@@ -1,131 +1,251 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-	<title>Contact V16</title>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-<!--===============================================================================================-->
-	<link rel="icon" type="image/png" href="images/icons/favicon.ico"/>
-<!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
-<!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
-<!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="fonts/iconic/css/material-design-iconic-font.min.css">
-<!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="fonts/Linearicons-Free-v1.0.0/icon-font.min.css">
-<!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="vendor/animate/animate.css">
-<!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="vendor/css-hamburgers/hamburgers.min.css">
-<!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="vendor/animsition/css/animsition.min.css">
-<!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="vendor/select2/select2.min.css">
-<!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="vendor/daterangepicker/daterangepicker.css">
-<!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="css/util.css">
-	<link rel="stylesheet" type="text/css" href="css/main.css">
-<!--===============================================================================================-->
-</head>
-<body>
+	<title>CHiNg與夥伴們的花錢快樂登記網</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-	<div class="bg-container-contact100" style="background-image: url(images/bg-01.jpg);">
-		<div class="contact100-header flex-sb-m">
-			<a href="#" class="contact100-header-logo">
-				<img src="images/icons/logo.png" alt="LOGO">
-			</a>
+	<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700' rel='stylesheet' type='text/css'>
 
-			<div>
-				<button class="btn-show-contact100">
-					Contact Us
-				</button>
-			</div>
-		</div>
-	</div>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 
-	<div class="container-contact100">
-		<div class="wrap-contact100">
-			<button class="btn-hide-contact100">
-				<i class="zmdi zmdi-close"></i>
-			</button>
-
-			<div class="contact100-form-title" style="background-image: url(images/bg-02.jpg);">
-				<span>Contact Us</span>
-			</div>
-
-			<form class="contact100-form validate-form">
-				<div class="wrap-input100 validate-input">
-					<input id="name" class="input100" type="text" name="name" placeholder="Full name">
-					<span class="focus-input100"></span>
-					<label class="label-input100" for="name">
-						<span class="lnr lnr-user m-b-2"></span>
-					</label>
-				</div>
-
-
-				<div class="wrap-input100 validate-input">
-					<input id="email" class="input100" type="text" name="email" placeholder="Eg. example@email.com">
-					<span class="focus-input100"></span>
-					<label class="label-input100" for="email">
-						<span class="lnr lnr-envelope m-b-5"></span>
-					</label>
-				</div>
-
-
-				<div class="wrap-input100 validate-input">
-					<input id="phone" class="input100" type="text" name="phone" placeholder="Eg. +1 800 000000">
-					<span class="focus-input100"></span>
-					<label class="label-input100" for="phone">
-						<span class="lnr lnr-smartphone m-b-2"></span>
-					</label>
-				</div>
-
-
-				<div class="wrap-input100 validate-input">
-					<textarea id="message" class="input100" name="message" placeholder="Your comments..."></textarea>
-					<span class="focus-input100"></span>
-					<label class="label-input100 rs1" for="message">
-						<span class="lnr lnr-bubble"></span>
-					</label>
-				</div>
-
-				<div class="container-contact100-form-btn">
-					<button class="contact100-form-btn">
-						Send Now
-					</button>
-				</div>
-			</form>
-		</div>
-	</div>
-
-
-
-<!--===============================================================================================-->
-	<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<!--===============================================================================================-->
-	<script src="vendor/animsition/js/animsition.min.js"></script>
-<!--===============================================================================================-->
-	<script src="vendor/bootstrap/js/popper.js"></script>
-	<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-<!--===============================================================================================-->
-	<script src="vendor/select2/select2.min.js"></script>
-<!--===============================================================================================-->
-	<script src="vendor/daterangepicker/moment.min.js"></script>
-	<script src="vendor/daterangepicker/daterangepicker.js"></script>
-<!--===============================================================================================-->
-	<script src="vendor/countdowntime/countdowntime.js"></script>
-<!--===============================================================================================-->
-	<script src="js/main.js"></script>
-	<!-- Global site tag (gtag.js) - Google Analytics -->
-	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-23581568-13"></script>
+	<link rel="stylesheet" href="css/style.css">
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sweetalert2@10.12.3/dist/sweetalert2.all.min.js"></script>
 	<script>
-	  window.dataLayer = window.dataLayer || [];
-	  function gtag(){dataLayer.push(arguments);}
-	  gtag('js', new Date());
+		function reSize() {
+			
+			x = $(window).width();
+            if (x < 1024) {
+				parent.document.all.frameid.height =1100;
+            }else{
+				//parent.document.all.frameid.height = document.body.scrollHeight;
+				parent.document.all.frameid.height =1100;
+			}
+		}
+		//window.onload = reSize;
 
-	  gtag('config', 'UA-23581568-13');
 	</script>
+</head>
+
+<body>
+	<section class="ftco-section">
+		<div class="container">
+			<div class="row justify-content-center">
+				<div class="col-md-6 text-center mb-5">
+					<div class="dbox w-100 text-center">
+						<div class="icon d-flex align-items-center justify-content-center">
+							<span class="fa fa-globe"></span>
+						</div>
+					</div>
+					<h2 class="heading-section">日本網購寄至倉庫轉運回台</h2><br>
+
+				</div>
+				<div class="row justify-content-center">
+					<div class="col-md-12">
+						<div class="wrapper">
+							<div class="row mb-5">
+								<div class="col-md-3">
+									<div class="dbox w-100 text-center">
+										<button type="button" class="btn btn-outline-primary" onclick="opfrom1()">日本網購登記</button>
+										<div class="text">
+											<p><span>日本網購後要寄至轉運倉庫<br>請按此登記</span></p>
+										</div>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="dbox w-100 text-center">
+										<button type="button" class="btn btn-outline-primary" onclick="opfrom2()">商品出貨通知回填</button>
+										<div class="text">
+											<p><span>商品出貨後收到Email通知<br>請按此回填登記</span></p>
+										</div>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="dbox w-100 text-center" onclick="opfrom3()" style="cursor: pointer;">
+										<div class="icon d-flex align-items-center justify-content-center">
+											<span class="fa fa-map-marker"></span>
+										</div>
+
+										<div class="text">
+											<p><span>日本倉庫收件資料</span>
+										</div>
+									</div>
+								</div>
+
+
+								<div class="col-md-3">
+									<div class="dbox w-100 text-center">
+										<div class="icon d-flex align-items-center justify-content-center">
+											<span class="fa fa-th-list"></span>
+										</div>
+										<div class="text">
+											<p><span>登記查詢</span><br>還沒寫到這<br>（ﾉ´д｀）</p>
+										</div>
+									</div>
+								</div>
+							</div>
+							<!--from1-->
+							<div class="row no-gutters" id="from1" style="display: none;">
+
+								<div class="col-md-7">
+									<iframe id="frameid"
+										src="https://docs.google.com/forms/d/e/1FAIpQLSfMzmiAD4hSvATXx5ZEBPKaQm46pwPN2jyrd4DW2U_jscao4w/viewform"
+										width="100%" frameborder="0" marginheight="0" marginwidth="0">載入中…</iframe>
+
+									<div class="contact-wrap w-100 p-md-5 p-4">
+										<h3 class="mb-4"></h3>
+										<div id="form-message-warning" class="mb-4"></div>
+
+
+									</div>
+
+								</div>
+								<div class="col-md-5 d-flex align-items-stretch">
+									<div class="info-wrap w-100 p-5 img" style="background-image: url(images/pexels-photo-6956788.jpeg);">
+
+									</div>
+								</div>
+							</div>
+								<!--from2-->
+								<div class="row no-gutters" id="from2" style="display: none;">
+									<div class="col-md-7">
+										<div class="contact-wrap w-100 p-md-5 p-4">
+											<h3 class="mb-4">商品出貨通知回填</h3>
+											<div id="form-message-warning" class="mb-4"></div>
+											
+											<form method="POST" id="contactForm" name="contactForm" class="contactForm">
+												<div class="row">
+													<div class="col-md-6">
+														<div class="form-group">
+															<label class="label" for="name">Full Name</label>
+															<input type="text" class="form-control" name="name"
+																id="name" placeholder="Name">
+														</div>
+													</div>
+													<div class="col-md-6">
+														<div class="form-group">
+															<label class="label" for="email">Email Address</label>
+															<input type="email" class="form-control" name="email"
+																id="email" placeholder="Email">
+														</div>
+													</div>
+													<div class="col-md-12">
+														<div class="form-group">
+															<label class="label" for="subject">Subject</label>
+															<input type="text" class="form-control" name="subject"
+																id="subject" placeholder="Subject">
+														</div>
+													</div>
+													<div class="col-md-12">
+														<div class="form-group">
+															<label class="label" for="#">Message</label>
+															<textarea name="message" class="form-control" id="message"
+																cols="30" rows="4" placeholder="Message"></textarea>
+														</div>
+													</div>
+													<div class="col-md-12">
+														<div class="form-group">
+															<input type="submit" value="Send Message"
+																class="btn btn-primary">
+															<div class="submitting"></div>
+														</div>
+													</div>
+												</div>
+											</form>
+										</div>
+									</div>
+									<div class="col-md-5 d-flex align-items-stretch">
+										<div class="info-wrap w-100 p-5 img"
+											style="background-image: url(images/img.jpg);">
+										</div>
+									</div>
+								</div>
+								<!--from2-->
+								<div class="row no-gutters" id="from3" >
+									<div class="col-md-7">
+										<div class="contact-wrap w-100 p-md-5 p-4">
+											<h3 class="mb-4">日本倉庫收件資料</h3>
+											<div id="form-message-warning" class="mb-4"></div>
+											
+											<form method="POST" id="contactForm" name="contactForm" class="contactForm">
+												<div class="row">
+													<div class="col-md-6">
+														<div class="form-group">
+															<label class="label" for="name">郵便番号</label>
+															<input type="text" class="form-control" name="name"
+																id="name" placeholder="Name" value="〒595-0813" disabled >
+														</div>
+													</div>
+													<div class="col-md-6">
+														<div class="form-group">
+															<label class="label" for="email">都道府県</label>
+															<input type="email" class="form-control" name="email"
+																id="email" placeholder="Email" value="大阪府" disabled>
+														</div>
+													</div>
+													<div class="col-md-6">
+														<div class="form-group">
+															<label class="label" for="subject">市区町村</label>
+															<input type="text" class="form-control" name="subject"
+																id="subject" placeholder="Subject" value="泉北郡忠岡町"  disabled>
+														</div>
+													</div>
+													<div class="col-md-6">
+														<div class="form-group">
+															<label class="label" for="#">以降の住所</label>
+															<input type="text" class="form-control" name="subject"
+																id="subject" placeholder="Subject" value="忠岡南3-1514-7"  disabled>
+														</div>
+													</div>
+													<div class="col-md-12">
+														<div class="form-group">
+															<label class="label" for="#">マンション・ビル名、部屋番号等</label>
+															<input type="text" class="form-control" name="subject"
+																id="subject" placeholder="Subject" value="JT0872147-01"  disabled>
+														</div>
+													</div>
+													<div class="col-md-6">
+														<div class="form-group">
+															<label class="label" for="#">お名前</label>
+															<input type="text" class="form-control" name="subject"
+																id="subject" placeholder="Subject" value="SUN CHENG CHING"  disabled>
+														</div>
+													</div>
+													<div class="col-md-6">
+														<div class="form-group">
+															<label class="label" for="#">電話番号</label>
+															<input type="text" class="form-control" name="subject"
+																id="subject" placeholder="Subject" value="06-6245-73851"  disabled>
+														</div>
+													</div>
+													<!--<div class="col-md-12">
+														<div class="form-group">
+															<input type="submit" value="Send Message"
+																class="btn btn-primary">
+															<div class="submitting"></div>
+														</div>
+													</div>-->
+												</div>
+											</form>
+										</div>
+									</div>
+									<div class="col-md-5 d-flex align-items-stretch">
+										<div class="info-wrap w-100 p-5 img"
+											style="background-image: url(images/pexels-photo-4464817.jpeg);">
+										</div>
+									</div>
+								</div>
+						</div>
+					</div>
+				</div>
+	</section>
+	<script src="js/jquery.min.js"></script>
+	<script src="js/popper.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/jquery.validate.min.js"></script>
+	<script src="js/main.js"></script>
+
 </body>
+
 </html>

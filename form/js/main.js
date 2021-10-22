@@ -1,87 +1,89 @@
-
-(function ($) {
-    "use strict";
-
-    /*==================================================================
-    [ Validate after type ]*/
-    $('.validate-input .input100').each(function(){
-        $(this).on('blur', function(){
-            if(validate(this) == false){
-                showValidate(this);
-            }
-            else {
-                $(this).parent().addClass('true-validate');
-            }
-        })    
-    })
-  
-  
-    /*==================================================================
-    [ Validate ]*/
-    var input = $('.validate-input .input100');
-
-    $('.validate-form').on('submit',function(){
-        var check = true;
-
-        for(var i=0; i<input.length; i++) {
-            if(validate(input[i]) == false){
-                showValidate(input[i]);
-                check=false;
-            }
-        }
-
-        return check;
-    });
-
-
-    $('.validate-form .input100').each(function(){
-        $(this).focus(function(){
-           hideValidate(this);
-           $(this).parent().removeClass('true-validate');
-        });
-    });
-
-     function validate (input) {
-        if($(input).attr('type') == 'email' || $(input).attr('name') == 'email') {
-            if($(input).val().trim().match(/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{1,5}|[0-9]{1,3})(\]?)$/) == null) {
-                return false;
-            }
-        }
-        else {
-            if($(input).val().trim() == ''){
-                return false;
-            }
-        }
-    }
-
-    function showValidate(input) {
-        var thisAlert = $(input).parent();
-
-        $(thisAlert).addClass('alert-validate');
-
-        $(thisAlert).append('<span class="btn-hide-validate">&#xf136;</span>')
-        $('.btn-hide-validate').each(function(){
-            $(this).on('click',function(){
-               hideValidate(this);
-            });
-        });
-    }
-
-    function hideValidate(input) {
-        var thisAlert = $(input).parent();
-        $(thisAlert).removeClass('alert-validate');
-        $(thisAlert).find('.btn-hide-validate').remove();
-    }
+$(document).ready(function () {
     
+});
 
-    /*==================================================================
-    [ Show / hide contact ]*/
-    $('.btn-hide-contact100').on('click', function(){
-        $('.container-contact100').fadeOut(300);
+function opfrom1(){
+	$('#from1').fadeIn();
+	$('#from2').fadeOut();
+	$('#from3').fadeOut();
+	$('html, body').animate({ scrollTop: $('#from1').offset().top }, 1000);
+	reSize();
+}
+
+function opfrom2(){
+	Swal.fire({
+		imageUrl: 'images/201511915392854716.jpg',
+        imageWidth: 200,
+        imageHeight: 200,
+        title: '還在趕工中!',
+	}).then((result) => {
+		$('#from2').fadeOut();
+	    $('#from3').fadeIn();
+	})
+	$('#from1').fadeOut();
+	$('#from2').fadeIn();
+	$('#from3').fadeOut();
+	$('html, body').animate({ scrollTop: $('#from2').offset().top }, 1000);
+	parent.document.all.frameid.height =0;
+	
+}
+function opfrom3(){
+	/*Swal.fire({
+		imageUrl: 'images/201511915392854716.jpg',
+        imageWidth: 200,
+        imageHeight: 200,
+        title: '還在趕工中!',
+	}).then((result) => {
+		$('#from2').fadeOut();
+	})*/
+	$('#from1').fadeOut();
+	$('#from2').fadeOut();
+	$('#from3').fadeIn();
+	$('html, body').animate({ scrollTop: $('#from3').offset().top }, 1000);
+	parent.document.all.frameid.height =0;
+	
+}
+//https://script.google.com/home 
+//寫入資料
+function datapost(){
+	$.ajax({
+		type: "post",
+		url: "https://script.google.com/macros/s/AKfycbzY8xSlZsiAPKedMmH2_ZONYkpgG6eYTja_pzdiFppkVJVO3LGS9vk4CZzVYxKW1_SOlQ/exec",
+			data: {
+					"order_time": "2021/10/11",
+					"order_name": "這是ajax測試",
+					"order_forwhom": "這是ajax測試",
+					"order_way": "這是ajax測試",
+					"order_commodity": "這是ajax測試",
+					"order_platform": "這是ajax測試",
+					"order_url": "這是ajax測試",
+					"order_money": "這是ajax測試",
+					"order_date1": "這是ajax測試",
+					"order_date2": "這是ajax測試",
+					"order_shippingdate": "這是ajax測試",
+					"order_delivery": "這是ajax測試",
+					"order_deliverycode": "這是ajax測試",
+					"order_urgent": "urgent"
+			},
+			success: function(response) {
+			  if(response == "成功"){
+				 alert(response);
+			   }
+			 }
+		});
+
+}
+//呼叫資料
+function dataget(){
+	
+    $.ajax({
+    type: "get",
+    url: "https://script.google.com/macros/s/AKfycbzY8xSlZsiAPKedMmH2_ZONYkpgG6eYTja_pzdiFppkVJVO3LGS9vk4CZzVYxKW1_SOlQ/exec",
+        data: { "type": "select",
+                "order_name": "CHING"
+        },
+        success: function(response) {
+           alert(response);
+         }
     });
-
-    $('.btn-show-contact100').on('click', function(){
-        $('.container-contact100').fadeIn(300);
-    });
-
-})(jQuery);
+}
