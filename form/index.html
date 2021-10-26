@@ -11,25 +11,92 @@
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 
 	<link rel="stylesheet" href="css/style.css">
-	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sweetalert2@10.12.3/dist/sweetalert2.all.min.js"></script>
+	<script type="text/javascript"
+		src="https://cdn.jsdelivr.net/npm/sweetalert2@10.12.3/dist/sweetalert2.all.min.js"></script>
 	<script>
 		function reSize() {
-			
+
 			x = $(window).width();
-            if (x < 1024) {
-				parent.document.all.frameid.height =1100;
-            }else{
+			if (x < 1024) {
+				parent.document.all.frameid.height = 1100;
+			} else {
 				//parent.document.all.frameid.height = document.body.scrollHeight;
-				parent.document.all.frameid.height =1100;
+				parent.document.all.frameid.height = 1100;
 			}
 		}
 		//window.onload = reSize;
 
 	</script>
+	<style>
+		.double-wrap.hide {
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.double-wrap {
+			position: fixed;
+			top: 0;
+			right: 0;
+			left: 0;
+			bottom: 0;
+			z-index: 99;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background: rgba(255, 255, 255, .8);
+			transition: opacity .6s;
+		}
+
+		/*  begin double css */
+
+		.double {
+			width: 40px;
+			height: 40px;
+			position: relative;
+			margin: 100px auto;
+		}
+
+		.double-bounce1,
+		.double-bounce2 {
+			width: 100%;
+			height: 100%;
+			border-radius: 50%;
+			background-color: rgb(6, 103, 116);
+			opacity: 0.6;
+			position: absolute;
+			top: 0;
+			left: 0;
+			animation: sk-bounce 2.0s infinite ease-in-out;
+		}
+
+		.double-bounce2 {
+			animation-delay: -1.0s;
+		}
+
+		@keyframes sk-bounce {
+
+			0%,
+			100% {
+				transform: scale(0.0);
+			}
+
+			50% {
+				transform: scale(1.0);
+			}
+		}
+
+		/*  begin rect css */
+	</style>
 </head>
 
 <body>
 	<section class="ftco-section">
+		<div class="double-wrap">
+			<div class="double">
+				<div class="double-bounce1"></div>
+				<div class="double-bounce2"></div>
+			</div>
+		</div>
 		<div class="container">
 			<div class="row justify-content-center">
 				<div class="col-md-6 text-center mb-5">
@@ -47,7 +114,8 @@
 							<div class="row mb-5">
 								<div class="col-md-3">
 									<div class="dbox w-100 text-center">
-										<button type="button" class="btn btn-outline-primary" onclick="opfrom1()">日本網購登記</button>
+										<button type="button" class="btn btn-outline-primary"
+											onclick="opfrom1()">日本網購登記</button>
 										<div class="text">
 											<p><span>日本網購後要寄至轉運倉庫<br>請按此登記</span></p>
 										</div>
@@ -55,7 +123,8 @@
 								</div>
 								<div class="col-md-3">
 									<div class="dbox w-100 text-center">
-										<button type="button" class="btn btn-outline-primary" onclick="opfrom2()">商品出貨通知回填</button>
+										<button type="button" class="btn btn-outline-primary"
+											onclick="opfrom2()">商品出貨通知回填</button>
 										<div class="text">
 											<p><span>商品出貨後收到Email通知<br>請按此回填登記</span></p>
 										</div>
@@ -89,153 +158,243 @@
 							<div class="row no-gutters" id="from1" style="display: none;">
 
 								<div class="col-md-7">
-									
-                                                                        <iframe id="frameid"
+									<iframe id="frameid"
 										src="https://docs.google.com/forms/d/e/1FAIpQLSfMzmiAD4hSvATXx5ZEBPKaQm46pwPN2jyrd4DW2U_jscao4w/viewform"
 										width="100%" frameborder="0" marginheight="0" marginwidth="0">載入中…</iframe>
+
 									<div class="contact-wrap w-100 p-md-5 p-4">
 										<h3 class="mb-4"></h3>
 										<div id="form-message-warning" class="mb-4"></div>
-                                                                                
+
 
 									</div>
 
 								</div>
 								<div class="col-md-5 d-flex align-items-stretch">
-									<div class="info-wrap w-100 p-5 img" style="background-image: url(images/pexels-photo-6956788.jpeg);">
+									<div class="info-wrap w-100 p-5 img"
+										style="background-image: url(images/pexels-photo-6956788.jpeg);">
 
 									</div>
 								</div>
 							</div>
-								<!--from2-->
-								<div class="row no-gutters" id="from2" style="display: none;">
-									<div class="col-md-7">
-										<div class="contact-wrap w-100 p-md-5 p-4">
-											<h3 class="mb-4">商品出貨通知回填</h3>
-											<div id="form-message-warning" class="mb-4"></div>
-											
-											<form method="POST" id="contactForm" name="contactForm" class="contactForm">
-												<div class="row">
-													<div class="col-md-6">
-														<div class="form-group">
-															<label class="label" for="name">Full Name</label>
-															<input type="text" class="form-control" name="name"
-																id="name" placeholder="Name">
-														</div>
-													</div>
-													<div class="col-md-6">
-														<div class="form-group">
-															<label class="label" for="email">Email Address</label>
-															<input type="email" class="form-control" name="email"
-																id="email" placeholder="Email">
-														</div>
-													</div>
-													<div class="col-md-12">
-														<div class="form-group">
-															<label class="label" for="subject">Subject</label>
-															<input type="text" class="form-control" name="subject"
-																id="subject" placeholder="Subject">
-														</div>
-													</div>
-													<div class="col-md-12">
-														<div class="form-group">
-															<label class="label" for="#">Message</label>
-															<textarea name="message" class="form-control" id="message"
-																cols="30" rows="4" placeholder="Message"></textarea>
-														</div>
-													</div>
-													<div class="col-md-12">
-														<div class="form-group">
-															<input type="submit" value="Send Message"
-																class="btn btn-primary">
-															<div class="submitting"></div>
-														</div>
+							<!--from2-->
+							<div class="row no-gutters" id="from2" style="display: none;">
+								<div class="col-md-7">
+									<div class="contact-wrap w-100 p-md-5 p-4">
+										<h3 class="mb-4">商品出貨通知回填</h3>
+										<br><span id="ddinfo">(請輸入網購登記相同名稱)</span>
+										<div id="form-message-warning" class="mb-4"></div>
+
+										<form class="contactForm">
+											<div class="row">
+												<div class="col-md-6">
+													<div class="form-group">
+														<label class="label" for="name">綽號名稱</label>
+
+														<input type="text" class="form-control" id="name"
+															placeholder="請輸入相同名稱">
 													</div>
 												</div>
-											</form>
-										</div>
-									</div>
-									<div class="col-md-5 d-flex align-items-stretch">
-										<div class="info-wrap w-100 p-5 img"
-											style="background-image: url(images/img.jpg);">
-										</div>
+												
+												<div class="col-md-6" id="gobt1">
+													<div class="form-group">
+														<button type="button" class="btn btn-primary"
+											onclick="dataget()">綽號名稱查詢</button>
+														<div class="submitting"></div>
+													</div>
+												</div>
+												<div class="col-md-6" id="inputinfo3">
+													<div class="form-group">
+														<label class="label">出貨通知平台</label>
+														<input type="text" class="form-control" id="inputid2" disabled>
+													</div>
+												</div>
+												<div class="col-md-12" id="inputinfo1">
+													<div class="form-group">
+														<label class="label">出貨通知商品</label>
+														<div id="goodbt"></div>
+													</div>
+												</div>
+												<div class="col-md-12" id="inputinfo2">
+													<div class="form-group">
+														<label class="label">出貨通知商品</label>
+														<input type="text" class="form-control" id="inputid1" disabled>
+													</div>
+												</div>
+												
+												<div class="col-md-6" id="inputinfo4">
+													<div class="form-group">
+														<label class="label">訂購/預購</label>
+														<input type="text" class="form-control" id="inputid3" disabled>
+													</div>
+												</div>
+												<div class="col-md-6" id="inputinfo5">
+													<div class="form-group">
+														<label class="label">商品金額</label>
+														<input type="text" class="form-control" id="inputid4" disabled>
+													</div>
+												</div>
+												<div class="col-md-6" id="inputinfo6">
+													<div class="form-group">
+														<label class="label">出貨通知日期</label>
+														<input type="date" class="form-control" id="inputid5" >
+													</div>
+												</div>
+												<div class="col-md-6" id="inputinfo7">
+													<div class="form-group">
+														<label class="label">日本國內宅配物流</label>
+														<input type="text" class="form-control" id="inputid6" >
+													</div>
+												</div>
+												<div class="col-md-6" id="inputinfo8">
+													<div class="form-group">
+														<label class="label">日本宅配物流單號或編號</label>
+														<input type="text" class="form-control" id="inputid7" >
+													</div>
+												</div>
+												<div class="col-md-6" id="inputinfo9">
+													<div class="form-group">
+														<label class="label">有急件想立即寄回台灣嗎?</label>
+														<input type="text" class="form-control" id="inputid8" >
+													</div>
+												</div>
+												<div class="col-md-6" id="goback">
+													<div class="form-group">
+														<button type="button" class="btn btn-primary"
+											onclick="datapost()">確認送出資料</button>
+														<button type="button" class="btn btn-outline-secondary"
+											onclick="goback()">重選出貨商品</button>
+														<div class="submitting"></div>
+													</div>
+												</div>
+                                                <!--
+												   出貨日期:
+
+												   日本國內宅配物流?:
+												   Amazon co jp
+												   佐川急便株式会社 (BOOTH 横浜物流センター)
+												   ヤマト運輸株式会社
+												   日本郵便
+												   其他
+
+												   日本宅配物流單號或編號:
+
+												   有急件想立即寄回台灣嗎?:
+												   一般都會與其他包裹集中一段時間再集貨回台灣，如有急需立即回台，將會立即集貨處理。
+												   並沒有
+												   須馬上集貨處理 (送出後立即通知我)
+
+												<div class="col-md-6">
+													<div class="form-group">
+														<label class="label" for="email">Email Address</label>
+														<input type="email" class="form-control" name="email" id="email"
+															placeholder="Email">
+													</div>
+												</div>
+												<div class="col-md-12">
+													<div class="form-group">
+														<label class="label" for="subject">Subject</label>
+														<input type="text" class="form-control" name="subject"
+															id="subject" placeholder="Subject">
+													</div>
+												</div>
+												<div class="col-md-12">
+													<div class="form-group">
+														<label class="label" for="#">Message</label>
+														<textarea name="message" class="form-control" id="message"
+															cols="30" rows="4" placeholder="Message"></textarea>
+													</div>
+												</div>
+												-->
+												
+											</div>
+										</form>
 									</div>
 								</div>
-								<!--from-->
-								<div class="row no-gutters" id="from3" >
-									<div class="col-md-7">
-										<div class="contact-wrap w-100 p-md-5 p-4">
-											<h3 class="mb-4">日本倉庫收件資料</h3>
-											<div id="form-message-warning" class="mb-4"></div>
-											
-											<form method="POST" id="contactForm" name="contactForm" class="contactForm">
-												<div class="row">
-													<div class="col-md-6">
-														<div class="form-group">
-															<label class="label" for="name">郵便番号</label>
-															<input type="text" class="form-control" name="name"
-																id="name" placeholder="Name" value="〒595-0813" disabled >
-														</div>
+								<div class="col-md-5 d-flex align-items-stretch">
+									<div class="info-wrap w-100 p-5 img" style="background-image: url(images/pexels-photo-9461229.jpeg);">
+									</div>
+								</div>
+							</div>
+							<!--from2-->
+							<div class="row no-gutters" id="from3">
+								<div class="col-md-7">
+									<div class="contact-wrap w-100 p-md-5 p-4">
+										<h3 class="mb-4">日本倉庫收件資料</h3>
+										<div id="form-message-warning" class="mb-4"></div>
+
+										<form method="POST" id="contactForm" name="contactForm" class="contactForm">
+											<div class="row">
+												<div class="col-md-6">
+													<div class="form-group">
+														<label class="label" for="name">郵便番号</label>
+														<input type="text" class="form-control" name="name" id="name"
+															placeholder="Name" value="〒595-0813" disabled>
 													</div>
-													<div class="col-md-6">
-														<div class="form-group">
-															<label class="label" for="email">都道府県</label>
-															<input type="email" class="form-control" name="email"
-																id="email" placeholder="Email" value="大阪府" disabled>
-														</div>
+												</div>
+												<div class="col-md-6">
+													<div class="form-group">
+														<label class="label" for="email">都道府県</label>
+														<input type="text" class="form-control" name="email" id="email"
+															placeholder="Email" value="大阪府" disabled>
 													</div>
-													<div class="col-md-6">
-														<div class="form-group">
-															<label class="label" for="subject">市区町村</label>
-															<input type="text" class="form-control" name="subject"
-																id="subject" placeholder="Subject" value="泉北郡忠岡町"  disabled>
-														</div>
+												</div>
+												<div class="col-md-6">
+													<div class="form-group">
+														<label class="label" for="subject">市区町村</label>
+														<input type="text" class="form-control" name="subject"
+															id="subject" placeholder="Subject" value="泉北郡忠岡町" disabled>
 													</div>
-													<div class="col-md-6">
-														<div class="form-group">
-															<label class="label" for="#">以降の住所</label>
-															<input type="text" class="form-control" name="subject"
-																id="subject" placeholder="Subject" value="忠岡南3-1514-7"  disabled>
-														</div>
+												</div>
+												<div class="col-md-6">
+													<div class="form-group">
+														<label class="label" for="#">以降の住所</label>
+														<input type="text" class="form-control" name="subject"
+															id="subject" placeholder="Subject" value="忠岡南3-1514-7"
+															disabled>
 													</div>
-													<div class="col-md-12">
-														<div class="form-group">
-															<label class="label" for="#">マンション・ビル名、部屋番号等</label>
-															<input type="text" class="form-control" name="subject"
-																id="subject" placeholder="Subject" value="JT0872147-01"  disabled>
-														</div>
+												</div>
+												<div class="col-md-12">
+													<div class="form-group">
+														<label class="label" for="#">マンション・ビル名、部屋番号等</label>
+														<input type="text" class="form-control" name="subject"
+															id="subject" placeholder="Subject" value="JT0872147-01"
+															disabled>
 													</div>
-													<div class="col-md-6">
-														<div class="form-group">
-															<label class="label" for="#">お名前</label>
-															<input type="text" class="form-control" name="subject"
-																id="subject" placeholder="Subject" value="SUN CHENG CHING"  disabled>
-														</div>
+												</div>
+												<div class="col-md-6">
+													<div class="form-group">
+														<label class="label" for="#">お名前</label>
+														<input type="text" class="form-control" name="subject"
+															id="subject" placeholder="Subject" value="SUN CHENG CHING"
+															disabled>
 													</div>
-													<div class="col-md-6">
-														<div class="form-group">
-															<label class="label" for="#">電話番号</label>
-															<input type="text" class="form-control" name="subject"
-																id="subject" placeholder="Subject" value="06-6245-73851"  disabled>
-														</div>
+												</div>
+												<div class="col-md-6">
+													<div class="form-group">
+														<label class="label" for="#">電話番号</label>
+														<input type="text" class="form-control" name="subject"
+															id="subject" placeholder="Subject" value="06-6245-73851"
+															disabled>
 													</div>
-													<!--<div class="col-md-12">
+												</div>
+												<!--<div class="col-md-12">
 														<div class="form-group">
 															<input type="submit" value="Send Message"
 																class="btn btn-primary">
 															<div class="submitting"></div>
 														</div>
 													</div>-->
-												</div>
-											</form>
-										</div>
-									</div>
-									<div class="col-md-5 d-flex align-items-stretch">
-										<div class="info-wrap w-100 p-5 img"
-											style="background-image: url(images/pexels-photo-4464817.jpeg);">
-										</div>
+											</div>
+										</form>
 									</div>
 								</div>
+								<div class="col-md-5 d-flex align-items-stretch">
+									<div class="info-wrap w-100 p-5 img"
+										style="background-image: url(images/pexels-photo-4464817.jpeg);">
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
