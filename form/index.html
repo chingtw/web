@@ -14,6 +14,7 @@
 	<script type="text/javascript"
 		src="https://cdn.jsdelivr.net/npm/sweetalert2@10.12.3/dist/sweetalert2.all.min.js"></script>
 	<script>
+
 		function reSize() {
 
 			x = $(window).width();
@@ -192,14 +193,14 @@
 														<label class="label" for="name">綽號名稱</label>
 
 														<input type="text" class="form-control" id="name"
-															placeholder="請輸入相同名稱">
+															placeholder="請輸入名稱">
 													</div>
 												</div>
-												
+
 												<div class="col-md-6" id="gobt1">
 													<div class="form-group">
 														<button type="button" class="btn btn-primary"
-											onclick="dataget()">綽號名稱查詢</button>
+															onclick="dataget()">綽號名稱查詢</button>
 														<div class="submitting"></div>
 													</div>
 												</div>
@@ -221,7 +222,7 @@
 														<input type="text" class="form-control" id="inputid1" disabled>
 													</div>
 												</div>
-												
+
 												<div class="col-md-6" id="inputinfo4">
 													<div class="form-group">
 														<label class="label">訂購/預購</label>
@@ -237,37 +238,64 @@
 												<div class="col-md-6" id="inputinfo6">
 													<div class="form-group">
 														<label class="label">出貨通知日期</label>
-														<input type="date" class="form-control" id="inputid5" >
+														<input type="date" class="form-control" id="inputid5">
 													</div>
 												</div>
 												<div class="col-md-6" id="inputinfo7">
 													<div class="form-group">
 														<label class="label">日本國內宅配物流</label>
-														<input type="text" class="form-control" id="inputid6" >
+														<!--<input type="text" class="form-control" id="inputid6" >-->
+														<select class="form-select" aria-label="Default select example"
+															id="inputid6select" onchange="filter_user_trainings();">
+															<option selected value="0">請選擇日本國內宅配物流</option>
+															<option value="Amazon co jp">Amazon co jp</option>
+															<option value="佐川急便株式会社">佐川急便株式会社</option>
+															<option value="ヤマト運輸株式会社">ヤマト運輸株式会社</option>
+															<option value="日本郵便">日本郵便</option>
+															<option value="其他">其他</option>
+														</select>
+														<input type="text" class="form-control" id="inputid6"
+															placeholder="請選擇日本國內宅配物流">
 													</div>
 												</div>
 												<div class="col-md-6" id="inputinfo8">
 													<div class="form-group">
 														<label class="label">日本宅配物流單號或編號</label>
-														<input type="text" class="form-control" id="inputid7" >
+														<input type="text" class="form-control" id="inputid7">
 													</div>
 												</div>
 												<div class="col-md-6" id="inputinfo9">
 													<div class="form-group">
 														<label class="label">有急件想立即寄回台灣嗎?</label>
-														<input type="text" class="form-control" id="inputid8" >
+														<div class="form-check">
+															<input class="form-check-input" type="radio"
+																name="flexRadioDefault" id="flexRadioDefault1"
+																value="須馬上集貨處理">
+															<label class="form-check-label" for="flexRadioDefault1">
+																須馬上集貨處理
+															</label>
+														</div>
+														<div class="form-check">
+															<input class="form-check-input" type="radio"
+																name="flexRadioDefault" id="flexRadioDefault2" value="否"
+																checked>
+															<label class="form-check-label" for="flexRadioDefault2">
+																否
+															</label>
+														</div>
+														<!--<input type="text" class="form-control" id="inputid8" >-->
 													</div>
 												</div>
 												<div class="col-md-6" id="goback">
 													<div class="form-group">
 														<button type="button" class="btn btn-primary"
-											onclick="datapost()">確認送出資料</button>
+															onclick="datapost()">確認送出資料</button>
 														<button type="button" class="btn btn-outline-secondary"
-											onclick="goback()">重選出貨商品</button>
+															onclick="goback()">重選出貨商品</button>
 														<div class="submitting"></div>
 													</div>
 												</div>
-                                                <!--
+												<!--
 												   出貨日期:
 
 												   日本國內宅配物流?:
@@ -286,13 +314,14 @@
 
 												
 												-->
-												
+
 											</div>
 										</form>
 									</div>
 								</div>
 								<div class="col-md-5 d-flex align-items-stretch">
-									<div class="info-wrap w-100 p-5 img" style="background-image: url(images/pexels-photo-9461229.jpeg);">
+									<div class="info-wrap w-100 p-5 img"
+										style="background-image: url(images/pexels-photo-9461229.jpeg);">
 									</div>
 								</div>
 							</div>

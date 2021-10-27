@@ -1,5 +1,5 @@
 $(document).ready(function () {
-	sessionStorage.clear(); 
+	sessionStorage.clear();
 	$('.double-wrap').hide();
 	$('.double').hide();
 	$('#gobt1').hide();
@@ -27,6 +27,21 @@ $(document).ready(function () {
 		$('#goodbt').html('');
 		$('#goback').hide();
 		$('#ddinfo').text("(請輸入網購登記相同名稱)");
+	});
+	$("#inputid6select").change(function () {
+		var val = $("#inputid6select").val();
+		if (val == "其他") {
+			$("#inputid6").val("");
+			$('#inputid6').attr("placeholder", "請輸入宅配物流公司名稱");
+			document.getElementById('inputid6').focus();
+
+		} else if (val == "0") {
+			$("#inputid6").val("");
+			$('#inputid6').attr("placeholder", "請選擇日本國內宅配物流");
+		} else {
+			$("#inputid6").val(val);
+		}
+
 	});
 });
 
@@ -87,20 +102,20 @@ function datapost() {
 	var input_commodity = $('#inputid1').val();
 	var input_platform = $('#inputid2').val();
 	var input_money = $('#inputid4').val();
-	var input_urgent = $('#inputid8').val();
-	var input_shippingdate = $('#inputid5').val(); //日期格式確認
+	var input_urgent = $("input[name='flexRadioDefault']:checked").val();
+	var input_shippingdate = $('#inputid5').val();
 	var input_delivery = $('#inputid6').val();
 	var input_deliverycode = $('#inputid7').val();
-	if (input_shippingdate == ""||input_delivery == ""|| input_deliverycode == "") {
+	if (input_shippingdate == "" || input_delivery == "" || input_deliverycode == "") {
 		Swal.fire({
-            allowOutsideClick: false,
-            imageUrl: 'images/ERROR.jpg',
+			allowOutsideClick: false,
+			imageUrl: 'images/ERROR.jpg',
 			imageWidth: 200,
 			imageHeight: 200,
-            title: '輸入資料不完整!',
-            text: '請重新確認資料輸入完整!'
-        })
-       return false;
+			title: '輸入資料不完整!',
+			text: '請重新確認資料輸入完整!'
+		})
+		return false;
 	}
 	$.ajax({
 		beforeSend: function () {
@@ -114,7 +129,7 @@ function datapost() {
 			"order_time": ndate,
 			"order_name": input_name,
 			"order_way": input_way,
-			"order_commodity":input_commodity,
+			"order_commodity": input_commodity,
 			"order_platform": input_platform,
 			"order_money": input_money,
 			"order_urgent": input_urgent,
@@ -127,7 +142,7 @@ function datapost() {
 			$('.double').fadeOut();
 		},
 		success: function (response) {
-		
+
 			if (response == "成功") {
 				Swal.fire({
 					allowOutsideClick: false,
@@ -135,7 +150,7 @@ function datapost() {
 					imageUrl: 'images/doge.jpg',
 					imageWidth: 200,
 					imageHeight: 300,
-                    padding: '3em',
+					padding: '3em',
 					title: '資料回填成功!',
 					text: '貨到倉或寄回台灣時會再通知~',
 					backdrop: `
@@ -147,14 +162,14 @@ function datapost() {
 				}).then((result) => {
 					dataget();
 				})
-			}else{
+			} else {
 				Swal.fire({
 					allowOutsideClick: false,
 					imageUrl: 'images/ERROR.jpg',
 					imageWidth: 200,
 					imageHeight: 200,
 					title: '發生錯誤!',
-					text:'請稍後在試，還是有問題請回報~'
+					text: '請稍後在試，還是有問題請回報~'
 				})
 			}
 		}
@@ -163,28 +178,28 @@ function datapost() {
 }
 //呼叫資料
 function dataget() {
-	sessionStorage.clear(); 
+	sessionStorage.clear();
 	$('#inputinfo2').hide();
 	$('#inputinfo3').hide();
 	$('#inputinfo4').hide();
 	$('#inputinfo5').hide();
-	$('#inputinfo6').hide();$('#inputid5').val("");
-	$('#inputinfo7').hide();$('#inputid6').val("");
-	$('#inputinfo8').hide();$('#inputid7').val("");
-	$('#inputinfo9').hide();$('#inputid8').val("");
+	$('#inputinfo6').hide(); $('#inputid5').val("");
+	$('#inputinfo7').hide(); $("#inputid6select")[0].selectedIndex = 0; $('#inputid6').val("");
+	$('#inputinfo8').hide(); $('#inputid7').val("");
+	$('#inputinfo9').hide(); $("input[type='radio'][name='flexRadioDefault'][value='否']").prop("checked", true)
 	$('#goback').hide();
 	$('#ddinfo').text("(點選已出貨通知之商品)");
 	var name = $('#name').val();
 	if (name == "") {
 		Swal.fire({
-            allowOutsideClick: false,
-            imageUrl: 'images/ERROR.jpg',
+			allowOutsideClick: false,
+			imageUrl: 'images/ERROR.jpg',
 			imageWidth: 200,
 			imageHeight: 200,
-            title: '輸入資料不完整!',
-            text: '請重新確認資料輸入完整!'
-        })
-       return false;
+			title: '輸入資料不完整!',
+			text: '請重新確認資料輸入完整!'
+		})
+		return false;
 	}
 	$.ajax({
 		beforeSend: function () {
@@ -206,12 +221,12 @@ function dataget() {
 			var list = response.length;
 			var bt = "";
 			for (i = 0; i < list; i++) {
-				if (response[i].output[8] != "y"){
-					doCookie(i,response[i].output);
-					if (response[i].output[2] == "自己"){
-						bt += '<button type="button" class="btn btn-primary" onclick="dataStorage('+i+')">'+response[i].output[4]+'</button>';
-					}else{
-						bt += '<button type="button" class="btn btn-primary" onclick="dataStorage('+i+')">'+response[i].output[4]+' / '+ response[i].output[2] + '</button>';
+				if (response[i].output[8] != "y") {
+					doCookie(i, response[i].output);
+					if (response[i].output[2] == "自己") {
+						bt += '<button type="button" class="btn btn-primary" onclick="dataStorage(' + i + ')">' + response[i].output[4] + '</button>';
+					} else {
+						bt += '<button type="button" class="btn btn-primary" onclick="dataStorage(' + i + ')">' + response[i].output[4] + ' / ' + response[i].output[2] + '</button>';
 					}
 				}
 			}
@@ -222,42 +237,42 @@ function dataget() {
 	});
 }
 function dataStorage(data) {
- var Storage = sessionStorage.getItem('list'+ data);
- var ar=Storage.split(',');
- $('#ddinfo').text("(請填寫出貨通知詳細資料)");
- $('#inputinfo1').hide();
- $('#inputinfo2').fadeIn();
- $('#inputinfo3').fadeIn();
- $('#inputinfo4').fadeIn();
- $('#inputinfo5').fadeIn();
- $('#inputinfo6').fadeIn();
- $('#inputinfo7').fadeIn();
- $('#inputinfo8').fadeIn();
- $('#inputinfo9').fadeIn();
- $('#goback').fadeIn();
- $('#inputid1').val(ar[4]);
- $('#inputid2').val(ar[3]);
- $('#inputid3').val(ar[7]);
- $('#inputid4').val(ar[6]);
+	var Storage = sessionStorage.getItem('list' + data);
+	var ar = Storage.split(',');
+	$('#ddinfo').text("(請填寫出貨通知詳細資料)");
+	$('#inputinfo1').hide();
+	$('#inputinfo2').fadeIn();
+	$('#inputinfo3').fadeIn();
+	$('#inputinfo4').fadeIn();
+	$('#inputinfo5').fadeIn();
+	$('#inputinfo6').fadeIn();
+	$('#inputinfo7').fadeIn();
+	$('#inputinfo8').fadeIn();
+	$('#inputinfo9').fadeIn();
+	$('#goback').fadeIn();
+	$('#inputid1').val(ar[4]);
+	$('#inputid2').val(ar[3]);
+	$('#inputid3').val(ar[7]);
+	$('#inputid4').val(ar[6]);
 }
 function goback() {
-	
+
 	$('#ddinfo').text("(點選已出貨通知之商品)");
 	$('#inputinfo1').fadeIn();
 	$('#inputinfo2').hide();
 	$('#inputinfo3').hide();
 	$('#inputinfo4').hide();
 	$('#inputinfo5').hide();
-	$('#inputinfo6').hide();$('#inputid5').val("");
-	$('#inputinfo7').hide();$('#inputid6').val("");
-	$('#inputinfo8').hide();$('#inputid7').val("");
-	$('#inputinfo9').hide();$('#inputid8').val("");
+	$('#inputinfo6').hide(); $('#inputid5').val("");
+	$('#inputinfo7').hide(); $("#inputid6select")[0].selectedIndex = 0; $('#inputid6').val("");
+	$('#inputinfo8').hide(); $('#inputid7').val("");
+	$('#inputinfo9').hide(); $("input[type='radio'][name='flexRadioDefault'][value='否']").prop("checked", true)
 	$('#goback').hide();
 	$('#inputid1').val("");
 	$('#inputid2').val("");
 	$('#inputid3').val("");
 	$('#inputid4').val("");
-   }
-function doCookie(list,info) {
-    window.sessionStorage.setItem("list"+ list, info);
+}
+function doCookie(list, info) {
+	window.sessionStorage.setItem("list" + list, info);
 }
