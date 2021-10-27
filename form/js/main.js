@@ -15,6 +15,17 @@ $(document).ready(function () {
 	$('#goback').hide();
 	$("#name").bind("input propertychange", function (event) {
 		$('#gobt1').fadeIn();
+		$('#inputinfo1').hide();
+		$('#inputinfo2').hide();
+		$('#inputinfo3').hide();
+		$('#inputinfo4').hide();
+		$('#inputinfo5').hide();
+		$('#inputinfo6').hide();
+		$('#inputinfo7').hide();
+		$('#inputinfo8').hide();
+		$('#inputinfo9').hide();
+		$('#goodbt').html('');
+		$('#goback').hide();
 		$('#ddinfo').text("(請輸入網購登記相同名稱)");
 	});
 });
@@ -63,13 +74,34 @@ function opfrom3() {
 //https://script.google.com/home 
 //寫入資料
 function datapost() {
-	Swal.fire({
+	/*Swal.fire({
 		imageUrl: 'images/201511915392854716.jpg',
 		imageWidth: 200,
 		imageHeight: 200,
 		title: '資料送出功能趕工中!',
-	})
-	/* 
+	})*/
+	var date = new Date();
+	var ndate = date.toLocaleString();
+	var input_name = $('#name').val();
+	var input_way = $('#inputid3').val();
+	var input_commodity = $('#inputid1').val();
+	var input_platform = $('#inputid2').val();
+	var input_money = $('#inputid4').val();
+	var input_urgent = $('#inputid8').val();
+	var input_shippingdate = $('#inputid5').val(); //日期格式確認
+	var input_delivery = $('#inputid6').val();
+	var input_deliverycode = $('#inputid7').val();
+	if (input_shippingdate == ""||input_delivery == ""|| input_deliverycode == "") {
+		Swal.fire({
+            allowOutsideClick: false,
+            imageUrl: 'images/ERROR.jpg',
+			imageWidth: 200,
+			imageHeight: 200,
+            title: '輸入資料不完整!',
+            text: '請重新確認資料輸入完整!'
+        })
+       return false;
+	}
 	$.ajax({
 		beforeSend: function () {
 			//將div顯示
@@ -77,31 +109,56 @@ function datapost() {
 			$('.double').fadeIn();
 		},
 		type: "post",
-		url: "https://script.google.com/macros/s/AKfycby32jsYfKx-7lwUChIXyc0ygQE3R1qqaUY7LFhj1k7667YWvu_mcgImv0Mdi1lo_N4Vlw/exec",
+		url: "https://script.google.com/macros/s/AKfycby7og6FAmsfNsbq81m8PsFX28P-BqSa0tqqGH_ZOYdlxo38Qf1WqZrQM5BPcHwuX5rfgw/exec",
 		data: {
-			"order_time": "2021/10/11",
-			"order_name": "這是ajax測試",
-			"order_way": "這是ajax測試",
-			"order_commodity": "這是ajax測試",
-			"order_platform": "這是ajax測試",
-			"order_money": "這是ajax測試",
-			"order_urgent": "urgent",
-			"order_shippingdate": "這是ajax測試",
-			"order_delivery": "這是ajax測試",
-			"order_deliverycode": "這是ajax測試",
-			"order_acceptancecode": "這是ajax測試",
-			"order_date1": ""
+			"order_time": ndate,
+			"order_name": input_name,
+			"order_way": input_way,
+			"order_commodity":input_commodity,
+			"order_platform": input_platform,
+			"order_money": input_money,
+			"order_urgent": input_urgent,
+			"order_shippingdate": input_shippingdate,
+			"order_delivery": input_delivery,
+			"order_deliverycode": input_deliverycode
 		}, complete: function () {
 
 			$('.double-wrap').fadeOut();
 			$('.double').fadeOut();
 		},
 		success: function (response) {
+		
 			if (response == "成功") {
-				alert(response);
+				Swal.fire({
+					allowOutsideClick: false,
+					width: 600,
+					imageUrl: 'images/doge.jpg',
+					imageWidth: 200,
+					imageHeight: 300,
+                    padding: '3em',
+					title: '資料回填成功!',
+					text: '貨到倉或寄回台灣時會再通知~',
+					backdrop: `
+					rgba(0,0,123,0.4)
+					url("/images/nyan-cat.gif")
+					left top
+					no-repeat
+				  `
+				}).then((result) => {
+					dataget();
+				})
+			}else{
+				Swal.fire({
+					allowOutsideClick: false,
+					imageUrl: 'images/ERROR.jpg',
+					imageWidth: 200,
+					imageHeight: 200,
+					title: '發生錯誤!',
+					text:'請稍後在試，還是有問題請回報~'
+				})
 			}
 		}
-	});*/
+	});
 
 }
 //呼叫資料
@@ -111,17 +168,19 @@ function dataget() {
 	$('#inputinfo3').hide();
 	$('#inputinfo4').hide();
 	$('#inputinfo5').hide();
-	$('#inputinfo6').hide();
-	$('#inputinfo7').hide();
-	$('#inputinfo8').hide();
-	$('#inputinfo9').hide();
+	$('#inputinfo6').hide();$('#inputid5').val("");
+	$('#inputinfo7').hide();$('#inputid6').val("");
+	$('#inputinfo8').hide();$('#inputid7').val("");
+	$('#inputinfo9').hide();$('#inputid8').val("");
 	$('#goback').hide();
 	$('#ddinfo').text("(點選已出貨通知之商品)");
 	var name = $('#name').val();
 	if (name == "") {
 		Swal.fire({
             allowOutsideClick: false,
-            icon: 'warning',
+            imageUrl: 'images/ERROR.jpg',
+			imageWidth: 200,
+			imageHeight: 200,
             title: '輸入資料不完整!',
             text: '請重新確認資料輸入完整!'
         })
@@ -134,7 +193,7 @@ function dataget() {
 			$('.double').fadeIn();
 		},
 		type: "get",
-		url: "https://script.google.com/macros/s/AKfycby32jsYfKx-7lwUChIXyc0ygQE3R1qqaUY7LFhj1k7667YWvu_mcgImv0Mdi1lo_N4Vlw/exec",
+		url: "https://script.google.com/macros/s/AKfycby7og6FAmsfNsbq81m8PsFX28P-BqSa0tqqGH_ZOYdlxo38Qf1WqZrQM5BPcHwuX5rfgw/exec",
 		data: {
 			"type": "select",
 			"order_name": name
@@ -189,15 +248,15 @@ function goback() {
 	$('#inputinfo3').hide();
 	$('#inputinfo4').hide();
 	$('#inputinfo5').hide();
-	$('#inputinfo6').hide();
-	$('#inputinfo7').hide();
-	$('#inputinfo8').hide();
-	$('#inputinfo9').hide();
+	$('#inputinfo6').hide();$('#inputid5').val("");
+	$('#inputinfo7').hide();$('#inputid6').val("");
+	$('#inputinfo8').hide();$('#inputid7').val("");
+	$('#inputinfo9').hide();$('#inputid8').val("");
 	$('#goback').hide();
-	$('#inputid1').val(ar[4]);
-	$('#inputid2').val(ar[3]);
-	$('#inputid3').val(ar[7]);
-	$('#inputid4').val(ar[6]);
+	$('#inputid1').val("");
+	$('#inputid2').val("");
+	$('#inputid3').val("");
+	$('#inputid4').val("");
    }
 function doCookie(list,info) {
     window.sessionStorage.setItem("list"+ list, info);
