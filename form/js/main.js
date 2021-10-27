@@ -155,7 +155,7 @@ function datapost() {
 					text: '貨到倉或寄回台灣時會再通知~',
 					backdrop: `
 					rgba(0,0,123,0.4)
-					url("../images/nyan-cat.gif")
+					url("./images/nyan-cat.gif")
 					left top
 					no-repeat
 				  `
