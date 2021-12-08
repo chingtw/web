@@ -224,9 +224,9 @@ function dataget() {
 				if (response[i].output[8] != "y") {
 					doCookie(i, response[i].output);
 					if (response[i].output[2] == "自己") {
-						bt += '<button type="button" class="btn btn-primary" onclick="dataStorage(' + i + ')">' + response[i].output[4] + '</button>';
+						bt += '<button type="button" class="btn btn-primary" onclick="dataStorage(' + i + ')">' + response[i].output[4] + '</button><br>';
 					} else {
-						bt += '<button type="button" class="btn btn-primary" onclick="dataStorage(' + i + ')">' + response[i].output[4] + ' / ' + response[i].output[2] + '</button>';
+						bt += '<button type="button" class="btn btn-primary" onclick="dataStorage(' + i + ')">' + response[i].output[4] + ' / ' + response[i].output[2] + '</button><br>';
 					}
 				}
 			}
