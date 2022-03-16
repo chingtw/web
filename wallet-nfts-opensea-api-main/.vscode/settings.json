@@ -1,0 +1,11 @@
+{
+    "liveServer.settings.port": 443,
+    "liveServer.settings.root": "/",
+    "liveServer.settings.CustomBrowser": "chrome",
+    "liveServer.settings.https": {
+      "enable": true,
+      "cert": "/Users/chingx/Documents/code/https/localhost.pem",
+      "key": "/Users/chingx/Documents/code/https/localhost.key",
+      "passphrase": "12345"
+    }
+  }
