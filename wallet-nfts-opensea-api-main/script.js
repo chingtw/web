@@ -19,7 +19,7 @@ const connect = () => {
   })
 }
 
-const renderTokensForOwner = (ownerAddress) => {
+/*const renderTokensForOwner = (ownerAddress) => {
   fetch(
     `https://api.opensea.io/api/v1/assets?owner=${ownerAddress}&order_direction=desc&offset=0&limit=30`, {
       mode: 'no-cors'
@@ -32,6 +32,7 @@ const renderTokensForOwner = (ownerAddress) => {
   })
 }
 
+
 const createTokenElement = ({ name, collection, description, permalink, image_preview_url, token_id }) => {
   const newElement = document.getElementById("nft_template").content.cloneNode(true)
 
@@ -42,17 +43,17 @@ const createTokenElement = ({ name, collection, description, permalink, image_pr
   newElement.querySelector("img").alt = description
 
   return newElement
-}
+}*/
 
 document.addEventListener("DOMContentLoaded", async () => {
   let accountAddress
 
   accountAddress = await connect()
-  renderTokensForOwner(accountAddress)
+  //renderTokensForOwner(accountAddress)
 
   window.ethereum.on("accountsChanged", async () => {
     accountAddress = await connect()
     document.getElementById("container").innerHTML = ""
-    renderTokensForOwner(accountAddress)
+    //renderTokensForOwner(accountAddress)
   })
 })

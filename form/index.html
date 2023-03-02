@@ -8,7 +8,7 @@
 
 	<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700' rel='stylesheet' type='text/css'>
 
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="css/fontawesome/all.css">
 
 	<link rel="stylesheet" href="css/style.css">
 	<script type="text/javascript"
@@ -29,6 +29,12 @@
 
 	</script>
 	<style>
+     i { 
+        position: absolute; 
+        right: 30px;
+        top: calc(50%);
+       }
+
 		.double-wrap.hide {
 			opacity: 0;
 			pointer-events: none;
@@ -103,45 +109,46 @@
 				<div class="col-md-6 text-center mb-5">
 					<div class="dbox w-100 text-center">
 						<div class="icon d-flex align-items-center justify-content-center">
-							<span class="fa fa-globe"></span>
+							<span class="fa-solid fa-box"></span>
 						</div>
 					</div>
-					<h2 class="heading-section">日本網購寄至倉庫轉運回台</h2><br>
-
+					<h2 class="heading-section">日本包裹寄至倉庫轉運回台</h2><br>
+					<div class="row justify-content-center"><div style="color: red;">2023/03/03 網站更新</div>&nbsp;&nbsp;1.新增出貨回填【特殊注意商品】與【已到倉資訊】<br>2.新增【FC與個人信件包裹】類別<br>3.倉庫收件地址點擊複製 <br>4.包裹登記GOOGLE表單流程更新</div>
 				</div>
 				<div class="row justify-content-center">
 					<div class="col-md-12">
 						<div class="wrapper">
 							<div class="row mb-5">
 								<div class="col-md-3">
-									<div class="dbox w-100 text-center">
-										<button type="button" class="btn btn-outline-primary"
-											onclick="opfrom1()">日本網購登記</button>
-										<div class="text">
-											<p><span>日本網購後要寄至轉運倉庫<br>請按此登記</span></p>
-										</div>
-									</div>
-								</div>
-								<div class="col-md-3">
-									<div class="dbox w-100 text-center">
-										<button type="button" class="btn btn-outline-primary"
-											onclick="opfrom2()">商品出貨通知回填</button>
-										<div class="text">
-											<p><span>商品出貨後收到Email通知<br>請按此回填登記</span></p>
-										</div>
-									</div>
-								</div>
-								<div class="col-md-3">
 									<div class="dbox w-100 text-center" onclick="opfrom3()" style="cursor: pointer;">
 										<div class="icon d-flex align-items-center justify-content-center">
-											<span class="fa fa-map-marker"></span>
+											<span class="fa-solid fa-map-location-dot"></span>
 										</div>
 
 										<div class="text">
-											<p><span>日本倉庫收件資料</span>
+											<p><span>日本倉庫收件地址</span>
 										</div>
 									</div>
 								</div>
+								<div class="col-md-3">
+									<div class="dbox w-100 text-center">
+										<button type="button" class="btn btn-outline-primary"
+											onclick="opfrom1()">日本包裹登記</button>
+										<div class="text">
+											<p><span>包裹與網購後要寄至倉庫<br>請按此登記</span></p>
+										</div>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="dbox w-100 text-center">
+										<button type="button" class="btn btn-outline-primary"
+											onclick="opfrom2()">包裹出貨回填</button>
+										<div class="text">
+											<p><span>收到商品出貨通知<br>請按此回填登記</span></p>
+										</div>
+									</div>
+								</div>
+								
 
 
 								<div class="col-md-3">
@@ -150,7 +157,7 @@
 											<span class="fa fa-th-list"></span>
 										</div>
 										<div class="text">
-											<p><span>登記查詢</span><br>目前沒想寫這功能<br>（ﾉ´д｀）</p>
+											<p><span>已到倉資訊</span><br><span id="gtdata">資料載入中</span></p>
 										</div>
 									</div>
 								</div>
@@ -182,8 +189,8 @@
 							<div class="row no-gutters" id="from2" style="display: none;">
 								<div class="col-md-7">
 									<div class="contact-wrap w-100 p-md-5 p-4">
-										<h3 class="mb-4">商品出貨通知回填</h3>
-										<br><span id="ddinfo">(請輸入網購登記相同名稱)</span>
+										<h3 class="mb-4">包裹出貨通知回填</h3>
+										<br><span id="ddinfo">(請輸入包裹登記相同名稱)</span>
 										<div id="form-message-warning" class="mb-4"></div>
 
 										<form class="contactForm">
@@ -235,12 +242,7 @@
 														<input type="text" class="form-control" id="inputid4" disabled>
 													</div>
 												</div>
-												<div class="col-md-6" id="inputinfo6">
-													<div class="form-group">
-														<label class="label">出貨通知日期</label>
-														<input type="date" class="form-control" id="inputid5">
-													</div>
-												</div>
+												
 												<div class="col-md-6" id="inputinfo7">
 													<div class="form-group">
 														<label class="label">日本國內宅配物流</label>
@@ -249,7 +251,7 @@
 															id="inputid6select" onchange="filter_user_trainings();">
 															<option selected value="0">請選擇日本國內宅配物流</option>
 															<option value="Amazon co jp">Amazon co jp</option>
-															<option value="佐川急便株式会社">佐川急便株式会社</option>
+															<option value="佐川急便株式会社">佐川急便 Sagawa</option>
 															<option value="ヤマト運輸株式会社">ヤマト運輸株式会社</option>
 															<option value="日本郵便">日本郵便</option>
 															<option value="其他">其他</option>
@@ -258,19 +260,43 @@
 															placeholder="請選擇日本國內宅配物流">
 													</div>
 												</div>
+												
+												<div class="col-md-6" id="inputinfo6">
+													<div class="form-group">
+														<label class="label">出貨通知日期</label>
+														<input type="date" class="form-control" id="inputid5">
+													</div>
+												</div>
 												<div class="col-md-6" id="inputinfo8">
 													<div class="form-group">
 														<label class="label">日本宅配物流單號或編號</label>
 														<input type="text" class="form-control" id="inputid7">
 													</div>
 												</div>
+												<div class="col-md-6" id="inputinfo10">
+													<div class="form-group">
+														<label class="label">包裹是否為特殊注意商品</label>
+														<!--<input type="text" class="form-control" id="inputid6" >-->
+														<select class="form-select" aria-label="Default select example"
+															id="inputid10select" onchange="filter_user_trainings();">
+															<option selected value="0">請選擇</option>
+															<option value="無">無</option>
+															<option value="大型重量">重型玩偶/非固定大型物件</option>
+															<option value="海報">海報</option>
+															<option value="易碎">易碎商品</option>
+															<option value="其他">其他</option>
+														</select>
+														<input type="text" class="form-control" id="inputid10"
+															placeholder="請選擇需特殊注意選項">
+													</div>
+												</div>
 												<div class="col-md-6" id="inputinfo9">
 													<div class="form-group">
-														<label class="label">有急件想立即寄回台灣嗎?</label>
+														<label class="label">有急件需立即寄回台灣嗎?</label>
 														<div class="form-check">
 															<input class="form-check-input" type="radio"
 																name="flexRadioDefault" id="flexRadioDefault1"
-																value="須馬上集貨處理">
+																value="是">
 															<label class="form-check-label" for="flexRadioDefault1">
 																須馬上集貨處理
 															</label>
@@ -329,30 +355,32 @@
 							<div class="row no-gutters" id="from3">
 								<div class="col-md-7">
 									<div class="contact-wrap w-100 p-md-5 p-4">
-										<h3 class="mb-4">日本倉庫收件資料</h3>
+										<h3 class="mb-4">日本倉庫收件地址</h3>
 										<div id="form-message-warning" class="mb-4"></div>
 
 										<form method="POST" id="contactForm" name="contactForm" class="contactForm">
-											<div class="row">
+											<div class="row" id="jpForm">
 												<div class="col-md-6">
 													<div class="form-group">
-														<label class="label" for="name">郵便番号</label>
+														<label class="label" for="name">〒郵便番号</label>
+														<span class="user2">
 														<input type="text" class="form-control" name="name" id="name"
-															placeholder="Name" value="〒595-0813" disabled>
+															placeholder="Name" value="595-0813" readonly><i class="fa-solid fa-copy"></i>
+														</span>
 													</div>
 												</div>
 												<div class="col-md-6">
 													<div class="form-group">
 														<label class="label" for="email">都道府県</label>
 														<input type="text" class="form-control" name="email" id="email"
-															placeholder="Email" value="大阪府" disabled>
+															placeholder="Email" value="大阪府" readonly><i class="fa-solid fa-copy"></i>
 													</div>
 												</div>
 												<div class="col-md-6">
 													<div class="form-group">
 														<label class="label" for="subject">市区町村</label>
 														<input type="text" class="form-control" name="subject"
-															id="subject" placeholder="Subject" value="泉北郡忠岡町" disabled>
+															id="subject" placeholder="Subject" value="泉北郡忠岡町" readonly><i class="fa-solid fa-copy"></i>
 													</div>
 												</div>
 												<div class="col-md-6">
@@ -360,7 +388,7 @@
 														<label class="label" for="#">以降の住所</label>
 														<input type="text" class="form-control" name="subject"
 															id="subject" placeholder="Subject" value="忠岡南3-1514-7"
-															disabled>
+															readonly><i class="fa-solid fa-copy"></i>
 													</div>
 												</div>
 												<div class="col-md-12">
@@ -368,7 +396,7 @@
 														<label class="label" for="#">マンション・ビル名、部屋番号等</label>
 														<input type="text" class="form-control" name="subject"
 															id="subject" placeholder="Subject" value="JT0872147-01"
-															disabled>
+															readonly><i class="fa-solid fa-copy"></i>
 													</div>
 												</div>
 												<div class="col-md-6">
@@ -376,7 +404,7 @@
 														<label class="label" for="#">お名前</label>
 														<input type="text" class="form-control" name="subject"
 															id="subject" placeholder="Subject" value="SUN CHENG CHING"
-															disabled>
+															readonly><i class="fa-solid fa-copy"></i>
 													</div>
 												</div>
 												<div class="col-md-6">
@@ -384,7 +412,7 @@
 														<label class="label" for="#">電話番号</label>
 														<input type="text" class="form-control" name="subject"
 															id="subject" placeholder="Subject" value="06-6245-7385"
-															disabled>
+															readonly><i class="fa-solid fa-copy"></i>
 													</div>
 												</div>
 												<!--<div class="col-md-12">
@@ -412,7 +440,7 @@
 	<script src="js/popper.js"></script>
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/jquery.validate.min.js"></script>
-	<script src="js/main.js"></script>
+	<script src="js/main.js?ver=20230303"></script>
 
 </body>
 
