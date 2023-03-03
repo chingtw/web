@@ -152,7 +152,7 @@ function datapost() {
 			$('.double').fadeIn();
 		},
 		type: "post",
-		url: "https://script.google.com/macros/s/AKfycbya-23CN19NMo0tdUm8YoYJbq6I9PlvMnObzg6nddWiVeHKLUtVJ1h-GEpWltsoFUojcA/exec",
+		url: "https://script.google.com/macros/s/AKfycbzkk7pmnwTnQmB0tkGGQ2fc2CzKp2nf4oxWF837sG9PLvI0wmxS183n3z_55MOq4Ad_-w/exec",
 		data: {
 			"order_time": ndate,
 			"order_name": input_name,
@@ -238,7 +238,7 @@ function dataget() {
 			$('.double').fadeIn();
 		},
 		type: "get",
-		url: "https://script.google.com/macros/s/AKfycbya-23CN19NMo0tdUm8YoYJbq6I9PlvMnObzg6nddWiVeHKLUtVJ1h-GEpWltsoFUojcA/exec",
+		url: "https://script.google.com/macros/s/AKfycbzkk7pmnwTnQmB0tkGGQ2fc2CzKp2nf4oxWF837sG9PLvI0wmxS183n3z_55MOq4Ad_-w/exec",
 		data: {
 			"type": "select",
 			"order_name": name
@@ -289,7 +289,7 @@ function datagetdata() {
 			$('.double').fadeIn();
 		},
 		type: "get",
-		url: "https://script.google.com/macros/s/AKfycbya-23CN19NMo0tdUm8YoYJbq6I9PlvMnObzg6nddWiVeHKLUtVJ1h-GEpWltsoFUojcA/exec",
+		url: "https://script.google.com/macros/s/AKfycbzkk7pmnwTnQmB0tkGGQ2fc2CzKp2nf4oxWF837sG9PLvI0wmxS183n3z_55MOq4Ad_-w/exec",
 		data: {
 			"type": "data",
 			"order_name": ""
