@@ -11,8 +11,11 @@
 	<link rel="stylesheet" href="css/fontawesome/all.css">
 
 	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/animations/scale.css" />
 	<script type="text/javascript"
 		src="https://cdn.jsdelivr.net/npm/sweetalert2@10.12.3/dist/sweetalert2.all.min.js"></script>
+	<script src="https://unpkg.com/@popperjs/core@2"></script>
+	<script src="https://unpkg.com/tippy.js@6"></script>
 	<script>
 
 		function reSize() {
@@ -25,18 +28,21 @@
 				parent.document.all.frameid.height = 1100;
 			}
 		}
+	
 		//window.onload = reSize;
                //https://atomiks.github.io/tippyjs/ (提示插件)
 	</script>
 	<style>
-     i { 
-        position: absolute; 
-        right: 30px;
-        top: calc(50%);
-       }
-		.shadow {
-		box-shadow: 3px 3px 9px #b3b3b3;
+		i {
+			position: absolute;
+			right: 30px;
+			top: calc(50%);
 		}
+
+		.shadow {
+			box-shadow: 3px 3px 9px #b3b3b3;
+		}
+
 		.double-wrap.hide {
 			opacity: 0;
 			pointer-events: none;
@@ -115,7 +121,10 @@
 						</div>
 					</div>
 					<h2 class="heading-section">日本包裹寄至倉庫轉運回台</h2><br>
-					<div class="row justify-content-center"><div style="color: red;">2023/03/03 網站更新</div>&nbsp;&nbsp;1.新增出貨回填【特殊注意商品】與【已到倉資訊】<br>2.新增【FC與個人信件包裹】類別<br>3.倉庫收件地址點擊複製 <br>4.包裹登記GOOGLE表單流程更新</div>
+					<div class="row justify-content-center">
+						<div style="color: red;">2023/03/03 網站更新</div>&nbsp;&nbsp;<span class="fa-solid fa-file-arrow-up" id="updata" style="font-size: 20px;"></span>
+						
+					</div>
 				</div>
 				<div class="row justify-content-center">
 					<div class="col-md-12">
@@ -137,7 +146,7 @@
 										<button type="button" class="btn btn-outline-primary"
 											onclick="opfrom1()">日本包裹登記</button>
 										<div class="text">
-											<p><span>包裹與網購後要寄至倉庫<br>請按此登記</span></p>
+											<p><span>包裹與網購後要寄倉庫<br>請按此登記</span></p>
 										</div>
 									</div>
 								</div>
@@ -150,14 +159,15 @@
 										</div>
 									</div>
 								</div>
-								
+
 
 
 								<div class="col-md-3">
 									<div class="dbox w-100 text-center">
-										<div class="icon d-flex align-items-center justify-content-center shadow">
+										<div id="gtdata2"
+											class="icon d-flex align-items-center justify-content-center shadow"  style="cursor: pointer;">
 											<span class="fa fa-th-list"></span>
-										</div>
+									</div>
 										<div class="text">
 											<p><span>已到倉資訊</span><br><span id="gtdata">資料載入中</span></p>
 										</div>
@@ -244,7 +254,7 @@
 														<input type="text" class="form-control" id="inputid4" disabled>
 													</div>
 												</div>
-												
+
 												<div class="col-md-6" id="inputinfo7">
 													<div class="form-group">
 														<label class="label">日本國內宅配物流</label>
@@ -262,7 +272,7 @@
 															placeholder="請選擇日本國內宅配物流">
 													</div>
 												</div>
-												
+
 												<div class="col-md-6" id="inputinfo6">
 													<div class="form-group">
 														<label class="label">出貨通知日期</label>
@@ -366,8 +376,9 @@
 													<div class="form-group">
 														<label class="label" for="name">〒郵便番号</label>
 														<span class="user2">
-														<input type="text" class="form-control" name="name" id="name"
-															placeholder="Name" value="595-0813" readonly><i class="fa-solid fa-copy"></i>
+															<input type="text" class="form-control" name="name"
+																id="name" placeholder="Name" value="595-0813"
+																readonly><i class="fa-solid fa-copy"></i>
 														</span>
 													</div>
 												</div>
@@ -375,14 +386,16 @@
 													<div class="form-group">
 														<label class="label" for="email">都道府県</label>
 														<input type="text" class="form-control" name="email" id="email"
-															placeholder="Email" value="大阪府" readonly><i class="fa-solid fa-copy"></i>
+															placeholder="Email" value="大阪府" readonly><i
+															class="fa-solid fa-copy"></i>
 													</div>
 												</div>
 												<div class="col-md-6">
 													<div class="form-group">
 														<label class="label" for="subject">市区町村</label>
 														<input type="text" class="form-control" name="subject"
-															id="subject" placeholder="Subject" value="泉北郡忠岡町" readonly><i class="fa-solid fa-copy"></i>
+															id="subject" placeholder="Subject" value="泉北郡忠岡町"
+															readonly><i class="fa-solid fa-copy"></i>
 													</div>
 												</div>
 												<div class="col-md-6">
@@ -439,11 +452,11 @@
 				</div>
 	</section>
 	<script src="js/jquery.min.js"></script>
-	<script src="js/popper.js"></script>
+	<!--<script src="js/popper.js"></script>-->
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/jquery.validate.min.js"></script>
-	<script src="js/main.js?ver=20230303_2"></script>
-
+	<script src="js/main.js?ver=20230303v2"></script>
+	
 </body>
 
 </html>

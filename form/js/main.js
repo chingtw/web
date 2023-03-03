@@ -30,6 +30,19 @@ $(document).ready(function () {
 		$('#goback').hide();
 		$('#ddinfo').text("(請輸入網購登記相同名稱)");
 	});
+	var updatainfo = `1.新增出貨回填【特殊注意商品】與【已到倉資訊】<br>
+	2.新增【FC與個人信件包裹】類別<br>
+	3.倉庫收件地址點擊複製 <br>
+	4.包裹登記GOOGLE表單流程更新<br>
+	5.優化UI資訊效果
+	`
+	tippy('#updata', {
+		allowHTML: true,
+		hideOnClick: 'toggle',
+		maxWidth: 'none',
+		placement: 'bottom',
+		content: updatainfo,
+	});
 	datagetdata();
 	$("#inputid6select").change(function () {
 		var val = $("#inputid6select").val();
@@ -70,6 +83,7 @@ $(document).ready(function () {
 	$("#jpForm input").click(function () {
 		copyCode(this.value);
 	});
+	
 });
 
 function opfrom1() {
@@ -299,10 +313,18 @@ function datagetdata() {
 			$('.double').fadeOut();
 		},
 		success: function (response) {
-			var list = response.length;
-			console.log(response);
-			$("#gtdata").html(response[0].output[0]+"<br>"+response[0].output[1]+"<br>"+response[0].output[2]+"<br>");
-			
+			//var list = response.length;
+			//console.log(response);
+			//$("#gtdata").html(response[0].output[0]+"<br>"+response[0].output[1]+"<br>"+response[0].output[2]+"<br>");
+			var datahtml = "<strong>"+response[0].output[0]+"<br>"+response[0].output[1]+"<br>(非集運後總重量)<br>"+response[0].output[2]+"<br></strong>"
+			tippy('#gtdata2', {
+				allowHTML: true,
+				hideOnClick: 'toggle',
+				maxWidth: 'none',
+				content: datahtml,
+			});
+			$("#gtdata").html("資料更新成功<br>點擊顯示資訊");
+			$("#gtdata").fadeOut(3000);
 		}
 	});
 }
@@ -364,7 +386,7 @@ function doCookie(list, info) {
 
 
 function copyCode(Code,t) {
-	console.log(Code);
+	//console.log(Code);
 	let input = `<input type="text" id="temp" value="${Code}">`;
 	$("body").append(input); //放入document
 	$("#temp").select(); //選中輸入框的文字，目前只有input和textarea支援,注意要複製的標籤不能隱藏(display: none;)
