@@ -28,7 +28,7 @@
 				parent.document.all.frameid.height = 1100;
 			}
 		}
-	
+
 		//window.onload = reSize;
                //https://atomiks.github.io/tippyjs/ (提示插件)
 	</script>
@@ -122,328 +122,369 @@
 					</div>
 					<h2 class="heading-section">日本包裹寄至倉庫轉運回台</h2><br>
 					<div class="row justify-content-center">
-						<div style="color: red;">2023/03/03 網站更新</div>&nbsp;&nbsp;<span class="fa-solid fa-file-arrow-up" id="updata" style="font-size: 20px;"></span>
-						
+						<div style="color: red;">2025/11/25 網站更新</div>&nbsp;&nbsp;<span class="fa-solid fa-file-arrow-up" id="updata" style="font-size: 20px;"></span>
+
 					</div>
 				</div>
 				<div class="row justify-content-center">
 					<div class="col-md-12">
 						<div class="wrapper">
-							<div class="row mb-5">
-								<div class="col-md-3">
-									<div class="dbox w-100 text-center" onclick="opfrom3()" style="cursor: pointer;">
-										<div class="icon d-flex align-items-center justify-content-center shadow">
-											<span class="fa-solid fa-map-location-dot"></span>
-										</div>
-
-										<div class="text">
-											<p><span>日本倉庫收件地址</span>
-										</div>
-									</div>
-								</div>
-								<div class="col-md-3">
-									<div class="dbox w-100 text-center">
-										<button type="button" class="btn btn-outline-primary"
-											onclick="opfrom1()">日本包裹登記</button>
-										<div class="text">
-											<p><span>包裹與網購後要寄倉庫<br>請按此登記</span></p>
-										</div>
-									</div>
-								</div>
-								<div class="col-md-3">
-									<div class="dbox w-100 text-center">
-										<button type="button" class="btn btn-outline-primary"
-											onclick="opfrom2()">包裹出貨回填</button>
-										<div class="text">
-											<p><span>收到商品出貨通知<br>請按此回填登記</span></p>
-										</div>
-									</div>
-								</div>
-
-
-
-								<div class="col-md-3">
-									<div class="dbox w-100 text-center">
-										<div id="gtdata2"
-											class="icon d-flex align-items-center justify-content-center shadow"  style="cursor: pointer;">
-											<span class="fa fa-th-list"></span>
-									</div>
-										<div class="text">
-											<p><span>已到倉資訊</span><br><span id="gtdata">資料載入中</span></p>
-										</div>
-									</div>
-								</div>
-							</div>
-							<!--from1-->
-							<div class="row no-gutters" id="from1" style="display: none;">
-
-								<div class="col-md-7">
-									<iframe id="frameid"
-										src="https://docs.google.com/forms/d/e/1FAIpQLSfMzmiAD4hSvATXx5ZEBPKaQm46pwPN2jyrd4DW2U_jscao4w/viewform"
-										width="100%" frameborder="0" marginheight="0" marginwidth="0">載入中…</iframe>
-
-									<div class="contact-wrap w-100 p-md-5 p-4">
-										<h3 class="mb-4"></h3>
-										<div id="form-message-warning" class="mb-4"></div>
-
-
-									</div>
-
-								</div>
-								<div class="col-md-5 d-flex align-items-stretch">
-									<div class="info-wrap w-100 p-5 img"
-										style="background-image: url(images/pexels-photo-6956788.jpeg);">
-
-									</div>
-								</div>
-							</div>
-							<!--from2-->
-							<div class="row no-gutters" id="from2" style="display: none;">
-								<div class="col-md-7">
-									<div class="contact-wrap w-100 p-md-5 p-4">
-										<h3 class="mb-4">包裹出貨通知回填</h3>
-										<br><span id="ddinfo">(請輸入包裹登記相同名稱)</span>
-										<div id="form-message-warning" class="mb-4"></div>
-
-										<form class="contactForm">
-											<div class="row">
-												<div class="col-md-6">
-													<div class="form-group">
-														<label class="label" for="name">綽號名稱</label>
-
-														<input type="text" class="form-control" id="name"
-															placeholder="請輸入名稱">
+							<div class="accordion">
+								<!-- Accordion Item 1: Japan Warehouse Address -->
+								<div class="accordion-item">
+									<h2 class="accordion-header">
+										<button class="accordion-button" type="button" aria-expanded="true">
+											日本倉庫收件地址
+										</button>
+									</h2>
+									<div class="accordion-collapse collapse show">
+										<div class="accordion-body">
+											<div class="row no-gutters">
+												<div class="col-md-7">
+													<div class="contact-wrap w-100 p-md-5 p-4">
+														<h3 class="mb-4">日本倉庫收件地址</h3>
+														<div id="form-message-warning" class="mb-4"></div>
+														<form method="POST" id="contactForm" name="contactForm"
+															class="contactForm">
+															<div class="row" id="jpForm">
+																<div class="col-md-6">
+																	<div class="form-group">
+																		<label class="label" for="name">〒郵便番号</label>
+																		<span class="user2">
+																			<input type="text" class="form-control"
+																				name="name" id="name" placeholder="Name"
+																				value="595-0813" readonly><i
+																				class="fa-solid fa-copy"></i>
+																		</span>
+																	</div>
+																</div>
+																<div class="col-md-6">
+																	<div class="form-group">
+																		<label class="label" for="email">都道府県</label>
+																		<input type="text" class="form-control"
+																			name="email" id="email" placeholder="Email"
+																			value="大阪府" readonly><i
+																			class="fa-solid fa-copy"></i>
+																	</div>
+																</div>
+																<div class="col-md-6">
+																	<div class="form-group">
+																		<label class="label"
+																			for="subject">市区町村</label>
+																		<input type="text" class="form-control"
+																			name="subject" id="subject"
+																			placeholder="Subject" value="泉北郡忠岡町"
+																			readonly><i class="fa-solid fa-copy"></i>
+																	</div>
+																</div>
+																<div class="col-md-6">
+																	<div class="form-group">
+																		<label class="label" for="#">以降の住所</label>
+																		<input type="text" class="form-control"
+																			name="subject" id="subject"
+																			placeholder="Subject"
+																			value="忠岡南3-1514-7" readonly><i
+																			class="fa-solid fa-copy"></i>
+																	</div>
+																</div>
+																<div class="col-md-12">
+																	<div class="form-group">
+																		<label class="label"
+																			for="#">マンション・ビル名、部屋番号等</label>
+																		<input type="text" class="form-control"
+																			name="subject" id="subject"
+																			placeholder="Subject"
+																			value="JT0872147-01" readonly><i
+																			class="fa-solid fa-copy"></i>
+																	</div>
+																</div>
+																<div class="col-md-6">
+																	<div class="form-group">
+																		<label class="label" for="#">お名前</label>
+																		<input type="text" class="form-control"
+																			name="subject" id="subject"
+																			placeholder="Subject"
+																			value="SUN CHENG CHING" readonly><i
+																			class="fa-solid fa-copy"></i>
+																	</div>
+																</div>
+																<div class="col-md-6">
+																	<div class="form-group">
+																		<label class="label" for="#">電話番号</label>
+																		<input type="text" class="form-control"
+																			name="subject" id="subject"
+																			placeholder="Subject"
+																			value="06-6245-7385" readonly><i
+																			class="fa-solid fa-copy"></i>
+																	</div>
+																</div>
+															</div>
+														</form>
 													</div>
 												</div>
-												<div class="col-md-6" id="gobt1">
-													<div class="form-group">
-														<label class="label" for="name"></label>
-														<button type="button" class="btn btn-primary"
-															onclick="dataget()">綽號名稱查詢</button>
-														<div class="submitting"></div>
+												<div class="col-md-5 d-flex align-items-stretch">
+													<div class="info-wrap w-100 p-5 img">
+														<svg width="100%" height="100%" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+															<defs>
+																<linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+																	<stop offset="0%" style="stop-color:#6772e5;stop-opacity:1" />
+																	<stop offset="100%" style="stop-color:#87e0f5;stop-opacity:1" />
+																</linearGradient>
+															</defs>
+															<rect width="100%" height="100%" fill="url(#grad1)" />
+															<path d="M0 100 L100 0 L200 100 L100 200 Z" fill="rgba(255,255,255,0.1)" />
+															<path d="M200 200 L300 100 L400 200 L300 300 Z" fill="rgba(255,255,255,0.1)" />
+															<path d="M50 250 L150 150 L250 250 L150 350 Z" fill="rgba(255,255,255,0.1)" />
+															<g transform="translate(100, 100) rotate(45)">
+																<path d="M-50,0 L0,-50 L50,0 L0,50 Z" stroke="#fff" stroke-width="2" fill="none" />
+																<path d="M-25,0 L0,-25 L25,0 L0,25 Z" stroke="#fff" stroke-width="1" fill="none" />
+															</g>
+															<g transform="translate(300, 300) rotate(-45)">
+																<path d="M-50,0 L0,-50 L50,0 L0,50 Z" stroke="#fff" stroke-width="2" fill="none" />
+															</g>
+														</svg>
 													</div>
 												</div>
-												<div class="col-md-6" id="inputinfo3">
-													<div class="form-group">
-														<label class="label">出貨通知平台</label>
-														<input type="text" class="form-control" id="inputid2" disabled>
-													</div>
-												</div>
-												<div class="col-md-12" id="inputinfo1">
-													<div class="form-group">
-														<label class="label">出貨通知商品</label>
-														<div id="goodbt"></div>
-													</div>
-												</div>
-												<div class="col-md-12" id="inputinfo2">
-													<div class="form-group">
-														<label class="label">出貨通知商品</label>
-														<input type="text" class="form-control" id="inputid1" disabled>
-													</div>
-												</div>
-
-												<div class="col-md-6" id="inputinfo4">
-													<div class="form-group">
-														<label class="label">訂購/預購</label>
-														<input type="text" class="form-control" id="inputid3" disabled>
-													</div>
-												</div>
-												<div class="col-md-6" id="inputinfo5">
-													<div class="form-group">
-														<label class="label">商品金額</label>
-														<input type="text" class="form-control" id="inputid4" disabled>
-													</div>
-												</div>
-
-												<div class="col-md-6" id="inputinfo7">
-													<div class="form-group">
-														<label class="label">日本國內宅配物流</label>
-														<!--<input type="text" class="form-control" id="inputid6" >-->
-														<select class="form-select" aria-label="Default select example"
-															id="inputid6select" onchange="filter_user_trainings();">
-															<option selected value="0">請選擇日本國內宅配物流</option>
-															<option value="Amazon co jp">Amazon co jp</option>
-															<option value="佐川急便株式会社">佐川急便 Sagawa</option>
-															<option value="ヤマト運輸株式会社">ヤマト運輸株式会社</option>
-															<option value="日本郵便">日本郵便</option>
-															<option value="其他">其他</option>
-														</select>
-														<input type="text" class="form-control" id="inputid6"
-															placeholder="請選擇日本國內宅配物流">
-													</div>
-												</div>
-
-												<div class="col-md-6" id="inputinfo6">
-													<div class="form-group">
-														<label class="label">出貨通知日期</label>
-														<input type="date" class="form-control" id="inputid5">
-													</div>
-												</div>
-												<div class="col-md-6" id="inputinfo8">
-													<div class="form-group">
-														<label class="label">日本宅配物流單號或編號</label>
-														<input type="text" class="form-control" id="inputid7">
-													</div>
-												</div>
-												<div class="col-md-6" id="inputinfo10">
-													<div class="form-group">
-														<label class="label">包裹是否為特殊注意商品</label>
-														<!--<input type="text" class="form-control" id="inputid6" >-->
-														<select class="form-select" aria-label="Default select example"
-															id="inputid10select" onchange="filter_user_trainings();">
-															<option selected value="0">請選擇</option>
-															<option value="無">無</option>
-															<option value="大型重量">重型玩偶/非固定大型物件</option>
-															<option value="海報">海報</option>
-															<option value="易碎">易碎商品</option>
-															<option value="其他">其他</option>
-														</select>
-														<input type="text" class="form-control" id="inputid10"
-															placeholder="請選擇需特殊注意選項">
-													</div>
-												</div>
-												<div class="col-md-6" id="inputinfo9">
-													<div class="form-group">
-														<label class="label">有急件需立即寄回台灣嗎?</label>
-														<div class="form-check">
-															<input class="form-check-input" type="radio"
-																name="flexRadioDefault" id="flexRadioDefault1"
-																value="是">
-															<label class="form-check-label" for="flexRadioDefault1">
-																須馬上集貨處理
-															</label>
-														</div>
-														<div class="form-check">
-															<input class="form-check-input" type="radio"
-																name="flexRadioDefault" id="flexRadioDefault2" value="否"
-																checked>
-															<label class="form-check-label" for="flexRadioDefault2">
-																否
-															</label>
-														</div>
-														<!--<input type="text" class="form-control" id="inputid8" >-->
-													</div>
-												</div>
-												<div class="col-md-6" id="goback">
-													<div class="form-group">
-														<button type="button" class="btn btn-primary"
-															onclick="datapost()">確認送出資料</button>
-														<button type="button" class="btn btn-outline-secondary"
-															onclick="goback()">重選出貨商品</button>
-														<div class="submitting"></div>
-													</div>
-												</div>
-												<!--
-												   出貨日期:
-
-												   日本國內宅配物流?:
-												   Amazon co jp
-												   佐川急便株式会社 (BOOTH 横浜物流センター)
-												   ヤマト運輸株式会社
-												   日本郵便
-												   其他
-
-												   日本宅配物流單號或編號:
-
-												   有急件想立即寄回台灣嗎?:
-												   一般都會與其他包裹集中一段時間再集貨回台灣，如有急需立即回台，將會立即集貨處理。
-												   並沒有
-												   須馬上集貨處理 (送出後立即通知我)
-
-												
-												-->
-
 											</div>
-										</form>
+										</div>
 									</div>
 								</div>
-								<div class="col-md-5 d-flex align-items-stretch">
-									<div class="info-wrap w-100 p-5 img"
-										style="background-image: url(images/pexels-photo-9461229.jpeg);">
-									</div>
-								</div>
-							</div>
-							<!--from2-->
-							<div class="row no-gutters" id="from3">
-								<div class="col-md-7">
-									<div class="contact-wrap w-100 p-md-5 p-4">
-										<h3 class="mb-4">日本倉庫收件地址</h3>
-										<div id="form-message-warning" class="mb-4"></div>
-
-										<form method="POST" id="contactForm" name="contactForm" class="contactForm">
-											<div class="row" id="jpForm">
-												<div class="col-md-6">
-													<div class="form-group">
-														<label class="label" for="name">〒郵便番号</label>
-														<span class="user2">
-															<input type="text" class="form-control" name="name"
-																id="name" placeholder="Name" value="595-0813"
-																readonly><i class="fa-solid fa-copy"></i>
-														</span>
+								<!-- Accordion Item 2: Japan Package Registration -->
+								<div class="accordion-item">
+									<h2 class="accordion-header">
+										<button class="accordion-button collapsed" type="button"
+											aria-expanded="false">
+											日本包裹登記
+										</button>
+									</h2>
+									<div class="accordion-collapse collapse">
+										<div class="accordion-body">
+											<div class="row no-gutters">
+												<div class="col-md-7">
+													<div class="iframe-container">
+														<iframe id="frameid"
+															src="https://docs.google.com/forms/d/e/1FAIpQLSfMzmiAD4hSvATXx5ZEBPKaQm46pwPN2jyrd4DW2U_jscao4w/viewform"
+															width="100%" frameborder="0" marginheight="0"
+															marginwidth="0">載入中…</iframe>
+													</div>
+													<div class="contact-wrap w-100 p-md-5 p-4">
+														<h3 class="mb-4"></h3>
+														<div id="form-message-warning" class="mb-4"></div>
 													</div>
 												</div>
-												<div class="col-md-6">
-													<div class="form-group">
-														<label class="label" for="email">都道府県</label>
-														<input type="text" class="form-control" name="email" id="email"
-															placeholder="Email" value="大阪府" readonly><i
-															class="fa-solid fa-copy"></i>
+												<div class="col-md-5 d-flex align-items-stretch">
+													<div class="info-wrap w-100 p-5 img">
+														<svg width="100%" height="100%" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+															<defs>
+																<linearGradient id="grad2" x1="100%" y1="0%" x2="0%" y2="100%">
+																	<stop offset="0%" style="stop-color:#f5a623;stop-opacity:1" />
+																	<stop offset="100%" style="stop-color:#f8e71c;stop-opacity:1" />
+																</linearGradient>
+															</defs>
+															<rect width="100%" height="100%" fill="url(#grad2)" />
+															<g transform="translate(50,50)">
+																<rect x="0" y="0" width="100" height="100" rx="10" fill="rgba(255,255,255,0.2)" />
+																<path d="M20 50 L80 50" stroke="#fff" stroke-width="4" stroke-linecap="round" />
+																<path d="M70 40 L80 50 L70 60" stroke="#fff" stroke-width="4" fill="none" />
+															</g>
+															<g transform="translate(200,150)">
+																<rect x="0" y="0" width="150" height="150" rx="10" fill="rgba(255,255,255,0.2)" />
+																<path d="M30 75 L120 75" stroke="#fff" stroke-width="6" stroke-linecap="round" />
+																<path d="M110 60 L120 75 L110 90" stroke="#fff" stroke-width="6" fill="none" />
+															</g>
+															<g transform="translate(100,250)">
+																<rect x="0" y="0" width="80" height="80" rx="10" fill="rgba(255,255,255,0.2)" />
+															</g>
+														</svg>
 													</div>
 												</div>
-												<div class="col-md-6">
-													<div class="form-group">
-														<label class="label" for="subject">市区町村</label>
-														<input type="text" class="form-control" name="subject"
-															id="subject" placeholder="Subject" value="泉北郡忠岡町"
-															readonly><i class="fa-solid fa-copy"></i>
-													</div>
-												</div>
-												<div class="col-md-6">
-													<div class="form-group">
-														<label class="label" for="#">以降の住所</label>
-														<input type="text" class="form-control" name="subject"
-															id="subject" placeholder="Subject" value="忠岡南3-1514-7"
-															readonly><i class="fa-solid fa-copy"></i>
-													</div>
-												</div>
-												<div class="col-md-12">
-													<div class="form-group">
-														<label class="label" for="#">マンション・ビル名、部屋番号等</label>
-														<input type="text" class="form-control" name="subject"
-															id="subject" placeholder="Subject" value="JT0872147-01"
-															readonly><i class="fa-solid fa-copy"></i>
-													</div>
-												</div>
-												<div class="col-md-6">
-													<div class="form-group">
-														<label class="label" for="#">お名前</label>
-														<input type="text" class="form-control" name="subject"
-															id="subject" placeholder="Subject" value="SUN CHENG CHING"
-															readonly><i class="fa-solid fa-copy"></i>
-													</div>
-												</div>
-												<div class="col-md-6">
-													<div class="form-group">
-														<label class="label" for="#">電話番号</label>
-														<input type="text" class="form-control" name="subject"
-															id="subject" placeholder="Subject" value="06-6245-7385"
-															readonly><i class="fa-solid fa-copy"></i>
-													</div>
-												</div>
-												<!--<div class="col-md-12">
-														<div class="form-group">
-															<input type="submit" value="Send Message"
-																class="btn btn-primary">
-															<div class="submitting"></div>
-														</div>
-													</div>-->
 											</div>
-										</form>
+										</div>
 									</div>
 								</div>
-								<div class="col-md-5 d-flex align-items-stretch">
-									<div class="info-wrap w-100 p-5 img"
-										style="background-image: url(images/pexels-photo-4464817.jpeg);">
+								<!-- Accordion Item 3: Package Shipment Callback -->
+								<div class="accordion-item">
+									<h2 class="accordion-header">
+										<button class="accordion-button collapsed" type="button"
+											aria-expanded="false">
+											包裹出貨回填
+										</button>
+									</h2>
+									<div class="accordion-collapse collapse">
+										<div class="accordion-body">
+											<div class="row no-gutters">
+												<div class="col-md-7">
+													<div class="contact-wrap w-100 p-md-5 p-4">
+														<h3 class="mb-4">包裹出貨通知回填</h3>
+														<br><span id="ddinfo">(請輸入包裹登記相同名稱)</span>
+														<div id="form-message-warning" class="mb-4"></div>
+
+														<form class="contactForm">
+															<div class="row">
+																<div class="col-md-6">
+																	<div class="form-group">
+																		<label class="label" for="name">綽號名稱</label>
+																		<input type="text" class="form-control"
+																			id="name" placeholder="請輸入名稱">
+																	</div>
+																</div>
+																<div class="col-md-6" id="gobt1">
+																	<div class="form-group">
+																		<label class="label" for="name"></label>
+																		<button type="button" class="btn btn-primary"
+																			onclick="dataget()">綽號名稱查詢</button>
+																		<div class="submitting"></div>
+																	</div>
+																</div>
+																<div class="col-md-6" id="inputinfo3">
+																	<div class="form-group">
+																		<label class="label">出貨通知平台</label>
+																		<input type="text" class="form-control"
+																			id="inputid2" disabled>
+																	</div>
+																</div>
+																<div class="col-md-12" id="inputinfo1">
+																	<div class="form-group">
+																		<label class="label">出貨通知商品</label>
+																		<div id="goodbt"></div>
+																	</div>
+																</div>
+																<div class="col-md-12" id="inputinfo2">
+																	<div class="form-group">
+																		<label class="label">出貨通知商品</label>
+																		<input type="text" class="form-control"
+																			id="inputid1" disabled>
+																	</div>
+																</div>
+
+																<div class="col-md-6" id="inputinfo4">
+																	<div class="form-group">
+																		<label class="label">訂購/預購</label>
+																		<input type="text" class="form-control"
+																			id="inputid3" disabled>
+																	</div>
+																</div>
+																<div class="col-md-6" id="inputinfo5">
+																	<div class="form-group">
+																		<label class="label">商品金額</label>
+																		<input type="text" class="form-control"
+																			id="inputid4" disabled>
+																	</div>
+																</div>
+
+																<div class="col-md-6" id="inputinfo7">
+																	<div class="form-group">
+																		<label class="label">日本國內宅配物流</label>
+																		<select class="form-select"
+																			aria-label="Default select example"
+																			id="inputid6select"
+																			onchange="filter_user_trainings();">
+																			<option selected value="0">請選擇日本國內宅配物流
+																			</option>
+																			<option value="Amazon co jp">Amazon co jp
+																			</option>
+																			<option value="佐川急便株式会社">佐川急便 Sagawa
+																			</option>
+																			<option value="ヤマト運輸株式会社">ヤマト運輸株式会社
+																			</option>
+																			<option value="日本郵便">日本郵便</option>
+																			<option value="其他">其他</option>
+																		</select>
+																		<input type="text" class="form-control"
+																			id="inputid6" placeholder="請選擇日本國內宅配物流">
+																	</div>
+																</div>
+
+																<div class="col-md-6" id="inputinfo6">
+																	<div class="form-group">
+																		<label class="label">出貨通知日期</label>
+																		<input type="date" class="form-control"
+																			id="inputid5">
+																	</div>
+																</div>
+																<div class="col-md-6" id="inputinfo8">
+																	<div class="form-group">
+																		<label class="label">日本宅配物流單號或編號</label>
+																		<input type="text" class="form-control"
+																			id="inputid7">
+																	</div>
+																</div>
+																<div class="col-md-6" id="inputinfo10">
+																	<div class="form-group">
+																		<label class="label">包裹是否為特殊注意商品</label>
+																		<select class="form-select"
+																			aria-label="Default select example"
+																			id="inputid10select"
+																			onchange="filter_user_trainings();">
+																			<option selected value="0">請選擇</option>
+																			<option value="無">無</option>
+																			<option value="大型重量">重型玩偶/非固定大型物件
+																			</option>
+																			<option value="海報">海報</option>
+																			<option value="易碎">易碎商品</option>
+																			<option value="其他">其他</option>
+																		</select>
+																		<input type="text" class="form-control"
+																			id="inputid10" placeholder="請選擇需特殊注意選項">
+																	</div>
+																</div>
+																<div class="col-md-6" id="inputinfo9">
+																	<div class="form-group">
+																		<label class="label">有急件需立即寄回台灣嗎?</label>
+																		<div class="form-check">
+																			<input class="form-check-input"
+																				type="radio" name="flexRadioDefault"
+																				id="flexRadioDefault1" value="是">
+																			<label class="form-check-label"
+																				for="flexRadioDefault1">
+																				須馬上集貨處理
+																			</label>
+																		</div>
+																		<div class="form-check">
+																			<input class="form-check-input"
+																				type="radio" name="flexRadioDefault"
+																				id="flexRadioDefault2" value="否"
+																				checked>
+																			<label class="form-check-label"
+																				for="flexRadioDefault2">
+																				否
+																			</label>
+																		</div>
+																	</div>
+																</div>
+																<div class="col-md-6" id="goback">
+																	<div class="form-group">
+																		<button type="button" class="btn btn-primary"
+																			onclick="datapost()">確認送出資料</button>
+																		<button type="button"
+																			class="btn btn-outline-secondary"
+																			onclick="goback()">重選出貨商品</button>
+																		<div class="submitting"></div>
+																	</div>
+																</div>
+															</div>
+														</form>
+													</div>
+												</div>
+												<div class="col-md-5 d-flex align-items-stretch">
+													<div class="info-wrap w-100 p-5 img">
+														<svg width="100%" height="100%" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+															<defs>
+																<linearGradient id="grad3" x1="0%" y1="100%" x2="100%" y2="0%">
+																	<stop offset="0%" style="stop-color:#8e44ad;stop-opacity:1" />
+																	<stop offset="100%" style="stop-color:#3498db;stop-opacity:1" />
+																</linearGradient>
+															</defs>
+															<rect width="100%" height="100%" fill="url(#grad3)" />
+															<circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="10" />
+															<circle cx="300" cy="300" r="50" fill="rgba(255,255,255,0.3)" />
+															<path d="M100 100 L300 300" stroke="#fff" stroke-width="2" stroke-dasharray="5,5" />
+															<path d="M50 350 Q 200 50, 350 50" stroke="#fff" stroke-width="3" fill="none" />
+														</svg>
+													</div>
+												</div>
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -456,7 +497,9 @@
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/jquery.validate.min.js"></script>
 	<script src="js/main.js?ver=20230303v2"></script>
-	
+	<script src="js/accordion.js"></script>
+	<script src="js/easter_egg.js"></script>
+
 </body>
 
 </html>

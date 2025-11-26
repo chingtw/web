@@ -30,11 +30,10 @@ $(document).ready(function () {
 		$('#goback').hide();
 		$('#ddinfo').text("(請輸入網購登記相同名稱)");
 	});
-	var updatainfo = `1.新增出貨回填【特殊注意商品】與【已到倉資訊】<br>
-	2.新增【FC與個人信件包裹】類別<br>
-	3.倉庫收件地址點擊複製 <br>
-	4.包裹登記GOOGLE表單流程更新<br>
-	5.優化UI資訊效果
+	var updatainfo = `1.利用Gemini AI 代理 jules 進行前端改版<br>
+	2.全新版型參照 Stripe 網站UIUX設計語言<br>
+	3.iframe Google 表單 響應式優化<br>
+	4.API問題優化(待處理)
 	`
 	tippy('#updata', {
 		allowHTML: true,
@@ -95,7 +94,7 @@ function opfrom1() {
 }
 
 function opfrom2() {
-	/*Swal.fire({
+	Swal.fire({
 		imageUrl: 'images/201511915392854716.jpg',
 		imageWidth: 200,
 		imageHeight: 200,
