@@ -1,12 +1,10 @@
 // api.js - Handles communication with Google Apps Script
 // This module replaces the old $.ajax calls
 
-const API_URL = "https://script.google.com/macros/s/AKfycbzkk7pmnwTnQmB0tkGGQ2fc2CzKp2nf4oxWF837sG9PLvI0wmxS183n3z_55MOq4Ad_-w/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzaO_7yys8WyMcursQ0rlYwtl0-TBjbCocD1mR2UWePndLT0LS5AZBTn4j0QbRxHX6blg/exec";
 
 /**
- * Fetch package data by name (for the "Return" form)
- * @param {string} name - The nickname/name to search for
- * @returns {Promise<Array>} - Resolves with the list of packages
+ * Fetch package data by name
  */
 export async function getPackageData(name) {
     if (!name) throw new Error("Name is required");
@@ -17,15 +15,11 @@ export async function getPackageData(name) {
     });
 
     try {
+        // fetch 預設會自動 follow 302 轉導，最終拿到 JSON
         const response = await fetch(`${API_URL}?${params.toString()}`, {
-            method: "GET",
-            mode: "cors" // GAS usually requires handling CORS redirects, but often works with simple GET
+            method: "GET"
+            // mode: "cors" 是預設值，可省略
         });
-
-        // GAS redirects often return an opaque response or need handling
-        // But for this specific legacy setup, it returns JSON.
-        // If fetch fails due to CORS, we might need no-cors (but then we can't read data).
-        // Let's assume standard fetch works as per original $.ajax logic.
 
         if (!response.ok) {
             throw new Error(`Network response was not ok: ${response.status}`);
@@ -40,28 +34,30 @@ export async function getPackageData(name) {
 
 /**
  * Submit the Shipment Return form
- * @param {Object} formData - The data to submit
- * @returns {Promise<string>} - "成功" or error message
+ * 優化：使用 FormData，讓瀏覽器自動處理 Header
  */
-export async function submitReturnForm(formData) {
-    // Convert object to URLSearchParams for x-www-form-urlencoded (standard for $.ajax default)
-    // Or FormData. The original used $.ajax default which is urlencoded.
-    const params = new URLSearchParams();
-    for (const key in formData) {
-        params.append(key, formData[key]);
+export async function submitReturnForm(dataObject) {
+    // 1. 建立 FormData 物件
+    const formData = new FormData();
+    for (const key in dataObject) {
+        formData.append(key, dataObject[key]);
     }
 
     try {
         const response = await fetch(API_URL, {
             method: "POST",
-            body: params,
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            }
+            body: formData 
+            // 注意：使用 FormData 時，不要手動設定 Content-Type，
+            // 瀏覽器會自動設為 multipart/form-data 並加上 boundary
         });
 
-        // The backend returns a simple string like "成功"
-        return await response.text();
+        if (!response.ok) {
+            throw new Error(`Submission failed: ${response.status}`);
+        }
+
+        // GAS 通常回傳純文字或 JSON，這邊視你的後端而定
+        return await response.text(); 
+        
     } catch (error) {
         console.error("API Error (post):", error);
         throw error;
