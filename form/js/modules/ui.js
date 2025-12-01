@@ -110,10 +110,16 @@ export const UI = {
             tippy('[data-tippy-content]');
         }
     },
-
-    // Helper to render package selection buttons
+// Helper to render package selection buttons
     renderPackageList(packages, onSelect) {
         const container = document.getElementById('package-list');
+        
+        // 防呆 1: 確保容器存在
+        if (!container) {
+            console.error("❌ 錯誤: HTML 中找不到 id='package-list' 的元素");
+            return;
+        }
+
         container.innerHTML = '';
 
         if (packages.length === 0) {
@@ -126,14 +132,15 @@ export const UI = {
             // [0]Time, [1]Name, [2]Way/Note, [3]Platform, [4]Product, [5]?, [6]Money, [7]Type, [8]Status(y/n)
 
             // Skip if status is 'y' (already processed)
-            if (pkg.output[8] === 'y') return;
+            if (pkg.output && pkg.output[8] === 'y') return;
 
             const btn = document.createElement('button');
             btn.className = 'btn btn-secondary';
             btn.style.marginBottom = '10px';
             btn.style.width = '100%';
 
-            let label = pkg.output[4]; // Product
+            // 安全讀取資料 (防止 undefined)
+            let label = pkg.output[4] || "未命名商品"; // Product
             if (pkg.output[2]) label += ` / ${pkg.output[2]}`; // Note
 
             btn.textContent = label;
@@ -142,13 +149,29 @@ export const UI = {
             container.appendChild(btn);
         });
 
-        document.getElementById('package-select-container').classList.remove('hidden');
+        // --- 修正錯誤的關鍵點 ---
+        // 優先尋找 search-result-area，如果找不到才找 package-select-container
+        const resultArea = document.getElementById('search-result-area') || document.getElementById('package-select-container');
+        
+        if (resultArea) {
+            resultArea.classList.remove('hidden');
+        } else {
+            console.warn("⚠️ 警告: 找不到 'search-result-area' 或 'package-select-container'，列表無法顯示");
+        }
     },
 
     resetReturnForm() {
-        document.getElementById('return-form').reset();
-        document.getElementById('return-form-details').classList.add('hidden');
-        document.getElementById('package-select-container').classList.add('hidden');
-        document.getElementById('search-result-area').classList.add('hidden');
+        const form = document.getElementById('return-form');
+        if(form) form.reset();
+
+        const details = document.getElementById('return-form-details');
+        if(details) details.classList.add('hidden');
+
+        // 同樣加上防呆
+        const selectContainer = document.getElementById('package-select-container');
+        if(selectContainer) selectContainer.classList.add('hidden');
+
+        const resultArea = document.getElementById('search-result-area');
+        if(resultArea) resultArea.classList.add('hidden');
     }
 };
