@@ -195,6 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
                      triggerSearch();
                 });
             } else {
+                document.getElementById('search-result-area').classList.add('hidden');
+                document.getElementById('return-form-details').classList.add('hidden');
                 throw new Error("Backend returned error");
             }
         } catch (error) {
