@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         UI.showLoading();
         try {
+            // 0.關閉欄位
+            document.getElementById('search-result-area').classList.add('hidden');
+            document.getElementById('return-form-details').classList.add('hidden');
             // 1. 呼叫 API
             const data = await getPackageData(name);
             
@@ -189,8 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     imageWidth: 200,
                     imageHeight: 150,
                     backdrop: `rgba(0,0,123,0.4) url("./images/nyan-cat.gif") left top no-repeat`
-                }).then(() => {                  
-                    document.getElementById('return-form-details').classList.add('hidden');
+                }).then(() => {     
                     // Refresh search to update list
                      triggerSearch();
                 });
