@@ -43,6 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // 注意：這裡多加了 Array.isArray(data) 檢查，防止回傳物件導致 length 報錯
             if (!data || (Array.isArray(data) && data.length === 0)) {
                 Swal.fire('查無資料', '請確認名稱是否正確', 'info');
+                document.getElementById('search-result-area').classList.add('hidden');
+                document.getElementById('return-form-details').classList.add('hidden');
                 return;
             }
 
@@ -60,7 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             UI.hideLoading();
-            
+            document.getElementById('search-result-area').classList.add('hidden');
+            document.getElementById('return-form-details').classList.add('hidden');
             // --- 除錯重點：印出真正的錯誤原因 ---
             console.error("❌ 搜尋流程崩潰:", error);
             
