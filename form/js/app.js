@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     searchBtn.addEventListener('click', triggerSearch);
 
-    async function triggerSearch() {
+  async function triggerSearch() {
         const name = searchInput.value.trim();
         if (!name) {
             Swal.fire('請輸入名稱', '查詢欄位不能為空', 'warning');
@@ -31,20 +31,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
         UI.showLoading();
         try {
+            // 1. 呼叫 API
             const data = await getPackageData(name);
+            
+            // --- 除錯重點：印出 API 回傳的內容 ---
+            console.log("STEP 1: API 回傳資料成功", data);
+            
             UI.hideLoading();
 
-            if (!data || data.length === 0) {
+            // 2. 檢查資料是否為空
+            // 注意：這裡多加了 Array.isArray(data) 檢查，防止回傳物件導致 length 報錯
+            if (!data || (Array.isArray(data) && data.length === 0)) {
                 Swal.fire('查無資料', '請確認名稱是否正確', 'info');
                 return;
             }
 
+            // 3. 嘗試渲染 UI
+            // 很多時候 API 成功了，但資料格式跟 UI 要的不一樣，導致這裡報錯
+            console.log("STEP 2: 準備渲染 UI");
             document.getElementById('search-result-area').classList.remove('hidden');
-            UI.renderPackageList(data, fillReturnForm);
+            
+            // 確保 UI.renderPackageList 存在且不會報錯
+            if (typeof UI.renderPackageList === 'function') {
+                UI.renderPackageList(data, fillReturnForm);
+            } else {
+                throw new Error("UI.renderPackageList 函式不存在");
+            }
 
         } catch (error) {
             UI.hideLoading();
-            Swal.fire('發生錯誤', '無法取得資料，請稍後再試', 'error');
+            
+            // --- 除錯重點：印出真正的錯誤原因 ---
+            console.error("❌ 搜尋流程崩潰:", error);
+            
+            // 提示使用者
+            Swal.fire('發生錯誤', '細節請看 F12 Console', 'error');
         }
     }
 
@@ -156,8 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const result = await submitReturnForm(formData);
             UI.hideLoading();
-
-            if (result === "成功") {
+            console.log("Submit 回傳結果:", result);
+            if (result && result.includes("成功")) {
                 Swal.fire({
                     title: '資料回填成功!',
                     text: '貨到倉或寄回台灣時會再通知~',
