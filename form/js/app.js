@@ -189,7 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     imageWidth: 200,
                     imageHeight: 150,
                     backdrop: `rgba(0,0,123,0.4) url("./images/nyan-cat.gif") left top no-repeat`
-                }).then(() => {
+                }).then(() => {                  
+                    document.getElementById('return-form-details').classList.add('hidden');
                     // Refresh search to update list
                      triggerSearch();
                 });
