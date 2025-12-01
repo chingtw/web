@@ -1,7 +1,7 @@
 // api.js - Handles communication with Google Apps Script
 // This module replaces the old $.ajax calls
 
-const API_URL = "https://script.google.com/macros/s/AKfycbzkk7pmnwTnQmB0tkGGQ2fc2CzKp2nf4oxWF837sG9PLvI0wmxS183n3z_55MOq4Ad_-w/exec";
+const API_URL = "https://script.google.com/macros/s/1N4VN6DrqL-zRKS03BP_HybjQCohAjC9TxjkI7gXVN0mYruLJ_S-zau01/exec";
 
 /**
  * Fetch package data by name (for the "Return" form)
