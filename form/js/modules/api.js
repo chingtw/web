@@ -15,17 +15,31 @@ export async function getPackageData(name) {
     });
 
     try {
-        // fetch 預設會自動 follow 302 轉導，最終拿到 JSON
         const response = await fetch(`${API_URL}?${params.toString()}`, {
             method: "GET"
-            // mode: "cors" 是預設值，可省略
         });
 
         if (!response.ok) {
             throw new Error(`Network response was not ok: ${response.status}`);
         }
 
-        return await response.json();
+        // --- 除錯關鍵修改 ---
+        // 1. 先把內容當純文字取出來
+        const textData = await response.text();
+        
+        // 2. 在 Console 印出來看 (這行是關鍵，開啟瀏覽器 F12 Console 查看)
+        console.log("API 回傳原始資料:", textData);
+
+        // 3. 嘗試解析 JSON
+        try {
+            // 如果後端回傳空的，直接回傳空陣列或 null，避免報錯
+            if (!textData) return []; 
+            return JSON.parse(textData);
+        } catch (jsonError) {
+            // 如果解析失敗，丟出具體錯誤，並包含原始文字以便除錯
+            throw new Error(`JSON 解析失敗: ${jsonError.message}. 原始回傳: ${textData}`);
+        }
+
     } catch (error) {
         console.error("API Error (get):", error);
         throw error;
@@ -34,10 +48,8 @@ export async function getPackageData(name) {
 
 /**
  * Submit the Shipment Return form
- * 優化：使用 FormData，讓瀏覽器自動處理 Header
  */
 export async function submitReturnForm(dataObject) {
-    // 1. 建立 FormData 物件
     const formData = new FormData();
     for (const key in dataObject) {
         formData.append(key, dataObject[key]);
@@ -47,16 +59,17 @@ export async function submitReturnForm(dataObject) {
         const response = await fetch(API_URL, {
             method: "POST",
             body: formData 
-            // 注意：使用 FormData 時，不要手動設定 Content-Type，
-            // 瀏覽器會自動設為 multipart/form-data 並加上 boundary
         });
 
         if (!response.ok) {
             throw new Error(`Submission failed: ${response.status}`);
         }
 
-        // GAS 通常回傳純文字或 JSON，這邊視你的後端而定
-        return await response.text(); 
+        // 同樣先讀取文字，方便除錯
+        const resultText = await response.text();
+        console.log("Submit 回傳資料:", resultText);
+
+        return resultText;
         
     } catch (error) {
         console.error("API Error (post):", error);
