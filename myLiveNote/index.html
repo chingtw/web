@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveNote - My Live Records</title>
+    <!-- Google Fonts: 票券字體 -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Leaflet (Map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-container" style="position:relative;">
+            <!-- Hamburger Button -->
+            <button id="menu-btn" onclick="toggleMenu()" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; z-index:1100;">
+                <i data-lucide="menu"></i>
+            </button>
+            
+            <h1><span class="highlight">LIVE</span>NOTE</h1>
+            <p>參戰記錄存檔</p>
+        </div>
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="list">LIST</button>
+            <button class="tab-btn" data-tab="map">MAP</button>
+            <button class="tab-btn" id="login-btn" onclick="openLogin()">ADMIN</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Back Button (Hidden by default) -->
+        <div id="back-btn-container" style="display:none; margin-bottom: 1rem;">
+            <button onclick="showAllTickets()" style="background:transparent; border:1px solid #777; color:#ccc; padding:5px 15px; cursor:pointer; display:flex; align-items:center; gap:5px; border-radius:4px;">
+                <i data-lucide="arrow-left"></i> Back to List
+            </button>
+        </div>
+
+        <!-- Tab 1: List View -->
+        <section id="list-view" class="active">
+            <div id="loading" class="loading">Loading Tickets...</div>
+            <div id="ticket-container" class="ticket-list">
+                <!-- Tickets will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Tab 2: Map View -->
+        <section id="map-view">
+            <div id="map"></div>
+        </section>
+    </main>
+
+    <!-- Modal: Ticket Detail / Add Form -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content ticket-style-modal">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div id="modal-body">
+                <!-- Dynamic Content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-content login-box">
+            <h2>Admin Access</h2>
+            <input type="password" id="admin-pass" placeholder="Enter Password">
+            <button onclick="checkLogin()">Unlock</button>
+            <p id="login-msg"></p>
+        </div>
+    </div>
+
+    <!-- Side Drawer Menu -->
+    <div id="side-menu-overlay" class="menu-overlay hidden" onclick="toggleMenu()"></div>
+    <div id="side-menu" class="side-menu">
+        <div class="menu-header">
+            <h3>HISTORY / 履歴</h3>
+            <span class="close-menu" onclick="toggleMenu()">&times;</span>
+        </div>
+        <div id="menu-content">
+            <!-- Dynamic List Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Main Script -->
+    <script src="script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

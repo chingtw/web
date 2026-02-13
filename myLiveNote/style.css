@@ -1,0 +1,610 @@
+:root {
+    --bg-dark: #121212;
+    --bg-card: #1e1e1e;
+    --text-primary: #e0e0e0;
+    --text-accent: #ff4757; /* Ticket Red */
+    --gold: #f1c40f;
+    --ticket-paper: #f0f0f0;
+    --ticket-text: #2c3e50;
+    --border-dashed: 2px dashed #bdc3c7;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Noto Sans TC', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+header {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+}
+
+.highlight {
+    color: var(--text-accent);
+    font-family: 'Anton', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 2px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.tab-btn {
+    background: transparent;
+    border: 1px solid var(--text-accent);
+    color: var(--text-accent);
+    padding: 0.5rem 1.5rem;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active, .tab-btn:hover {
+    background: var(--text-accent);
+    color: white;
+}
+
+/* Main Layout */
+main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+section {
+    display: none;
+}
+section.active {
+    display: block;
+}
+
+/* TICKET STYLES - The Core Design */
+.ticket-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.ticket {
+    display: flex;
+    background: var(--ticket-paper);
+    color: var(--ticket-text);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.2s;
+    min-height: 180px;
+}
+
+.ticket:hover {
+    transform: translateY(-5px);
+}
+
+/* Left Stub (Date) */
+.ticket-stub {
+    background: var(--text-accent);
+    color: white;
+    width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    border-right: 2px dashed rgba(255,255,255,0.5);
+    position: relative;
+}
+
+.ticket-stub .day {
+    font-family: 'Anton', sans-serif;
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.ticket-stub .month {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+}
+
+.ticket-stub .year {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-top: 5px;
+}
+
+/* Main Body */
+.ticket-main {
+    flex: 1;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    background: white;
+}
+
+/* New: Poster Section */
+.ticket-poster {
+    width: 120px;
+    background-size: cover;
+    background-position: center;
+    border-right: 1px solid #eee;
+    filter: grayscale(20%);
+    transition: filter 0.3s;
+}
+
+.ticket:hover .ticket-poster {
+    filter: grayscale(0%);
+}
+
+.ticket-header {
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Typography Refinement */
+.tour-title.main-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 1.8rem; /* Large Main Title */
+    line-height: 1.1;
+    color: #222;
+    letter-spacing: 0.5px;
+    margin: 0;
+    /* Allow multi-line if title is very long */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+}
+
+.artist-name.sub-title {
+    font-size: 1rem; /* Subtitle */
+    color: #666;
+    margin-top: 0.4rem;
+    font-weight: bold;
+    /* Limit lines for clean look */
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.venue-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #34495e;
+    margin-top: auto;
+}
+
+.seat-info {
+    font-family: 'Courier New', monospace;
+    background: #ecf0f1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-left: auto;
+}
+
+/* Right Rip-off Section */
+.ticket-rip {
+    width: 60px;
+    border-left: var(--border-dashed);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    background: #ecf0f1;
+}
+
+.ticket-rip::after {
+    content: "ADMIT ONE";
+    writing-mode: vertical-rl;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    color: #bdc3c7;
+    letter-spacing: 2px;
+}
+
+/* First Time Badge - Corner Ribbon Style */
+.badge-first {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    border-top: 50px solid var(--gold);
+    border-right: 50px solid transparent;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.badge-first::after {
+    content: "初参戦";
+    position: absolute;
+    top: -45px;
+    left: 2px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #333; /* Dark text on gold */
+    transform: rotate(-45deg);
+    white-space: nowrap;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+}
+
+/* Ticket Type Tags */
+.type-tag {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-left: 10px;
+    color: white;
+}
+
+.type-tag.live { background-color: var(--text-accent); }
+.type-tag.fes { background-color: #e67e22; }
+.type-tag.event { background-color: #9b59b6; }
+.type-tag.online { background-color: #2980b9; }
+
+/* Focus Artist Badge (Omeate) */
+.focus-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    background-color: #ff007f; /* Hot Pink for "Oshi" */
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 6px;
+    vertical-align: middle;
+    font-weight: normal;
+    font-family: 'Noto Sans JP', sans-serif;
+}
+
+/* Ticket Variations */
+.ticket.type-fes .ticket-stub { background-color: #e67e22; }
+.ticket.type-event .ticket-stub { background-color: #9b59b6; }
+.ticket.type-online .ticket-stub { background-color: #2980b9; }
+
+/* Map View */
+#map {
+    height: 600px;
+    width: 100%;
+    border-radius: 8px;
+    border: 2px solid #333;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000; /* Increased to cover Leaflet map */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+    align-items: center;
+    justify-content: center;
+}
+.modal.hidden {
+    display: none !important; /* Force hide */
+}
+.modal:not(.hidden) {
+    display: flex !important; /* Force show flex */
+}
+
+.modal-content {
+    background-color: var(--ticket-paper);
+    color: var(--ticket-text);
+    padding: 0; /* Remove padding to let image bleed */
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    /* Hide Scrollbar */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+.modal-content::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.modal-hero-img {
+    width: 100%;
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.modal-text-content {
+    padding: 1.5rem;
+}
+
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 2rem;
+    cursor: pointer;
+    color: white; /* Contrast against hero image */
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    z-index: 10;
+}
+
+/* Ticket Status Styles */
+/* Default (Completed) is the base style */
+
+/* APPLIED (抽選中) - Dashed border, faded */
+.ticket.status-applied {
+    border: 2px dashed #7f8c8d;
+    opacity: 0.8;
+    background: #fdfdfd;
+}
+.ticket.status-applied .status-badge {
+    background: #95a5a6;
+    color: white;
+}
+
+/* WON (当選) - Golden Border, Celebration feel */
+.ticket.status-won {
+    border: 2px solid #f1c40f;
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+}
+.ticket.status-won .status-badge {
+    background: #f1c40f;
+    color: #333;
+    font-weight: bold;
+}
+
+/* CONFIRMED (參戰確定) - Solid Green or Blue accent */
+.ticket.status-confirmed {
+    border-left: 5px solid #2ecc71; /* Green indicator */
+}
+.ticket.status-confirmed .status-badge {
+    background: #2ecc71;
+    color: white;
+}
+
+/* LOST (落選) - Grayscale + Stamp */
+.ticket.status-lost {
+    filter: grayscale(100%);
+    opacity: 0.6;
+    position: relative;
+    pointer-events: none; /* Make it unclickable mostly, or clickable just for record */
+}
+.ticket.status-lost::after {
+    content: "落選";
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 4rem;
+    color: rgba(0,0,0,0.2);
+    font-weight: bold;
+    border: 5px solid rgba(0,0,0,0.2);
+    padding: 10px 40px;
+    border-radius: 10px;
+    pointer-events: none;
+    z-index: 20;
+}
+
+/* Status Badge in Header */
+.status-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: auto; /* Push to right */
+    display: inline-block;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    /* Header Adjustments */
+    header {
+        padding: 1rem 0.5rem;
+    }
+    .highlight {
+        font-size: 2.5rem;
+    }
+    .tabs {
+        gap: 0.5rem;
+    }
+    .tab-btn {
+        padding: 0.4rem 1rem;
+        font-size: 1rem;
+    }
+
+    /* Ticket Card Mobile Layout */
+    .ticket {
+        flex-direction: column;
+        min-height: auto;
+    }
+    
+    /* Stub becomes top banner */
+    .ticket-stub {
+        width: 100%;
+        height: 60px;
+        flex-direction: row;
+        border-right: none;
+        border-bottom: 2px dashed rgba(255,255,255,0.5);
+        gap: 1rem;
+        padding: 0.5rem;
+    }
+    .ticket-stub .day { font-size: 2rem; }
+    .ticket-stub .month { font-size: 1.2rem; }
+
+    /* Poster becomes hero image */
+    .ticket-poster {
+        width: 100%;
+        height: 150px; /* Fixed height for mobile */
+        border-right: none;
+        border-bottom: 1px solid #eee;
+    }
+
+    .ticket-main {
+        padding: 1rem;
+    }
+    
+    .artist-name {
+        font-size: 1.5rem; /* Slightly smaller */
+    }
+
+    /* Hide the rip section on mobile to save space */
+    .ticket-rip {
+        display: none;
+    }
+
+    /* Badge adjustment */
+    .badge-first {
+        top: 5px;
+        right: 5px;
+        font-size: 0.6rem;
+        padding: 2px 8px;
+    }
+
+    /* Modal Mobile Style */
+    .modal-content {
+        width: 100%;
+        height: 100%; /* Full screen on mobile */
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+        padding: 1.5rem;
+    }
+
+    .close-modal {
+        top: 15px;
+        right: 15px;
+        background: rgba(0,0,0,0.1);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Map Height */
+    #map {
+        height: 70vh; /* Taller on mobile for better view */
+    }
+}
+
+.loading {
+    text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: #555;
+    margin-top: 50px;
+}
+
+/* SIDE MENU (DRAWER) */
+.menu-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1090;
+    transition: opacity 0.3s;
+}
+.menu-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.side-menu {
+    position: fixed;
+    top: 0; left: 0;
+    width: 80%;
+    max-width: 300px;
+    height: 100%;
+    background: #1e1e1e;
+    color: #eee;
+    z-index: 1100;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    overflow-y: auto;
+    /* Hide Scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.side-menu::-webkit-scrollbar {
+    display: none;
+}
+
+.side-menu.open {
+    transform: translateX(0);
+}
+
+.menu-header {
+    background: #2c2c2c;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+}
+.menu-header h3 { margin: 0; font-family: 'Anton', sans-serif; }
+.close-menu { cursor: pointer; font-size: 1.5rem; }
+
+.menu-group {
+    padding: 1rem;
+    border-bottom: 1px solid #333;
+}
+.menu-year {
+    color: var(--text-accent);
+    font-family: 'Anton', sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+.menu-item {
+    display: block;
+    margin-bottom: 0.8rem;
+    padding: 0.5rem;
+    background: #252525;
+    border-radius: 4px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.menu-item:hover {
+    background: #333;
+}
+.menu-date {
+    font-size: 0.75rem;
+    color: #888;
+}
+.menu-artist {
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #ddd;
+}
+.menu-tour {
+    font-size: 0.8rem;
+    color: #aaa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
