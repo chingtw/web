@@ -1,0 +1,1288 @@
+:root {
+    --bg-dark: #000000;
+    --bg-card: #0a0a0a;
+    --text-primary: #ffffff;
+    --text-accent: #C5A489;
+    --gold: #C5A489;
+    --ticket-bg: #121212;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Noto Sans TC', sans-serif;
+    margin: 0; padding: 0;
+    overflow-x: hidden;
+}
+
+/* Hide Scrollbars Global */
+* {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    box-sizing: border-box; /* 全域套用，防止寬度計算錯誤 */
+}
+
+*::-webkit-scrollbar {
+    display: none;
+}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.animate-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+.animate-fade {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Tabs Animation */
+section.active {
+    display: block;
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Ticket Hover & Active State */
+.ticket {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+.ticket:active {
+    transform: scale(0.98) !important;
+}
+
+.year-chip {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.year-chip:active {
+    transform: scale(0.9);
+}
+
+/* Modal Animation */
+.modal-content {
+    animation: scaleIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* Header & Tabs */
+header {
+    text-align: center;
+    padding: 2.5rem 1rem 1rem 1rem;
+    background: #000;
+}
+
+.header-container {
+    margin-bottom: 1rem;
+}
+
+.highlight {
+    color: var(--text-accent);
+    font-family: 'Anton', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 3px;
+}
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.tab-btn {
+    background: transparent;
+    border: 1px solid #222;
+    color: #666;
+    padding: 0.6rem 1rem;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.tab-btn.icon-btn {
+    flex: 0 0 50px; /* 固定寬度給漢堡按鈕 */
+    color: var(--text-accent);
+}
+
+.tab-btn:hover {
+    border-color: #444;
+    color: #aaa;
+}
+
+.tab-btn.active {
+    background: var(--text-accent);
+    color: black;
+    border-color: var(--text-accent);
+}
+
+/* Main Layout */
+main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+section { display: none; width: 100%; box-sizing: border-box; }
+section.active { display: block; }
+
+/* Year Filter Bar */
+.filter-categories {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 0.5rem;
+    padding: 0 0.5rem;
+}
+
+#filter-addon {
+    margin-left: auto;
+}
+
+.cat-btn {
+    background: transparent;
+    border: none;
+    color: #444;
+    font-family: 'Bebas Neue';
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    padding: 5px 0;
+    transition: all 0.3s;
+    border-bottom: 2px solid transparent;
+}
+
+.cat-btn.active {
+    color: var(--text-accent);
+    border-bottom-color: var(--text-accent);
+}
+
+.year-filter-bar {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+    width: 100%;
+    scrollbar-width: none;
+    cursor: grab;
+    user-select: none;
+    -webkit-overflow-scrolling: touch;
+    transition: -webkit-mask-image 0.3s;
+    mask-image: none;
+    -webkit-mask-image: none;
+}
+
+/* 在末尾增加一個透明區塊，確保最後一個項目滑到底時不會緊貼邊緣 */
+.year-filter-bar::after {
+    content: "";
+    flex: 0 0 1.5rem;
+}
+
+.show-all-toggle {
+    font-size: 0.65rem;
+    color: #555;
+    background: transparent;
+    border: 1px solid #333;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Bebas Neue';
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+.show-all-toggle.active {
+    color: var(--text-accent);
+    border-color: var(--text-accent);
+    background: rgba(197, 164, 137, 0.1);
+}
+
+/* Quick Add Tags in Admin Form */
+.quick-add-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.tag-chip {
+    font-size: 0.75rem;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #aaa;
+    padding: 3px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tag-chip:hover {
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+    background: rgba(197, 164, 137, 0.05);
+}
+
+.tag-chip:active {
+    transform: scale(0.95);
+}
+.year-filter-bar:active {
+    cursor: grabbing;
+}
+.year-filter-bar::-webkit-scrollbar { display: none; }
+
+.year-chip {
+    padding: 0.5rem 1.2rem;
+    border: 1px solid #222;
+    border-radius: 20px;
+    color: #666;
+    font-family: 'Bebas Neue';
+    font-size: 1.1rem;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.year-chip.active {
+    background: #1a1a1a;
+    color: var(--text-accent);
+    border-color: var(--text-accent);
+}
+
+/* TICKET STYLES */
+.ticket-list { display: flex; flex-direction: column; gap: 2rem; }
+
+.ticket {
+    display: flex;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #222;
+    min-height: 200px;
+    cursor: pointer;
+}
+
+/* Left Section: Info */
+.ticket-info-left {
+    flex: 1.6;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 5; /* Keep text on top */
+    clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+    background: #000;
+}
+
+.ticket-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 2.2rem;
+    color: var(--text-accent);
+    margin: 0.4rem 0;
+    line-height: 1.1;
+    overflow-wrap: break-word;
+    word-break: keep-all;
+    line-break: strict;
+}
+
+.ticket-subtitle { font-size: 1rem; color: #aaa; font-weight: bold; }
+
+.ticket-meta-top { display: flex; gap: 1rem; margin: 0.8rem 0; }
+.info-box {
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 5px 12px;
+    text-align: center;
+}
+.info-box span:first-child { display: block; font-size: 0.6rem; color: #555; text-transform: uppercase; }
+.info-box span:last-child { font-size: 0.9rem; font-weight: bold; color: var(--text-accent); }
+
+.ticket-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: auto; }
+.pill {
+    font-size: 0.7rem; color: #888;
+    background: #111; padding: 4px 10px; border-radius: 12px;
+    display: flex; align-items: center; gap: 4px;
+}
+
+.ticket-visual {
+    flex: 1;
+    background-size: cover; background-position: center;
+    margin-left: -12%;
+    position: relative;
+    z-index: 1;
+}
+
+/* Global Dark Dimmer for Images */
+.ticket-visual::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    /* 斜向漸層：起點純黑對齊斜切線，隨後過度到原本의 0.4 遮罩亮度 */
+    background: linear-gradient(105deg, #000 0%, rgba(0,0,0,0.4) 15%, rgba(0,0,0,0.4) 100%);
+    z-index: 2;
+}
+
+/* Right Section: Stub */
+.ticket-stub-right {
+    width: 80px;
+    background: var(--text-accent);
+    display: flex;
+    align-items: center; justify-content: center;
+    border-left: 1px dashed rgba(0,0,0,0.3);
+    z-index: 10;
+}
+.barcode-container { transform: rotate(-90deg); width: 180px; text-align: center; }
+.barcode { 
+    width: 140px; 
+    height: 40px; 
+    /* 背景改為透明，線條改為黑色 */
+    background: transparent;
+    background-image: 
+        linear-gradient(90deg, #000 2px, transparent 2px),
+        linear-gradient(90deg, #000 1px, transparent 1px),
+        linear-gradient(90deg, #000 3px, transparent 3px),
+        linear-gradient(90deg, #000 1px, transparent 1px);
+    background-size: 13px 100%, 7px 100%, 19px 100%, 11px 100%;
+    margin: 0 auto; 
+}
+.ticket-num { font-size: 0.65rem; color: #000; font-family: 'Bebas Neue', monospace; font-weight: bold; margin-top: 6px; letter-spacing: 1px; }
+
+/* STATUS MODIFIERS */
+.ticket.status-confirmed { border-color: var(--text-accent); }
+
+/* COMPLETED: 呈現達成感與典藏感 */
+.ticket.status-completed { 
+    border: 1px solid var(--text-accent); 
+    box-shadow: inset 0 0 20px rgba(197, 164, 137, 0.05);
+}
+.ticket.status-completed .ticket-stub-right { 
+    background: var(--text-accent); 
+}
+/* 加入一個隱約的達成印章感 */
+.ticket.status-completed::before {
+    content: "COLLECTED";
+    position: absolute;
+    bottom: 15px;
+    right: 100px;
+    font-family: 'Bebas Neue';
+    font-size: 2.5rem;
+    color: rgba(197, 164, 137, 0.1);
+    transform: rotate(-15deg);
+    border: 2px solid rgba(197, 164, 137, 0.1);
+    padding: 0 10px;
+    pointer-events: none;
+    z-index: 5;
+}
+.ticket.status-completed .ticket-title { color: var(--text-accent); }
+.ticket.status-completed .ticket-visual::after { background: rgba(0, 0, 0, 0.2); } /* 輕微遮罩增加層次 */
+.ticket.status-completed .ticket-logo { color: var(--text-accent); border-color: var(--text-accent); }
+
+.ticket.status-applied { border: 1px dashed #5d9cec; }
+.ticket.status-applied .ticket-stub-right { background: #5d9cec; }
+.ticket.status-applied .ticket-title { color: #5d9cec; }
+.ticket.status-applied .ticket-logo { color: #5d9cec; border-color: #5d9cec; }
+
+.ticket-logo {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid var(--text-accent);
+    color: var(--text-accent);
+    font-family: 'Bebas Neue';
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    border-radius: 2px;
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.status-badge {
+    font-size: 0.65rem;
+    font-weight: bold;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap; /* 防止手機版狀態文字斷行跑版 */
+}
+
+.status-applied .status-badge { color: #5d9cec; }
+.status-confirmed .status-badge { color: var(--text-accent); }
+.status-completed .status-badge { color: #C5A489; } /* 完畢使用金色 */
+.status-failed .status-badge { color: #666; }
+
+/* FAILED STATES: 落選或失敗 */
+.ticket.status-failed { 
+    border: 1px dashed #444; 
+    opacity: 0.7;
+    filter: grayscale(0.5);
+}
+.ticket.status-failed .ticket-stub-right { background: #333; }
+.ticket.status-failed .ticket-title { color: #777; }
+.ticket.status-failed .ticket-logo { color: #666; border-color: #666; }
+.ticket.status-failed .ticket-visual::after { background: rgba(0, 0, 0, 0.7); }
+.ticket.status-failed .status-badge { color: #666; }
+
+/* MOBILE OPTIMIZATIONS */
+@media (max-width: 600px) {
+    .highlight { font-size: 2.2rem; }
+    
+    .ticket { 
+        flex-direction: row; 
+        min-height: 180px;
+    }
+
+    .ticket-info-left {
+        flex: 2;
+        clip-path: none;
+        /* 恢復手機版最穩定的平滑漸層 */
+        background: linear-gradient(90deg, #000 75%, rgba(0,0,0,0.7) 90%, transparent 100%);
+        margin-right: -45%; 
+        position: relative;
+        z-index: 10; /* 提高層級確保標籤不被遮擋 */
+        padding: 1.2rem 1rem;
+        min-width: 0; /* 允許內容正確收縮 */
+    }
+
+    .ticket-visual {
+        flex: 1.5;
+        margin-left: 0;
+        z-index: 1;
+        height: auto;
+    }
+
+    /* Extra dim on mobile for bright images */
+    .ticket-visual::after {
+        background: rgba(0, 0, 0, 0.5); /* 50% Dim on mobile */
+    }
+
+    .ticket-title { 
+        font-size: 1.5rem; /* 微調手機版標題大小 */
+        word-break: break-word; /* 允許在長單詞內斷行，防止撐破容器 */
+        line-break: auto;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3; /* 最多顯示三行，防止過長標題壓扁其他資訊 */
+        -webkit-box-orient: vertical;
+    }
+    .ticket-subtitle { font-size: 0.85rem; }
+
+    .ticket-stub-right { width: 45px; }
+    .barcode-container { width: 140px; }
+    .barcode { width: 80px; height: 20px; }
+    .ticket-num { font-size: 0.5rem; }
+}
+
+/* MODAL / LIGHTBOX */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 3000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    align-items: center; justify-content: center;
+}
+.modal.hidden { display: none !important; }
+.modal:not(.hidden) { display: flex !important; }
+
+.modal-content {
+    background-color: transparent; /* 讓背景透明，顯示內部的翻轉卡片 */
+    color: #eee;
+    width: 95%;
+    max-width: 600px;
+    position: relative;
+    max-height: 90vh;
+    perspective: 1500px; /* 增加 3D 透視感 */
+    border: none;
+}
+
+/* 翻轉器容器 */
+.modal-flipper {
+    position: relative;
+    width: 100%;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.modal-content.flipped .modal-flipper {
+    transform: rotateY(180deg);
+}
+
+.modal-front, .modal-back {
+    width: 100%;
+    backface-visibility: hidden;
+    background-color: #000;
+    border: 1px solid #222;
+    border-radius: 12px;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    max-height: 90vh;
+}
+
+.modal-back {
+    position: absolute;
+    top: 0; left: 0;
+    transform: rotateY(180deg);
+    display: flex;
+    flex-direction: column;
+    /* 移除固定高度，由內容決定比例 */
+}
+
+.ticket-image-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* 從頂部開始排，方便長圖閱讀 */
+    background: #050505;
+    border-radius: 8px;
+    border: 1px solid #111;
+    padding: 5px;
+    margin: 10px 0;
+}
+
+.ticket-img-preview {
+    width: 100%; /* 強制寬度撐滿 */
+    height: auto; /* 高度隨比例自動延伸 */
+    display: block;
+    object-fit: contain;
+    box-shadow: 0 0 30px rgba(197, 164, 137, 0.1);
+}
+
+.modal-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 15px;
+    margin: 1.5rem 0;
+}
+
+.modal-meta-item {
+    font-size: 0.95rem;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.modal-meta-item strong {
+    color: var(--text-accent);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.modal-meta-item span {
+    color: #eee;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.no-ticket-msg {
+    color: #333;
+    border: 2px dashed #111;
+    padding: 60px 40px;
+    border-radius: 8px;
+    text-align: center;
+    font-family: 'Bebas Neue';
+    letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+    .modal-meta-grid {
+        gap: 10px 12px;
+    }
+    .modal-meta-item {
+        font-size: 0.85rem;
+    }
+    .modal-meta-item strong {
+        font-size: 0.75rem;
+    }
+}
+
+.modal-hero-img { width: 100%; height: 250px; background-size: cover; background-position: center; position: relative; }
+.modal-hero-img::after { content: ""; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); }
+
+/* 翻轉切換按鈕 */
+.flip-toggle-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: var(--text-accent);
+    color: black;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    transition: transform 0.3s;
+}
+.flip-toggle-btn:hover { transform: scale(1.1); }
+
+.modal-text-content { padding: 1.5rem; }
+.close-modal { position: absolute; top: 15px; right: 20px; font-size: 2.5rem; cursor: pointer; color: white; z-index: 101; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
+
+/* SIDE MENU */
+.menu-overlay { 
+    position: fixed; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.85); 
+    z-index: 3100; 
+    transition: opacity 0.3s; 
+    display: none; /* 預設不顯示 */
+}
+.menu-overlay.hidden { display: none; }
+.menu-overlay:not(.hidden) { display: block; }
+
+.side-menu { 
+    position: fixed; 
+    z-index: 3200; 
+    background: #0a0a0a; 
+    border: 1px solid #222;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    /* PC 預設：置中彈窗 */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 90%;
+    max-width: 600px;
+    height: 85vh;
+    display: none; /* 預設隱藏 */
+    flex-direction: column;
+}
+.side-menu.open { 
+    display: flex; /* 開啟時顯示 */
+    transform: translate(-50%, -50%) scale(1); 
+}
+
+.menu-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 1.5rem 2rem; 
+    border-bottom: 1px solid #222; 
+    background: #0a0a0a;
+}
+.close-menu { font-size: 2rem; cursor: pointer; color: #666; position: relative; z-index: 10; }
+
+.menu-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden; /* 內部獨立捲動 */
+}
+
+#menu-content {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding: 1rem 2rem;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* 增加 iOS 滑動順暢度 */
+}
+
+.menu-nav {
+    width: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* 改為從頂部開始排列 */
+    padding: 20px 0; /* 增加上下留白 */
+    gap: 15px;
+    background: #070707;
+    border-left: 1px solid #111;
+    overflow-y: auto; /* 核心：當年份過多時允許捲動 */
+    overscroll-behavior-y: contain;
+    scrollbar-width: none; /* 隱藏捲軸 (Firefox) */
+}
+
+.menu-nav::-webkit-scrollbar {
+    display: none; /* 隱藏捲軸 (Chrome/Safari) */
+}
+
+.nav-year-link {
+    color: #444;
+    font-family: 'Bebas Neue';
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    writing-mode: vertical-lr;
+    padding: 5px 0;
+}
+.nav-year-link:hover { color: var(--text-accent); }
+
+.menu-year { color: var(--text-accent); font-family: 'Anton'; font-size: 1.8rem; margin: 1.5rem 0 1rem 0; }
+.menu-item { background: #111; border: 1px solid #1a1a1a; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s; }
+.menu-item:hover { border-color: var(--text-accent); background: #161616; }
+.menu-artist { color: var(--text-accent); font-weight: bold; font-size: 1.1rem; }
+.menu-artist.is-type { font-size: 0.75rem; }
+.menu-tour { font-size: 0.9rem; color: #888; margin-top: 4px; }
+
+@media (max-width: 600px) {
+    .side-menu {
+        top: 0;
+        left: 0;
+        transform: translateX(-100%) !important;
+        width: 85%;
+        max-width: 320px;
+        height: 100%;
+        border-radius: 0;
+        border: none;
+        border-right: 1px solid #111;
+        display: flex; /* 手機版一律 flex */
+    }
+    .side-menu.open {
+        transform: translateX(0) !important;
+    }
+    .menu-header { padding: 1rem 1.5rem; }
+    #menu-content { padding: 1rem 1.5rem; }
+    .menu-nav { 
+        width: 45px; 
+        gap: 12px;
+        padding: 15px 0;
+    }
+}
+
+/* STATS */
+.stats-switcher {
+    display: none; /* 電腦版隱藏 */
+}
+
+.stats-container { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 1.5rem; 
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.stats-card { 
+    background: #050505; 
+    border: 1px solid #111; 
+    padding: 1.5rem; 
+    border-radius: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+@media (max-width: 600px) { 
+    .stats-switcher {
+        display: flex;
+        background: #111;
+        padding: 4px;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        gap: 4px;
+    }
+
+    .switcher-btn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #666;
+        padding: 10px;
+        font-family: 'Bebas Neue';
+        font-size: 1rem;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.3s;
+    }
+
+    .switcher-btn.active {
+        background: var(--text-accent);
+        color: #000;
+    }
+
+    .stats-container { 
+        grid-template-columns: 1fr; 
+        gap: 1.2rem;
+        padding: 0;
+        width: 100%;
+    } 
+
+    /* 手機版隱藏非作用中的卡片 */
+    .stats-container.active-artist .stats-card:last-child { display: none; }
+    .stats-container.active-venue .stats-card:first-child { display: none; }
+
+    .stats-card {
+        padding: 1rem;
+        width: 100%;
+        max-width: 100%;
+    }
+    .chart-wrapper {
+        height: 180px;
+    }
+}
+
+.stats-card h3 { font-family: 'Bebas Neue'; color: var(--text-accent); text-align: center; margin-bottom: 1.5rem; letter-spacing: 1px; }
+
+.chart-wrapper { 
+    height: 220px; 
+    margin-bottom: 1.5rem; 
+    position: relative; 
+    width: 100%; 
+}
+
+.stats-header .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 10px;
+    flex: 1;
+}
+
+.stats-item { display: flex; flex-direction: column; padding: 0.7rem 0; border-bottom: 1px solid #111; cursor: pointer; transition: background 0.3s; }
+.stats-item:hover { background: rgba(197, 164, 137, 0.05); }
+.stats-header { display: flex; justify-content: space-between; width: 100%; font-size: 0.85rem; color: #888; }
+.stats-item .count { color: var(--text-accent); font-family: 'Bebas Neue'; font-size: 1.1rem; }
+
+.stats-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    padding-left: 10px;
+    border-left: 2px solid var(--text-accent);
+    margin-top: 0;
+}
+.stats-details.open {
+    max-height: 500px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+.detail-entry {
+    font-size: 0.75rem;
+    color: #aaa;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    width: 100%;
+    max-width: 100%; /* 強制限制 */
+}
+
+.detail-entry .detail-date { 
+    color: #555; 
+    font-family: monospace; 
+    flex-shrink: 0; 
+}
+
+.title-wrapper {
+    flex: 1;
+    min-width: 0; /* 重要：防止 flex 子元素溢出 */
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    text-align: right;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.title-wrapper::-webkit-scrollbar { display: none; }
+
+.detail-entry .detail-title { 
+    display: inline-block;
+    white-space: nowrap;
+    transition: transform 0.3s ease;
+    vertical-align: middle;
+}
+
+/* 電腦版自動捲動效果 (由 JS 驅動變數) */
+.detail-title.auto-scroll {
+    animation: scroll-title 4s linear infinite alternate;
+}
+
+@keyframes scroll-title {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(var(--scroll-x, 0)); }
+}
+
+/* Show More Buttons */
+.show-more-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid #222;
+    color: #666;
+    padding: 8px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-family: 'Bebas Neue';
+    letter-spacing: 1px;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+.show-more-btn:hover {
+    color: var(--text-accent);
+    border-color: var(--text-accent);
+    background: rgba(197, 164, 137, 0.05);
+}
+
+/* MAP VIEW */
+#map-view {
+    width: 100%;
+}
+
+.custom-marker-pin {
+    width: 24px;
+    height: 24px;
+    border-radius: 50% 50% 50% 0;
+    background: var(--text-accent);
+    position: absolute;
+    transform: rotate(-45deg);
+    border: 1px solid #000;
+    box-shadow: 0 0 10px rgba(197, 164, 137, 0.5);
+}
+
+.custom-marker-pin::after {
+    content: "";
+    width: 10px;
+    height: 10px;
+    margin: 7px 0 0 7px;
+    background: #000;
+    position: absolute;
+    border-radius: 50%;
+}
+
+#map {
+    height: 75vh; /* Use viewport height for better view on all devices */
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid #222;
+    z-index: 1;
+}
+
+/* Leaflet Popup Customization */
+.leaflet-popup-content-wrapper {
+    background: #000 !important;
+    color: #fff !important;
+    border: 1px solid var(--text-accent);
+}
+.leaflet-popup-tip { background: var(--text-accent) !important; }
+
+.badge-container {
+    position: absolute;
+    top: 10px;
+    right: 88px; /* 緊鄰存根聯左側 */
+    display: flex;
+    flex-direction: column; /* 垂直排列勳表，更像榮譽榜 */
+    gap: 4px;
+    z-index: 20;
+    align-items: flex-end;
+}
+
+.badge-item {
+    background: #111;
+    border: 1px solid var(--text-accent);
+    color: var(--text-accent);
+    padding: 2px 8px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    border-radius: 2px 0 0 2px; /* 只有左側圓角 */
+    position: relative;
+    box-shadow: -2px 2px 5px rgba(0,0,0,0.3);
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    border-right: none; /* 讓它看起來像從右側延伸出來 */
+}
+
+/* 勳表質感：右端微調 */
+.badge-item::after {
+    content: "";
+    position: absolute;
+    right: -4px;
+    top: 0;
+    width: 0;
+    height: 0;
+    border-top: 9px solid transparent;
+    border-bottom: 9px solid transparent;
+    border-left: 4px solid #111; /* 做出右側的小缺口感 */
+    display: none; /* 為了整潔先隱藏複雜缺口 */
+}
+
+.badge-item span {
+    letter-spacing: 1px;
+}
+
+/* 懸停效果 */
+.badge-item:hover {
+    transform: translateX(-5px);
+    background: var(--text-accent);
+    color: #000;
+}
+
+@media (max-width: 600px) { 
+    .badge-container { 
+        top: auto;
+        bottom: 12px; /* 手機版移到右下角，完全避開上方的狀態標籤 */
+        right: 52px; 
+        gap: 3px;
+    } 
+    .badge-item { 
+        padding: 2px 6px; 
+        font-size: 0.6rem;
+        box-shadow: -1px 1px 3px rgba(0,0,0,0.5);
+    }
+}
+
+/* LOGIN & ADMIN FORM */
+.login-box {
+    padding: 2.5rem;
+    text-align: center;
+}
+.login-box h2 { font-family: 'Bebas Neue'; color: var(--text-accent); letter-spacing: 2px; }
+.login-box input {
+    width: 100%; padding: 12px; margin: 15px 0;
+    background: #111; border: 1px solid #333; color: white;
+    border-radius: 4px; text-align: center; font-size: 1.1rem;
+}
+.login-box button {
+    width: 100%; padding: 12px;
+    background: var(--text-accent); color: black;
+    border: none; border-radius: 4px; font-weight: bold; cursor: pointer;
+}
+#login-msg { margin-top: 10px; font-size: 0.8rem; }
+
+#admin-form input, #admin-form select, #admin-form textarea {
+    padding: 12px; background: #111; border: 1px solid #333; color: white;
+    border-radius: 4px; font-family: inherit; font-size: 0.95rem;
+}
+#admin-form input:focus, #admin-form textarea:focus { border-color: var(--text-accent); outline: none; }
+#admin-form label { font-size: 0.85rem; color: #888; }
+
+.hidden { display: none !important; }
+
+/* Skeleton Loading */
+.skeleton-container { display: flex; flex-direction: column; gap: 2rem; }
+.skeleton-ticket {
+    height: 180px;
+    background: #1a1a1a;
+    border: 1px solid #222;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+.skeleton-ticket::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    animation: skeleton-pulse 1.5s infinite;
+}
+@keyframes skeleton-pulse {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Body Scroll Lock */
+body.no-scroll {
+    overflow: hidden;
+    height: 100%;
+}
+
+/* Scroll to Top Button */
+.scroll-top-btn {
+    display: flex;
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 45px;
+    height: 45px;
+    background: rgba(10, 10, 10, 0.9);
+    border: 1px solid var(--text-accent);
+    color: var(--text-accent);
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999; /* 確保在所有光箱之上 */
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.scroll-top-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+}
+
+/* 當開啟光箱時，隱藏置頂按鈕 */
+body.no-scroll .scroll-top-btn {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.scroll-top-btn:hover {
+    background: var(--text-accent);
+    color: #000;
+    transform: translateY(-5px); /* 懸停時輕微上浮 */
+}
+
+.scroll-top-btn:active {
+    transform: scale(0.9);
+}
+
+@media (max-width: 600px) {
+    .scroll-top-btn {
+        bottom: 25px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Nav Lock State */
+.nav-locked {
+    filter: grayscale(1);
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: wait;
+}
+/* --- SCROLL TIMELINE INDICATOR --- */
+.scroll-timeline-container {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 9999;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* 改為置中對齊線條 */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s;
+}
+
+.scroll-timeline-container.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.scroll-year-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 4px 6px 12px;
+    background: linear-gradient(to left, rgba(0,0,0,0.4), transparent);
+    border-radius: 30px 0 0 30px;
+}
+
+.scroll-year-sub {
+    font-family: 'Bebas Neue';
+    font-size: 0.65rem;
+    color: var(--text-accent);
+    opacity: 0.4;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+}
+
+.scroll-year-pill {
+    background: var(--text-accent);
+    color: #000;
+    font-family: 'Bebas Neue';
+    font-size: 0.9rem;
+    padding: 4px 10px;
+    border-radius: 15px 0 0 15px;
+    box-shadow: -3px 3px 15px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.scroll-timeline-container.visible .scroll-year-pill {
+    transform: translateX(0);
+}
+
+.scroll-year-pill::after {
+    content: "";
+    width: 1px;
+    height: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 1px;
+}
+
+.scroll-timeline-track {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--text-accent), transparent);
+    opacity: 0.15;
+    margin-right: -36px;
+}
+
+.scroll-timeline-track.top {
+    background: linear-gradient(to top, var(--text-accent), transparent);
+}
+
+.scroll-timeline-track.bottom {
+    background: linear-gradient(to bottom, var(--text-accent), transparent);
+}
+
+/* Main Footer */
+.main-footer {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #555;
+    font-size: 0.8rem;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 2px;
+    background: var(--bg-dark);
+}
+
+.main-footer p {
+    margin: 0;
+    opacity: 0.6;
+}
