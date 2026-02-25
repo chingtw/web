@@ -253,8 +253,8 @@ function filterTickets() {
     setTimeout(() => {
         let filtered = allTickets;
 
-        // 核心優化：在 YEAR 和 ARTIST 類別下，預設排除「落選」與「搶票失敗」
-        if (currentFilterCategory === 'date' || currentFilterCategory === 'artist') {
+        // 核心優化：在 YEAR, ARTIST 和 MILESTONE 類別下，預設排除「落選」與「搶票失敗」
+        if (currentFilterCategory === 'date' || currentFilterCategory === 'artist' || currentFilterCategory === 'milestone') {
             filtered = allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET');
         }
 
