@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#C5A489">
+    <title>LiveNote - CHING Live Records</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path fill='%23C5A489' d='M2 8a2 2 0 0 1 2-2h24a2 2 0 0 1 2 2v4a3 3 0 0 0 0 6v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z'/><line x1='22' y1='6' x2='22' y2='26' stroke='%23000' stroke-width='1.5' stroke-dasharray='2,1.5'/></svg>">
+    <!-- Google Fonts: 票券字體 -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Leaflet (Map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <h1><span class="highlight">LIVE</span>NOTE</h1>
+            <p>CHING 参戦履歴</p>
+        </div>
+        <div class="tabs">
+            <!-- Hamburger Button -->
+            <button id="menu-btn" class="tab-btn icon-btn" onclick="toggleMenu()">
+                <i data-lucide="menu"></i>
+            </button>
+            
+            <button class="tab-btn active" data-tab="list">LIST</button>
+            <button class="tab-btn" data-tab="map">MAP</button>
+            <button class="tab-btn" data-tab="stats">STATS</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Back Button (Hidden by default) -->
+        <div id="back-btn-container" style="display:none; margin-bottom: 1rem;">
+            <button onclick="showAllTickets()" style="background:transparent; border:1px solid #777; color:#ccc; padding:5px 15px; cursor:pointer; display:flex; align-items:center; gap:5px; border-radius:4px;">
+                <i data-lucide="arrow-left"></i> Back to List
+            </button>
+        </div>
+
+        <!-- Tab 1: List View -->
+        <section id="list-view" class="active">
+            <div class="filter-categories">
+                <button class="cat-btn active" data-cat="date">YEAR</button>
+                <button class="cat-btn" data-cat="artist">ARTIST</button>
+                <button class="cat-btn" data-cat="status">STATUS</button>
+                <button class="cat-btn" data-cat="milestone">MILESTONE</button>
+                <div id="filter-addon"></div>
+            </div>
+            <div id="year-filter" class="year-filter-bar">
+                <!-- Chips injected by JS -->
+            </div>
+            
+            <!-- Skeleton Screen Loading -->
+            <div id="loading" class="skeleton-container">
+                <div class="skeleton-ticket"></div>
+                <div class="skeleton-ticket"></div>
+                <div class="skeleton-ticket"></div>
+            </div>
+
+            <div id="ticket-container" class="ticket-list">
+                <!-- Tickets will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Tab 2: Map View -->
+        <section id="map-view">
+            <div id="map"></div>
+        </section>
+
+        <!-- Tab 3: Stats View -->
+        <section id="stats-view">
+            <div class="stats-switcher">
+                <button class="switcher-btn active" data-stats="artist">ARTIST RANK</button>
+                <button class="switcher-btn" data-stats="venue">VENUE RANK</button>
+            </div>
+            <div class="stats-container active-artist">
+                <div class="stats-card">
+                    <h3>ARTIST RANKING</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="artistChart"></canvas>
+                    </div>
+                    <div id="artist-stats-list" class="stats-list">
+                        <!-- Full list injected by JS -->
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <h3>VENUE RANKING</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="venueChart"></canvas>
+                    </div>
+                    <div id="venue-stats-list" class="stats-list">
+                        <!-- Full list injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Ticket Detail / Add Form -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content ticket-style-modal">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div id="modal-admin-tool" style="position: absolute; top: 15px; left: 20px; z-index: 101;"></div>
+            <div id="modal-body">
+                <!-- Dynamic Content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-content login-box">
+            <h2>Admin Access</h2>
+            <input type="password" id="admin-pass" placeholder="Enter Password">
+            <button onclick="checkLogin()">Unlock</button>
+            <p id="login-msg"></p>
+        </div>
+    </div>
+
+    <!-- Side Drawer Menu -->
+    <div id="side-menu-overlay" class="menu-overlay hidden" onclick="toggleMenu()"></div>
+    <div id="side-menu" class="side-menu">
+        <div class="menu-header">
+            <h3>HISTORY / 履歴</h3>
+            <span class="close-menu" onclick="toggleMenu()">&times;</span>
+        </div>
+        <div class="menu-body">
+            <div id="menu-content">
+                <!-- Dynamic List Injected by JS -->
+            </div>
+            <div id="menu-nav" class="menu-nav">
+                <!-- Year links injected by JS -->
+            </div>
+        </div>
+        <div class="menu-footer" style="padding: 1rem 2rem; border-top: 1px solid #111; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+            <button id="admin-add-btn" class="hidden" onclick="showAdminForm()" style="background:var(--text-accent); color:black; border:none; padding:5px 15px; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:1rem; letter-spacing:1px;">+ ADD TICKET</button>
+            <span id="admin-entry-text" onclick="openLogin()" style="color: #222; font-size: 0.7rem; cursor: pointer; font-family: 'Bebas Neue'; letter-spacing: 1px; margin-left: auto;">Admin Access</span>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <button id="scroll-top-btn" class="scroll-top-btn">
+        <i data-lucide="arrow-up"></i>
+    </button>
+
+    <!-- Scroll Timeline Indicator -->
+    <div id="scroll-timeline" class="scroll-timeline-container">
+        <div class="scroll-timeline-track top"></div>
+        <div class="scroll-year-group">
+            <span id="scroll-year-prev" class="scroll-year-sub">2024</span>
+            <div class="scroll-year-pill">
+                <span id="scroll-year-text">2025</span>
+            </div>
+            <span id="scroll-year-next" class="scroll-year-sub">2026</span>
+        </div>
+        <div class="scroll-timeline-track bottom"></div>
+    </div>
+
+    <!-- Main Script -->
+    <script src="script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
