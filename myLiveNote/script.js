@@ -407,7 +407,7 @@ function renderFilterBar() {
             const map = { 
                 'CONFIRMED': '參戰確定', 
                 'COMPLETED': '參戰完畢', 
-                'APPLIED': '抽選中',
+                'APPLIED': '待參戰',
                 'FAILED': '未成行'
             };
             displayVal = map[val] || val;
