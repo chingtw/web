@@ -1,5 +1,6 @@
 // CONFIGURATION
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzNorFaLtMtIRlK7T7UlYCRjkEu06MZEyFWgeosQui4omJSjUnYD6AOo_xW2TfG67vo/exec'; 
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyI7xztDYRAEdAyL-uqRtw_HfKvz0NYrhTYvzdxoWyzL2CYsN4ODSR6WnLbBTZIJud7/exec'
+
 
 // MOCK DATA
 const MOCK_DATA = [
@@ -289,32 +290,47 @@ async function fetchData() {
     const navBar = document.querySelector('.tabs');
     const menuBtn = document.getElementById('menu-btn');
     const filterBar = document.querySelector('.filter-categories');
+    const userSwitchBtn = document.getElementById('user-switch-btn');
+    const quickSwitchBtn = document.querySelector('.quick-switch-btn');
     
+    // 取得 URL 中的使用者參數
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u');
+
     try {
         setLogoState('loading');
-        toggleBodyScroll(true); // 鎖定捲動
+        toggleBodyScroll(true); 
         
-        // 鎖定導覽列與篩選列
         navBar.classList.add('nav-locked');
         menuBtn.classList.add('nav-locked');
         if (filterBar) filterBar.classList.add('nav-locked');
+        if (userSwitchBtn) userSwitchBtn.classList.add('nav-locked');
+        if (quickSwitchBtn) quickSwitchBtn.classList.add('nav-locked');
 
         let validData;
         if (!GAS_API_URL) { 
             validData = MOCK_DATA;
         } else {
-            const res = await fetch(GAS_API_URL);
+            // 如果有指定使用者，則在請求中加入參數
+            const requestUrl = currentUser ? `${GAS_API_URL}?u=${currentUser}` : GAS_API_URL;
+            const res = await fetch(requestUrl);
             const rawData = await res.json();
+            // 核心修改：排除狀態為 HIDDEN 的紀錄 (軟刪除)
             validData = (rawData && rawData.length > 0) 
-                ? rawData.filter(t => t.id && String(t.id).trim() !== '') 
+                ? rawData.filter(t => t.id && String(t.id).trim() !== '' && t.status !== 'HIDDEN') 
                 : MOCK_DATA;
         }
 
-        // 模擬一點載入時間，讓散亂動畫更美
         setTimeout(() => {
             renderApp(validData);
             setLogoState('circle');
-            toggleBodyScroll(false); // 恢復捲動
+            toggleBodyScroll(false);
+
+            // 如果有使用者名稱，更新副標題視覺
+            if (currentUser) {
+                const subtitle = document.querySelector('.subtitle');
+                if (subtitle) subtitle.textContent = `${currentUser.toUpperCase()} 参戦記録`;
+            }
         }, 1200);
 
     } catch (e) { 
@@ -327,6 +343,8 @@ async function fetchData() {
             navBar.classList.remove('nav-locked');
             menuBtn.classList.remove('nav-locked');
             if (filterBar) filterBar.classList.remove('nav-locked');
+            if (userSwitchBtn) userSwitchBtn.classList.remove('nav-locked');
+            if (quickSwitchBtn) quickSwitchBtn.classList.remove('nav-locked');
         }, 1200);
     }
 }
@@ -669,9 +687,9 @@ function initStats() {
     // 清除舊的按鈕避免重複
     document.querySelectorAll('.show-more-btn').forEach(b => b.remove());
 
-    // 圖表只顯示超過含 2 回的資料 (即 2 回以上)，最多顯示前 10 名
-    const saForChart = sa.filter(d => d[1] >= 2).slice(0, 10);
-    const svForChart = sv.filter(d => d[1] >= 2).slice(0, 10);
+    // 圖表顯示門檻調整：只要有 1 回就顯示，最多顯示前 10 名
+    const saForChart = sa.filter(d => d[1] >= 1).slice(0, 10);
+    const svForChart = sv.filter(d => d[1] >= 1).slice(0, 10);
 
     renderDonut('artistChart', saForChart, artistChartInstance, (c)=>artistChartInstance=c);
     renderDonut('venueChart', svForChart, venueChartInstance, (c)=>venueChartInstance=c);
@@ -1033,35 +1051,63 @@ window.openLogin = () => {
     toggleBodyScroll(true);
 };
 
-window.checkLogin = () => { 
-    const pass = document.getElementById('admin-pass').value; 
-    if (pass.length > 0) { 
-        adminPassword = pass; 
-        document.getElementById('login-modal').classList.add('hidden');
-        document.body.classList.remove('login-open'); // 登入成功後移除類別
-        
-        // 切換為已登入狀態的 UI (側邊欄)
-        const addBtn = document.getElementById('admin-add-btn');
-        const entryText = document.getElementById('admin-entry-text');
-        if (addBtn) addBtn.classList.remove('hidden');
-        if (entryText) entryText.classList.add('hidden'); // 登入後隱藏原本的暗門字樣
+window.checkLogin = async () => { 
+    const passInput = document.getElementById('admin-pass');
+    const pass = passInput.value; 
+    const loginBtn = document.querySelector('#login-modal button');
+    
+    // 取得當前使用者名稱
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching'; 
 
-        // 若光箱開啟中，重新渲染光箱以顯示編輯按鈕 (及更新左上角工具)
-        const modalContent = document.getElementById('modal');
-        if (!modalContent.classList.contains('hidden')) {
-            if (window.currentDetailId) {
-                openDetail(window.currentDetailId);
+    if (pass.length === 0) return;
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Verifying...';
+
+    try {
+        const res = await fetch(`${GAS_API_URL}?action=login&u=${currentUser}&p=${encodeURIComponent(pass)}`);
+        const result = await res.json();
+
+        if (result.success) {
+            adminPassword = pass; 
+            document.getElementById('login-modal').classList.add('hidden');
+            document.body.classList.remove('login-open'); 
+            
+            const addBtn = document.getElementById('admin-add-btn');
+            const entryText = document.getElementById('admin-entry-text');
+            if (addBtn) addBtn.classList.remove('hidden');
+            if (entryText) entryText.classList.add('hidden'); 
+
+            const modalContent = document.getElementById('modal');
+            if (!modalContent.classList.contains('hidden')) {
+                if (window.currentDetailId) {
+                    openDetail(window.currentDetailId);
+                }
+            } else {
+                if (!document.getElementById('side-menu').classList.contains('open')) {
+                    toggleMenu();
+                }
             }
         } else {
-            // 否則重新開啟側邊選單，讓使用者看到新增按鈕
-            if (!document.getElementById('side-menu').classList.contains('open')) {
-                toggleMenu();
-            }
+            alert('密碼錯誤！Invalid Password.');
+            passInput.value = '';
+            passInput.focus();
         }
-    } 
+    } catch (e) {
+        console.error('Login error:', e);
+        alert('驗證時發生錯誤，請稍後再試。');
+    } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Unlock';
+    }
 }
 
 function showAdminForm(editData = null) {
+    // 進入編輯模式時，隱藏左上角的工具按鈕 (EDIT 按鈕或鎖頭)
+    const adminTool = document.getElementById('modal-admin-tool');
+    if (adminTool) adminTool.innerHTML = '';
+
     // 如果側邊選單是開啟狀態，則關閉它，避免擋住表單
     if (document.getElementById('side-menu').classList.contains('open')) {
         toggleMenu();
@@ -1177,9 +1223,16 @@ function showAdminForm(editData = null) {
                     </div>
                 </div>
 
-                <button type="submit" id="save-btn" style="background:var(--text-accent); color:black; padding:15px; font-weight:bold; font-family:'Bebas Neue'; border:none; margin-top:10px; font-size:1.2rem; cursor:pointer; border-radius:4px; transition:all 0.3s;">
-                    ${editData ? 'UPDATE TICKET' : 'SAVE TICKET'}
-                </button>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button type="submit" id="save-btn" style="flex:2; background:var(--text-accent); color:black; padding:15px; font-weight:bold; font-family:'Bebas Neue'; border:none; font-size:1.2rem; cursor:pointer; border-radius:4px; transition:all 0.3s;">
+                        ${editData ? 'UPDATE TICKET' : 'SAVE TICKET'}
+                    </button>
+                    ${editData ? `
+                        <button type="button" onclick="handleDelete('${editData.id}')" style="flex:1; background:#441111; color:#ff6666; border:1px solid #662222; padding:15px; font-weight:bold; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:1.2rem;">
+                            DELETE
+                        </button>
+                    ` : ''}
+                </div>
             </form>
         </div>
     `;
@@ -1187,8 +1240,51 @@ function showAdminForm(editData = null) {
     toggleBodyScroll(true);
 }
 
+window.handleDelete = async function(id) {
+    if (!confirm('確定要刪除這筆紀錄嗎？(Delete this record?)')) return;
+    if (!GAS_API_URL) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching';
+
+    const saveBtn = document.querySelector('#admin-form button[type="submit"]');
+    const delBtn = document.querySelector('button[onclick^="handleDelete"]');
+    
+    if (saveBtn) saveBtn.disabled = true;
+    if (delBtn) {
+        delBtn.disabled = true;
+        delBtn.textContent = 'Deleting...';
+    }
+
+    try {
+        await fetch(GAS_API_URL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            body: JSON.stringify({ 
+                username: currentUser,
+                password: adminPassword, 
+                data: { id: id, status: 'HIDDEN' } // 軟刪除：僅傳送 ID 與 HIDDEN 狀態
+            }) 
+        }); 
+        alert('紀錄已刪除！'); 
+        closeModal(); 
+        location.reload(); 
+    } catch (e) { 
+        alert('刪除失敗：' + e.toString()); 
+        if (delBtn) {
+            delBtn.disabled = false;
+            delBtn.textContent = 'DELETE';
+        }
+    }
+}
+
 window.handleSave = async function() {
     if (!GAS_API_URL) { alert('請先設定 GAS_API_URL'); return; }
+    
+    // 取得當前使用者名稱
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching'; // 預設為主站使用者
+
     const form = document.getElementById('admin-form'); 
     const formData = new FormData(form); 
     const data = {};
@@ -1196,7 +1292,6 @@ window.handleSave = async function() {
         if (key !== 'milestone') data[key] = val;
     });
 
-    // 智慧驗證：除非是活動、展覽或運動賽事，否則主要藝人與名單不能同時為空
     const skipArtistCheck = ['EVENT', 'SPORTS'].includes(data.type);
     if (!skipArtistCheck && !data.artist.trim() && !data.artist_list.trim()) {
         alert('請至少填寫「主要藝人」或「出演者名單」其中一項！');
@@ -1207,13 +1302,21 @@ window.handleSave = async function() {
     saveBtn.disabled = true; 
     saveBtn.textContent = 'Saving...';
     
-    // 收集所有勾選的里程碑
     const milestones = [];
     form.querySelectorAll('input[name="milestone"]:checked').forEach(cb => milestones.push(cb.value));
     data.is_first_time = milestones.join(',');
 
     try { 
-        await fetch(GAS_API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ password: adminPassword, data: data }) }); 
+        // 傳送包含 username 的 payload
+        await fetch(GAS_API_URL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            body: JSON.stringify({ 
+                username: currentUser,
+                password: adminPassword, 
+                data: data 
+            }) 
+        }); 
         alert('紀錄已送出！'); 
         closeModal(); 
         location.reload(); 

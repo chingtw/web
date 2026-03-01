@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#C5A489">
+    <title>LiveNote - 参戦者ポータル</title>
+    <!-- 引入所有與 index.html 相同的資源 -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path fill='%23C5A489' d='M2 8a2 2 0 0 1 2-2h24a2 2 0 0 1 2 2v4a3 3 0 0 0 0 6v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z'/><line x1='22' y1='6' x2='22' y2='26' stroke='%23000' stroke-width='1.5' stroke-dasharray='2,1.5'/></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Portal Overlay 專屬樣式 (與主站風格統一) */
+        #portal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* 改為從頂部開始，方便滑動 */
+            padding: 60px 20px; /* 增加上下內距 */
+            overflow-y: auto; /* 允許垂直滑動 */
+            transition: opacity 0.5s ease;
+            -webkit-overflow-scrolling: touch; /* iOS 流暢滑動 */
+        }
+        #portal-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .portal-content { text-align: center; max-width: 1000px; width: 100%; animation: fadeIn 1s ease; }
+        .portal-title { font-family: 'Bebas Neue'; font-size: 4.5rem; color: var(--text-accent); letter-spacing: 5px; margin-bottom: 0.5rem; }
+        .user-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-top: 3rem; }
+        .user-card { background: rgba(20, 20, 20, 0.8); border: 1px solid #222; padding: 30px; border-radius: 12px; cursor: pointer; transition: all 0.4s ease; backdrop-filter: blur(10px); }
+        .user-card:hover { transform: translateY(-12px); border-color: var(--text-accent); }
+        .user-avatar { width: 90px; height: 90px; border-radius: 50%; background: #111; margin: 0 auto 1.5rem; border: 2px solid #333; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-name { font-family: 'Bebas Neue'; font-size: 2rem; color: #eee; }
+        
+        /* Quick Switcher Floating UI (右下角) */
+        .quick-switch-container {
+            position: fixed;
+            bottom: 85px; /* 在 scroll-top-btn (20px) + btn高度(50px) + 間距 之後 */
+            right: 20px;
+            z-index: 9998;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        #quick-user-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 5px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #quick-user-menu.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .quick-user-item {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #111;
+            border: 2px solid #333;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.2s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .quick-user-item:hover {
+            transform: scale(1.15);
+            border-color: var(--text-accent);
+        }
+        .quick-user-item.active {
+            border-color: var(--text-accent);
+            box-shadow: 0 0 15px rgba(197, 164, 137, 0.4);
+        }
+        .quick-user-item img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* 懸浮按鈕樣式 */
+        .quick-switch-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #222;
+            border: 1px solid #444;
+            color: var(--text-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            transition: all 0.3s;
+        }
+        .quick-switch-btn:hover { background: #333; transform: scale(1.05); }
+        .quick-switch-btn.active { background: var(--text-accent); color: #000; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="shared-mode">
+
+    <!-- PORTAL OVERLAY -->
+    <div id="portal-overlay">
+        <div class="portal-content">
+            <div id="portal-logo" class="dynamic-logo-container circle" style="margin: 0 auto 2rem; width:120px; height:120px;"></div>
+            <h1 class="portal-title">LIVE NOTE</h1>
+            <p style="color:#777; font-family:'Noto Sans TC'; letter-spacing:3px; font-size:0.9rem;">SELECT ACCESS PASS / 参戦者を選択してください</p>
+            <div id="user-list" class="user-grid">
+                <p style="color:#333; grid-column: 1/-1;">Loading Access Passes...</p>
+            </div>
+            <div style="margin-top: 5rem;">
+                <a href="index.html" style="color: #444; text-decoration: none; font-family: 'Bebas Neue'; font-size: 0.85rem; letter-spacing: 2px; border-bottom: 1px solid #222; padding-bottom: 3px;">BACK TO MASTER SITE</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECORD SYSTEM -->
+    <header>
+        <div class="header-container">
+            <div class="dynamic-logo-container loading" id="main-logo"></div>
+            <p class="subtitle">LiveNote Records</p>
+        </div>
+        <div class="tabs">
+            <button id="menu-btn" class="tab-btn icon-btn" onclick="toggleMenu()"><i data-lucide="menu"></i></button>
+            <button class="tab-btn active" data-tab="list">LIST</button>
+            <button class="tab-btn" data-tab="map">MAP</button>
+            <button class="tab-btn" data-tab="stats">STATS</button>
+        </div>
+    </header>
+
+    <main>
+        <div id="back-btn-container" style="display:none; margin-bottom: 1rem;">
+            <button onclick="showAllTickets()" style="background:transparent; border:1px solid #777; color:#ccc; padding:5px 15px; cursor:pointer; display:flex; align-items:center; gap:5px; border-radius:4px;">
+                <i data-lucide="arrow-left"></i> Back to List
+            </button>
+        </div>
+        <section id="list-view" class="active">
+            <div class="filter-categories">
+                <button class="cat-btn active" data-cat="date">YEAR</button>
+                <button class="cat-btn" data-cat="artist">ARTIST</button>
+                <button class="cat-btn" data-cat="status">STATUS</button>
+                <button class="cat-btn" data-cat="milestone">MILESTONE</button>
+                <div id="filter-addon"></div>
+            </div>
+            <div id="year-filter" class="year-filter-bar"></div>
+            <div id="loading" class="skeleton-container">
+                <div class="skeleton-ticket"></div>
+                <div class="skeleton-ticket"></div>
+                <div class="skeleton-ticket"></div>
+            </div>
+            <div id="ticket-container" class="ticket-list"></div>
+        </section>
+        <section id="map-view"><div id="map"></div></section>
+        <section id="stats-view">
+            <div class="stats-switcher">
+                <button class="switcher-btn active" data-stats="artist">ARTIST RANK</button>
+                <button class="switcher-btn" data-stats="venue">VENUE RANK</button>
+            </div>
+            <div class="stats-container active-artist">
+                <div class="stats-card">
+                    <h3>ARTIST RANKING</h3>
+                    <div class="chart-wrapper"><canvas id="artistChart"></canvas></div>
+                    <div id="artist-stats-list" class="stats-list"></div>
+                </div>
+                <div class="stats-card">
+                    <h3>VENUE RANKING</h3>
+                    <div class="chart-wrapper"><canvas id="venueChart"></canvas></div>
+                    <div id="venue-stats-list" class="stats-list"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Actions -->
+    <div class="quick-switch-container">
+        <div id="quick-user-menu">
+            <!-- 由 JS 動態產生垂直頭像清單 -->
+        </div>
+        <div class="quick-switch-btn" onclick="toggleQuickMenu()">
+            <i data-lucide="users"></i>
+        </div>
+    </div>
+
+    <button id="scroll-top-btn" class="scroll-top-btn"><i data-lucide="arrow-up"></i></button>
+
+    <!-- Side Menu & Modals -->
+    <div id="modal" class="modal hidden"><div class="modal-content ticket-style-modal"><span class="close-modal" onclick="closeModal()">&times;</span><div id="modal-admin-tool" style="position: absolute; top: 15px; left: 20px; z-index: 101;"></div><div id="modal-body"></div></div></div>
+    <div id="login-modal" class="modal hidden"><div class="modal-content login-box"><h2>Admin Access</h2><input type="password" id="admin-pass" placeholder="Enter Password"><button onclick="checkLogin()">Unlock</button></div></div>
+    <div id="side-menu-overlay" class="menu-overlay hidden" onclick="toggleMenu()"></div>
+    <div id="side-menu" class="side-menu">
+        <div class="menu-header"><h3>HISTORY / 履歴</h3><span class="close-menu" onclick="toggleMenu()">&times;</span></div>
+        <div class="menu-body"><div id="menu-content"></div><div id="menu-nav" class="menu-nav"></div></div>
+        <div class="menu-footer" style="padding: 1rem 2rem; border-top: 1px solid #111; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+            <button id="admin-add-btn" class="hidden" onclick="showAdminForm()" style="background:var(--text-accent); color:black; border:none; padding:5px 15px; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:1rem; letter-spacing:1px;">+ ADD TICKET</button>
+            <span id="admin-entry-text" onclick="openLogin()" style="color: #222; font-size: 0.7rem; cursor: pointer; font-family: 'Bebas Neue'; letter-spacing: 1px; margin-left: auto;">Admin Access</span>
+        </div>
+    </div>
+
+    <footer class="main-footer"><p>Developed by CHING</p></footer>
+    <div id="scroll-timeline" class="scroll-timeline-container">
+        <div class="scroll-timeline-track top"></div>
+        <div class="scroll-year-group"><span id="scroll-year-prev" class="scroll-year-sub"></span><div class="scroll-year-pill"><span id="scroll-year-text"></span></div><span id="scroll-year-next" class="scroll-year-sub"></span></div>
+        <div class="scroll-timeline-track bottom"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        const overlay = document.getElementById('portal-overlay');
+        const userList = document.getElementById('user-list');
+        const quickUserMenu = document.getElementById('quick-user-menu');
+        const params = new URLSearchParams(window.location.search);
+        const userParam = params.get('u');
+
+        // 切換快速選單
+        window.toggleQuickMenu = () => {
+            quickUserMenu.classList.toggle('open');
+            document.querySelector('.quick-switch-btn').classList.toggle('active');
+        };
+
+        async function initPortalAndQuickSwitch() {
+            // Portal Logo
+            const logoText = "NO Live • NO LIFE • ";
+            const pLogo = document.getElementById('portal-logo');
+            logoText.split('').forEach((char, i) => {
+                const span = document.createElement('span');
+                span.textContent = char;
+                span.setAttribute('style', `--index: ${i}; --angle: ${(i / 20) * 360}deg;`);
+                pLogo.appendChild(span);
+            });
+
+            try {
+                const res = await fetch(`${GAS_API_URL}?action=getUsers`);
+                const users = await res.json();
+                
+                userList.innerHTML = '';
+                quickUserMenu.innerHTML = '';
+
+                const filteredUsers = users.filter(u => u.username !== 'ching');
+                const usersWithMaster = [
+                    {username: 'MASTER', display_name: 'CHING (MASTER)', isMaster: true}, 
+                    ...filteredUsers
+                ];
+                
+                usersWithMaster.forEach(u => {
+                    const isCurrent = (u.username === userParam) || (u.isMaster && !userParam);
+                    
+                    // 1. 入口頁卡片
+                    const card = document.createElement('div');
+                    card.className = 'user-card';
+                    card.onclick = () => {
+                        if (u.isMaster) window.location.href = 'index.html';
+                        else window.location.href = `shared.html?u=${u.username}`;
+                    };
+                    card.innerHTML = `
+                        <div class="user-avatar">${u.avatar_url ? `<img src="${u.avatar_url}">` : '<i data-lucide="user" style="color:#444; width:40px; height:40px;"></i>'}</div>
+                        <div class="user-name">${u.display_name}</div>
+                        <div class="user-badge">${u.isMaster ? 'OWNER' : 'GUEST PASS'}</div>
+                    `;
+                    userList.appendChild(card);
+
+                    // 2. 垂直懸浮選單頭像
+                    const item = document.createElement('div');
+                    item.className = `quick-user-item ${isCurrent ? 'active' : ''}`;
+                    item.title = u.display_name;
+                    item.onclick = () => {
+                        if (u.isMaster) window.location.href = 'index.html';
+                        else window.location.href = `shared.html?u=${u.username}`;
+                    };
+                    item.innerHTML = u.avatar_url 
+                        ? `<img src="${u.avatar_url}">` 
+                        : `<i data-lucide="user" style="width:18px; color:#555;"></i>`;
+                    
+                    quickUserMenu.appendChild(item);
+                });
+                lucide.createIcons();
+            } catch (e) {
+                userList.innerHTML = '<p style="color:red; grid-column: 1/-1;">Error: Unable to fetch users.</p>';
+            }
+        }
+
+        if (userParam) { overlay.classList.add('hidden'); }
+        initPortalAndQuickSwitch();
+
+        // 點擊外面關閉選單
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('.quick-switch-container')) {
+                quickUserMenu.classList.remove('open');
+                document.querySelector('.quick-switch-btn').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
