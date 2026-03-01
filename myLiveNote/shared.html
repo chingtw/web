@@ -93,23 +93,58 @@
         }
         .quick-user-item img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* 懸浮按鈕樣式 */
+        /* 懸浮按鈕樣式 - 預設更輕量的半透明 */
         .quick-switch-btn {
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: #222;
-            border: 1px solid #444;
+            background: rgba(30, 30, 30, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: var(--text-accent);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .quick-switch-btn:hover { background: #333; transform: scale(1.05); }
-        .quick-switch-btn.active { background: var(--text-accent); color: #000; }
+        .quick-switch-btn:hover { background: rgba(50, 50, 50, 0.7); transform: scale(1.05); }
+        .quick-switch-btn.active { 
+            background: var(--text-accent); 
+            color: #000; 
+            border-color: var(--text-accent);
+            box-shadow: 0 0 20px rgba(197, 164, 137, 0.4);
+        }
+
+        /* 選單展開時的背景遮罩 - 調淡並修復衝突 */
+        .quick-menu-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 9997;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .quick-menu-backdrop.open { opacity: 1; visibility: visible; pointer-events: auto; }
+
+        /* 確保置頂按鈕在遮罩之上 */
+        #scroll-top-btn { z-index: 9999; }
+
+        /* 手機版適應：改為 2 欄排版 */
+        @media (max-width: 600px) {
+            #portal-overlay { padding: 40px 15px; }
+            .portal-title { font-size: 3.5rem; }
+            .user-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 2rem; }
+            .user-card { padding: 20px 10px; }
+            .user-avatar { width: 70px; height: 70px; margin-bottom: 1rem; }
+            .user-name { font-size: 1.5rem; }
+        }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -189,6 +224,7 @@
     </main>
 
     <!-- Floating Actions -->
+    <div id="quick-menu-backdrop" class="quick-menu-backdrop" onclick="toggleQuickMenu()"></div>
     <div class="quick-switch-container">
         <div id="quick-user-menu">
             <!-- 由 JS 動態產生垂直頭像清單 -->
@@ -225,12 +261,14 @@
         const overlay = document.getElementById('portal-overlay');
         const userList = document.getElementById('user-list');
         const quickUserMenu = document.getElementById('quick-user-menu');
+        const quickBackdrop = document.getElementById('quick-menu-backdrop');
         const params = new URLSearchParams(window.location.search);
         const userParam = params.get('u');
 
         // 切換快速選單
         window.toggleQuickMenu = () => {
             quickUserMenu.classList.toggle('open');
+            quickBackdrop.classList.toggle('open');
             document.querySelector('.quick-switch-btn').classList.toggle('active');
         };
 
@@ -252,9 +290,12 @@
                 userList.innerHTML = '';
                 quickUserMenu.innerHTML = '';
 
+                // 找出 ching 的資料作為 MASTER，其餘為 GUEST
+                const masterData = users.find(u => u.username === 'ching') || { username: 'ching', display_name: 'CHING (MASTER)' };
                 const filteredUsers = users.filter(u => u.username !== 'ching');
+                
                 const usersWithMaster = [
-                    {username: 'MASTER', display_name: 'CHING (MASTER)', isMaster: true}, 
+                    { ...masterData, display_name: 'CHING (MASTER)', isMaster: true }, 
                     ...filteredUsers
                 ];
                 
@@ -302,6 +343,7 @@
         window.addEventListener('click', (e) => {
             if (!e.target.closest('.quick-switch-container')) {
                 quickUserMenu.classList.remove('open');
+                quickBackdrop.classList.remove('open');
                 document.querySelector('.quick-switch-btn').classList.remove('active');
             }
         });
