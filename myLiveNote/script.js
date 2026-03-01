@@ -609,7 +609,9 @@ function initMap() {
 
     Object.keys(venueGroups).forEach(coords => {
         const [la, ln] = coords.split(',').map(Number);
-        const ticketsAtVenue = venueGroups[coords];
+        // 排序該場館的所有活動 (日期由新到舊)
+        const ticketsAtVenue = venueGroups[coords].sort((a, b) => new Date(cleanDate(b.date)) - new Date(cleanDate(a.date)));
+        
         const marker = L.marker([la, ln], { icon: customIcon }).addTo(mapInstance);
         
         // 建立包含所有活動的清單
@@ -803,6 +805,9 @@ function renderMenu(tickets) {
     const sortedYears = Object.keys(years).sort((a,b)=>b-a);
 
     sortedYears.forEach(y => {
+        // 排序該年份內的票券 (日期由新到舊)
+        years[y].sort((a, b) => new Date(cleanDate(b.date)) - new Date(cleanDate(a.date)));
+
         // 1. 產生導覽列按鈕
         const navLink = document.createElement('div');
         navLink.className = 'nav-year-link';
