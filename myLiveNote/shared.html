@@ -31,7 +31,7 @@
             align-items: center;
             justify-content: flex-start; /* 改為從頂部開始，方便滑動 */
             padding: 60px 20px; /* 增加上下內距 */
-            overflow-y: auto; /* 允許垂直滑動 */
+            overflow-y: hidden; /* 預設禁止滑動，載入後才開啟 */
             transition: opacity 0.5s ease;
             -webkit-overflow-scrolling: touch; /* iOS 流暢滑動 */
         }
@@ -209,57 +209,64 @@
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(15, 15, 15, 0.9);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(197, 164, 137, 0.3);
-            padding: 12px 18px; /* 稍微縮減內距 */
-            border-radius: 16px;
+            background: rgba(15, 15, 15, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(197, 164, 137, 0.35);
+            padding: 10px 16px;
+            border-radius: 12px;
             z-index: 100001;
             display: flex;
             align-items: center;
-            gap: 12px; /* 縮小間距 */
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
             animation: fadeInUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) both;
-            max-width: 92vw; /* 稍微放寬限制 */
-            width: 400px;
+            max-width: 95vw;
+            width: 380px;
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
             box-sizing: border-box;
         }
         /* 滑動時縮下去隱藏的類別 */
         .pwa-install-banner.hidden-scroll {
-            transform: translate(-50%, 150%);
+            transform: translate(-50%, 180%);
             opacity: 0;
             pointer-events: none;
         }
         .pwa-install-banner.hidden { display: none !important; }
-        .pwa-icon { color: var(--text-accent); font-size: 20px; flex-shrink: 0; } /* 防止圖示被擠壓 */
-        .pwa-info { flex: 1; min-width: 0; } /* 允許文字區塊彈性縮放 */
+        .pwa-icon { color: var(--text-accent); font-size: 18px; flex-shrink: 0; display: flex; align-items: center; }
+        .pwa-info { flex: 1; min-width: 0; overflow: hidden; }
         .pwa-info h4 { 
-            font-family: 'Bebas Neue'; color: var(--text-accent); font-size: 1.2rem; 
-            margin: 0; letter-spacing: 2px; line-height: 1.1;
+            font-family: 'Bebas Neue'; color: var(--text-accent); font-size: 1.1rem; 
+            margin: 0; letter-spacing: 1px; line-height: 1.2;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .pwa-info p { 
-            color: #999; font-size: 0.75rem; margin: 4px 0 0; 
+            color: #888; font-size: 0.7rem; margin: 2px 0 0; 
             font-family: 'Noto Sans TC'; letter-spacing: 0.5px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .pwa-btn {
-            background: var(--text-accent); color: #000; border: none; padding: 8px 15px;
-            border-radius: 6px; font-family: 'Bebas Neue'; font-size: 0.95rem; cursor: pointer;
+            background: var(--text-accent); color: #000; border: none; padding: 6px 12px;
+            border-radius: 4px; font-family: 'Bebas Neue'; font-size: 0.9rem; cursor: pointer;
             white-space: nowrap; transition: all 0.3s; letter-spacing: 1px;
-            flex-shrink: 0; /* 關鍵：確保按鈕不被擠壓 */
+            flex-shrink: 0; /* 確保按鈕不被擠壓 */
+            min-width: 80px; /* 保證按鈕寬度 */
         }
         .pwa-btn:hover { background: #d6b89f; transform: scale(1.05); }
-        .pwa-close { color: #555; cursor: pointer; font-size: 1.4rem; line-height: 1; margin-left: 2px; transition: color 0.3s; flex-shrink: 0; }
+        .pwa-close { color: #555; cursor: pointer; font-size: 1.2rem; line-height: 1; margin-left: 2px; transition: color 0.3s; flex-shrink: 0; }
         .pwa-close:hover { color: #888; }
 
         @media (max-width: 600px) {
-            .pwa-install-banner { width: calc(100% - 20px); bottom: 15px; padding: 10px 15px; gap: 10px; }
-            .pwa-info h4 { font-size: 1.1rem; }
-            .pwa-info p { font-size: 0.7rem; }
-            .pwa-btn { padding: 7px 12px; font-size: 0.9rem; }
+            .pwa-install-banner { 
+                width: 92%; 
+                bottom: 12px; /* 稍微再往下移，遠離垂直選單 */
+                padding: 8px 12px; 
+                gap: 8px; 
+            }
+            .pwa-info p { display: none; } /* 窄螢幕隱藏副標題，騰出空間給按鈕 */
+            .pwa-info h4 { font-size: 1rem; }
+            .pwa-btn { padding: 5px 10px; font-size: 0.85rem; min-width: 70px; }
+            .pwa-icon { font-size: 16px; }
         }
     </style>
 </head>
@@ -478,6 +485,9 @@
         };
 
         async function initPortalAndQuickSwitch() {
+            // 禁止 body 滑動 (如果還在入口頁)
+            if (!userParam) document.body.classList.add('no-scroll');
+
             // Portal Logo
             const logoText = "NO Live • NO LIFE • ";
             const pLogo = document.getElementById('portal-logo');
@@ -538,6 +548,11 @@
                     quickUserMenu.appendChild(item);
                 });
                 lucide.createIcons();
+
+                // 載入完成後：開啟滑動
+                overlay.style.overflowY = 'auto';
+                // 如果之後需要 body 也能滑動 (例如 overlay 消失後)，則解除 no-scroll
+                // 但入口頁本來就不該讓 body 滑動，所以主要維持 overlay.style.overflowY = 'auto' 即可
             } catch (e) {
                 userList.innerHTML = '<p style="color:red; grid-column: 1/-1;">Error: Unable to fetch users.</p>';
             }
