@@ -1,5 +1,5 @@
 // CONFIGURATION
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyI7xztDYRAEdAyL-uqRtw_HfKvz0NYrhTYvzdxoWyzL2CYsN4ODSR6WnLbBTZIJud7/exec'
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbz8E_eeWl8iTQ4GWZ2Zdx8psWyZdm6fwq2QuLeM6N-3_iaEYtwXRWubrf1BIX8uXo2S/exec'
 
 
 // MOCK DATA
@@ -11,6 +11,7 @@ const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'O
 const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン会', 'FAN_MEETING': 'ファンミーティング', 'EVENT': '展示会 / イベント', 'SPORTS': 'スポーツ / 試合' };
 
 let allTickets = [];
+let venueConfig = [];
 let currentFilterCategory = 'date'; // date, artist, status, milestone
 let currentFilterValue = 'ALL';
 let showAllArtists = false;
@@ -33,6 +34,7 @@ const modalBody = document.getElementById('modal-body');
 
 document.addEventListener('DOMContentLoaded', () => { 
     fetchData(); 
+    fetchVenues(); // 新增：預載場地配置
     setupTabs(); 
     setupYearScroll();
     setupStatsSwitcher();
@@ -42,6 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- UTILITIES ---
+
+async function fetchVenues() {
+    try {
+        const res = await fetch(`${GAS_API_URL}?action=getVenues`);
+        venueConfig = await res.json();
+    } catch (e) {
+        console.error('Failed to fetch venues:', e);
+        venueConfig = [];
+    }
+}
 function setupScrollTimeline() {
     const timeline = document.getElementById('scroll-timeline');
     const yearText = document.getElementById('scroll-year-text');
@@ -1001,8 +1013,8 @@ window.openDetail = function(id) {
                 </div>`;
         } else {
             adminTool.innerHTML = `
-                <div onclick="openLogin()" style="opacity:0.2; cursor:pointer; color:white; padding:5px;">
-                    <i data-lucide="lock" style="width:16px;"></i>
+                <div onclick="openLogin()" class="admin-lock-btn">
+                    <i data-lucide="lock"></i>
                 </div>`;
         }
     }
@@ -1116,13 +1128,16 @@ function showAdminForm(editData = null) {
     // 重置翻轉狀態，避免開啟表單時是翻轉的
     modal.querySelector('.modal-content').classList.remove('flipped');
     
-    // 提取現有場地與藝人資料供建議
+    // 1. 處理場地清單 (來自 venueConfig)
     const venueMap = {};
+    venueConfig.forEach(v => {
+        if (v.venue_name && v.lat_lng) venueMap[v.venue_name] = v.lat_lng;
+    });
+    const venueOptions = Object.keys(venueMap).map(v => `<option value="${v}">`).join('');
+
+    // 2. 處理藝人建議 (仍來自 allTickets 統計)
     const artistCounts = {};
     allTickets.forEach(t => {
-        if (t.venue_name && t.lat_lng) venueMap[t.venue_name] = t.lat_lng;
-        
-        // 統計所有藝人出現頻率 (包含單獨與名單內)
         const eventArtists = new Set();
         if (t.artist) eventArtists.add(t.artist.trim());
         if (t.artist_list) {
@@ -1136,7 +1151,6 @@ function showAdminForm(editData = null) {
         });
     });
 
-    const venueOptions = Object.keys(venueMap).map(v => `<option value="${v}">`).join('');
     const sortedArtists = Object.entries(artistCounts).sort((a,b) => b[1] - a[1]);
     const artistOptions = sortedArtists.map(a => `<option value="${a[0]}">`).join('');
     
@@ -1193,8 +1207,8 @@ function showAdminForm(editData = null) {
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>巡迴/活動標題</label><input type="text" name="tour_title" placeholder="例如: ASIA TOUR 2024" required value="${editData ? editData.tour_title : ''}"></div>
                 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>會場名稱</label>
-                    <input type="text" name="venue_name" list="venue-list" placeholder="例如: 台北小巨蛋 (台北)" required value="${editData ? editData.venue_name : ''}" oninput="const coords = ${JSON.stringify(venueMap).replace(/"/g, '&quot;')}[this.value]; if(coords) document.querySelector('input[name=&quot;lat_lng&quot;]').value = coords;">
+                    <label>會場名稱 (從 Config 撈取)</label>
+                    <input type="text" name="venue_name" list="venue-list" placeholder="例如: 台北小巨蛋" required value="${editData ? editData.venue_name : ''}" oninput="const coords = ${JSON.stringify(venueMap).replace(/"/g, '&quot;')}[this.value]; if(coords) document.querySelector('input[name=&quot;lat_lng&quot;]').value = coords;">
                     <datalist id="venue-list">${venueOptions}</datalist>
                 </div>
 

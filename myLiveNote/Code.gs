@@ -24,6 +24,11 @@ function doGet(e) {
       return response(publicUsers);
     }
 
+    // 模式 1.2: 取得場地設定 (用於編輯表單 Autocomplete)
+    if (action === 'getVenues') {
+      return response(getVenuesConfig());
+    }
+
     // 模式 1.5: 驗證登入 (用於前端解鎖)
     if (action === 'login') {
       const pass = e.parameter.p;
@@ -141,6 +146,18 @@ function getSheetByName(name) {
 
 function getUsersConfig() {
   const sheet = getSheetByName(CONFIG_SHEET);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  const headers = data.shift();
+  return data.map(row => {
+    let obj = {};
+    headers.forEach((h, i) => obj[h] = row[i]);
+    return obj;
+  });
+}
+
+function getVenuesConfig() {
+  const sheet = getSheetByName('venue_config');
   if (!sheet) return [];
   const data = sheet.getDataRange().getValues();
   const headers = data.shift();

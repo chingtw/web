@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#C5A489">
-    <title>LiveNote - 参戦者ポータル</title>
+    <title>NO LIVE NO LIFE - 参戦者ポータル</title>
     <!-- 引入所有與 index.html 相同的資源 -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path fill='%23C5A489' d='M2 8a2 2 0 0 1 2-2h24a2 2 0 0 1 2 2v4a3 3 0 0 0 0 6v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z'/><line x1='22' y1='6' x2='22' y2='26' stroke='%23000' stroke-width='1.5' stroke-dasharray='2,1.5'/></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
@@ -13,6 +13,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
     
     <style>
         /* Portal Overlay 專屬樣式 (與主站風格統一) */
@@ -39,6 +40,38 @@
         .user-avatar { width: 90px; height: 90px; border-radius: 50%; background: #111; margin: 0 auto 1.5rem; border: 2px solid #333; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .user-name { font-family: 'Bebas Neue'; font-size: 2rem; color: #eee; }
+        .user-badge {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 3px 12px;
+            font-family: 'Bebas Neue';
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            border-radius: 2px;
+            color: #444;
+            border: 1px solid #222;
+            transition: all 0.3s ease;
+        }
+        .user-card:hover .user-badge {
+            color: var(--text-accent);
+            border-color: var(--text-accent);
+            background: rgba(197, 164, 137, 0.05);
+        }
+        .portal-subtitle {
+            color: #555;
+            font-family: 'Bebas Neue';
+            letter-spacing: 4px;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+        }
+        .portal-subtitle span {
+            font-family: 'Noto Sans TC';
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            margin-left: 10px;
+            opacity: 0.6;
+        }
         
         /* Quick Switcher Floating UI (右下角) */
         .quick-switch-container {
@@ -156,7 +189,7 @@
         <div class="portal-content">
             <div id="portal-logo" class="dynamic-logo-container circle" style="margin: 0 auto 2rem; width:120px; height:120px;"></div>
             <h1 class="portal-title">LIVE NOTE</h1>
-            <p style="color:#777; font-family:'Noto Sans TC'; letter-spacing:3px; font-size:0.9rem;">SELECT ACCESS PASS / 参戦者を選択してください</p>
+            <p class="portal-subtitle">SELECT ACCESS PASS <span>/ 参戦者を選択してください</span></p>
             <div id="user-list" class="user-grid">
                 <p style="color:#333; grid-column: 1/-1;">Loading Access Passes...</p>
             </div>
@@ -245,7 +278,7 @@
         <div class="menu-body"><div id="menu-content"></div><div id="menu-nav" class="menu-nav"></div></div>
         <div class="menu-footer" style="padding: 1rem 2rem; border-top: 1px solid #111; text-align: right; display: flex; justify-content: space-between; align-items: center;">
             <button id="admin-add-btn" class="hidden" onclick="showAdminForm()" style="background:var(--text-accent); color:black; border:none; padding:5px 15px; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:1rem; letter-spacing:1px;">+ ADD TICKET</button>
-            <span id="admin-entry-text" onclick="openLogin()" style="color: #222; font-size: 0.7rem; cursor: pointer; font-family: 'Bebas Neue'; letter-spacing: 1px; margin-left: auto;">Admin Access</span>
+            <span id="admin-entry-text" onclick="openLogin()" style="font-size: 0.7rem; cursor: pointer; font-family: 'Bebas Neue'; letter-spacing: 1px; margin-left: auto;">Admin Access</span>
         </div>
     </div>
 
@@ -258,6 +291,15 @@
 
     <script src="script.js"></script>
     <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW Registered!', reg))
+                    .catch(err => console.log('SW Reg error:', err));
+            });
+        }
+
         const overlay = document.getElementById('portal-overlay');
         const userList = document.getElementById('user-list');
         const quickUserMenu = document.getElementById('quick-user-menu');
@@ -312,7 +354,7 @@
                     card.innerHTML = `
                         <div class="user-avatar">${u.avatar_url ? `<img src="${u.avatar_url}">` : '<i data-lucide="user" style="color:#444; width:40px; height:40px;"></i>'}</div>
                         <div class="user-name">${u.display_name}</div>
-                        <div class="user-badge">${u.isMaster ? 'OWNER' : 'GUEST PASS'}</div>
+                        <div class="user-badge">${u.isMaster ? 'MASTER PASS' : 'GUEST PASS'}</div>
                     `;
                     userList.appendChild(card);
 
