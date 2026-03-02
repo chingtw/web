@@ -1,4 +1,4 @@
-# LiveNote - 個人演唱會參戰紀錄系統 (v3.0)
+# LiveNote - 個人演唱會參戰紀錄系統 (v4.0)
 
 LiveNote 是一個專為音樂愛好者設計的個人演唱會（Live）參戰紀錄 Web App。透過 Google Sheets 作為資料庫，結合 Google Apps Script (GAS) 提供後端 API，實現資料的持久化儲存、多使用者管理與智慧化的輸入體驗。
 
@@ -22,7 +22,7 @@ LiveNote 是一個專為音樂愛好者設計的個人演唱會（Live）參戰�
 - **📊 深度數據統計**：分析藝人與場館排行，點擊項目可即時展開該分類下的所有參戰歷史。
 - **🗺️ 全球參戰地圖**：整合 Leaflet，自動標記足跡，支援點擊地圖標記查看該場地所有公演紀錄。
 
-## 🛠️ 技術棧
+## 🛠️ Tools
 
 - **Frontend**: 
   - HTML5 / CSS3 (Vanilla CSS + CSS Variables)
@@ -70,4 +70,5 @@ myLiveNote/
 ```
 
 ---
+
 Developed by **CHING**
