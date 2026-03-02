@@ -951,7 +951,9 @@ window.openDetail = function(id) {
         <div class="modal-flipper">
             <!-- 正面：詳細資訊 -->
             <div class="modal-front">
-                <div class="modal-hero-img ${!hasHeroImg ? 'no-img' : ''}" style="${hasHeroImg ? `background-image: url('${rawT.images}')` : 'height: 60px;'}"></div>
+                <div class="modal-hero-img ${!hasHeroImg ? 'no-img' : ''}" style="${hasHeroImg ? `background-image: url('${rawT.images}')` : 'height: 60px;'}">
+                    <div id="modal-admin-tool-inner" style="position: absolute; top: 15px; left: 20px; z-index: 101;"></div>
+                </div>
                 <div class="modal-text-content">
                     <h2 style="color:var(--text-accent); font-family:'Anton'; font-size:2.2rem;">${rawT.tour_title}</h2><h3 style="color:#aaa; font-size:1.2rem; margin-top:0;">${rawT.artist}</h3>
                     ${rawT.artist_list ? `<div style="margin:1rem 0; background:#1a1a1a; padding:15px; border-left:3px solid var(--text-accent);"><strong style="color:var(--text-accent);">出演者</strong><br>${rawT.artist_list}</div>` : ''}
@@ -1004,7 +1006,7 @@ window.openDetail = function(id) {
         ` : ''}
     `;
     // 更新左上角 Admin 工具 (鎖頭或編輯按鈕)
-    const adminTool = document.getElementById('modal-admin-tool');
+    const adminTool = document.getElementById('modal-admin-tool-inner');
     if (adminTool) {
         if (adminPassword) {
             adminTool.innerHTML = `
@@ -1047,7 +1049,7 @@ window.closeModal = () => {
     modal.classList.add('hidden');
     document.getElementById('login-modal').classList.add('hidden');
     document.body.classList.remove('login-open'); // 關閉時移除類別
-    const adminTool = document.getElementById('modal-admin-tool');
+    const adminTool = document.getElementById('modal-admin-tool-inner');
     if (adminTool) adminTool.innerHTML = ''; // 清除 Admin 工具
     toggleBodyScroll(false);
 };
@@ -1117,7 +1119,7 @@ window.checkLogin = async () => {
 
 function showAdminForm(editData = null) {
     // 進入編輯模式時，隱藏左上角的工具按鈕 (EDIT 按鈕或鎖頭)
-    const adminTool = document.getElementById('modal-admin-tool');
+    const adminTool = document.getElementById('modal-admin-tool-inner');
     if (adminTool) adminTool.innerHTML = '';
 
     // 如果側邊選單是開啟狀態，則關閉它，避免擋住表單

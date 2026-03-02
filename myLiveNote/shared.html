@@ -15,6 +15,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     
     <style>
         /* Portal Overlay 專屬樣式 (與主站風格統一) */
@@ -33,10 +36,17 @@
             -webkit-overflow-scrolling: touch; /* iOS 流暢滑動 */
         }
         #portal-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-        .portal-content { text-align: center; max-width: 1000px; width: 100%; animation: fadeIn 1s ease; }
-        .portal-title { font-family: 'Bebas Neue'; font-size: 4.5rem; color: var(--text-accent); letter-spacing: 5px; margin-bottom: 0.5rem; }
+        .portal-content { text-align: center; max-width: 1000px; width: 100%; }
+        .portal-title { 
+            font-family: 'Bebas Neue'; font-size: 4.5rem; color: var(--text-accent); letter-spacing: 5px; margin-bottom: 0.5rem; 
+            animation: fadeInDown 1s ease both;
+        }
         .user-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-top: 3rem; }
-        .user-card { background: rgba(20, 20, 20, 0.8); border: 1px solid #222; padding: 30px; border-radius: 12px; cursor: pointer; transition: all 0.4s ease; backdrop-filter: blur(10px); }
+        .user-card { 
+            background: rgba(20, 20, 20, 0.8); border: 1px solid #222; padding: 30px; border-radius: 12px; cursor: pointer; transition: all 0.4s ease; backdrop-filter: blur(10px); 
+            opacity: 0;
+            animation: fadeInUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+        }
         .user-card:hover { transform: translateY(-12px); border-color: var(--text-accent); }
         .user-avatar { width: 90px; height: 90px; border-radius: 50%; background: #111; margin: 0 auto 1.5rem; border: 2px solid #333; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -65,6 +75,7 @@
             font-size: 0.9rem;
             margin-bottom: 2rem;
             text-transform: uppercase;
+            animation: fadeIn 1s ease 0.3s both;
         }
         .portal-subtitle span {
             font-family: 'Noto Sans TC';
@@ -84,6 +95,7 @@
             flex-direction: column;
             align-items: flex-end;
             gap: 10px;
+            transition: all 0.3s ease; /* 新增過渡效果 */
         }
 
         #quick-user-menu {
@@ -170,6 +182,13 @@
         /* 確保置頂按鈕在遮罩之上 */
         #scroll-top-btn { z-index: 9999; }
 
+        /* 當開啟詳細頁面(光箱)時，隱藏多使用者切換按鈕，避免擋住翻轉按鈕 */
+        body.no-scroll .quick-switch-container {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
         /* 手機版適應：改為 2 欄排版 */
         @media (max-width: 600px) {
             #portal-overlay { padding: 40px 15px; }
@@ -181,6 +200,8 @@
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="shared-mode">
@@ -342,12 +363,14 @@
                     ...filteredUsers
                 ];
                 
-                usersWithMaster.forEach(u => {
+                usersWithMaster.forEach((u, index) => {
                     const isCurrent = (u.username === userParam) || (u.isMaster && !userParam);
                     
                     // 1. 入口頁卡片
                     const card = document.createElement('div');
                     card.className = 'user-card';
+                    // 加入交錯延遲效果，從 0.5s 開始 (等標題動畫)，每張間隔 0.15s
+                    card.style.animationDelay = `${0.5 + index * 0.15}s`;
                     card.onclick = () => {
                         if (u.isMaster) window.location.href = 'index.html';
                         else window.location.href = `shared.html?u=${u.username}`;
