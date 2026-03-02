@@ -33,8 +33,16 @@ const modal = document.getElementById('modal');
 const modalBody = document.getElementById('modal-body');
 
 document.addEventListener('DOMContentLoaded', () => { 
-    fetchData(); 
-    fetchVenues(); // 新增：預載場地配置
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u');
+    const isSharedPortal = window.location.pathname.includes('shared.html') && !currentUser;
+
+    // 如果是在入口選擇頁面，跳過資料抓取，節省效能
+    if (!isSharedPortal) {
+        fetchData(); 
+        fetchVenues(); 
+    }
+    
     setupTabs(); 
     setupYearScroll();
     setupStatsSwitcher();
