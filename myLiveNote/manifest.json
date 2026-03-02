@@ -1,12 +1,15 @@
 {
+  "id": "mylivenote-ching",
   "name": "NO LIVE NO LIFE - ライブ参戦記録",
   "short_name": "LiveNote",
   "description": "LiveNote Records - ライブ参戦記録ポータル",
-  "start_url": "shared.html",
+  "start_url": "./shared.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#C5A489",
   "orientation": "portrait",
+  "categories": ["lifestyle", "entertainment"],
   "icons": [
     {
       "src": "https://img.icons8.com/ios-filled/512/C5A489/ticket.png",
@@ -17,7 +20,8 @@
     {
       "src": "https://img.icons8.com/ios-filled/192/C5A489/ticket.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
