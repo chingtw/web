@@ -206,23 +206,30 @@
         /* PWA Install Banner */
         .pwa-install-banner {
             position: fixed;
-            bottom: 30px;
+            bottom: 20px; /* 下移一點 */
             left: 50%;
             transform: translateX(-50%);
             background: rgba(15, 15, 15, 0.9);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(197, 164, 137, 0.3);
-            padding: 15px 25px;
+            padding: 12px 20px;
             border-radius: 16px;
-            z-index: 10001;
+            z-index: 100001;
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.6);
             animation: fadeInUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) both;
-            max-width: 90vw;
-            width: 420px;
+            max-width: 85vw; /* 縮小一點寬度，避免擋到右邊按鈕 */
+            width: 380px;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+        }
+        /* 滑動時縮下去隱藏的類別 */
+        .pwa-install-banner.hidden-scroll {
+            transform: translate(-50%, 150%);
+            opacity: 0;
+            pointer-events: none;
         }
         .pwa-install-banner.hidden { display: none !important; }
         .pwa-icon { color: var(--text-accent); font-size: 24px; flex-shrink: 0; }
@@ -362,10 +369,10 @@
     <div id="pwa-banner" class="pwa-install-banner hidden">
         <div class="pwa-icon"><i data-lucide="download-cloud"></i></div>
         <div class="pwa-info">
-            <h4>Install LiveNote</h4>
-            <p>Add to Home Screen for a full experience.</p>
+            <h4>安裝 LiveNote</h4>
+            <p>將此應用程式加入主畫面，獲得完整使用體驗。</p>
         </div>
-        <button id="pwa-install-btn" class="pwa-btn">INSTALL</button>
+        <button id="pwa-install-btn" class="pwa-btn">立即安裝</button>
         <div class="pwa-close" onclick="dismissPwaBanner()">&times;</div>
     </div>
 
@@ -404,7 +411,7 @@
                 deferredPrompt = null;
             } else {
                 // 如果瀏覽器不支援直接觸發，給予提示
-                alert('請點擊瀏覽器選單中的「安裝應用程式」或「加入主畫面」。\nPlease use your browser menu to "Install" or "Add to Home Screen".');
+                alert('請點擊瀏覽器選單中的「安裝應用程式」或「加入主畫面」。');
             }
         });
 
@@ -418,12 +425,29 @@
         if (isIOS && !isStandalone && !isDismissed) {
             setTimeout(() => {
                 const pwaDesc = pwaBanner.querySelector('p');
-                pwaDesc.textContent = 'Tap Share and "Add to Home Screen"';
+                pwaDesc.textContent = '點擊「分享」並選擇「加入主畫面」';
                 installBtn.style.display = 'none'; // iOS 無法程式觸發，隱藏按鈕改由文字提示
                 pwaBanner.classList.remove('hidden');
                 lucide.createIcons();
             }, 4000);
         }
+
+        // 捲動隱藏邏輯
+        let scrollTimer = null;
+        window.addEventListener('scroll', () => {
+            if (pwaBanner.classList.contains('hidden') || isDismissed) return;
+
+            // 開始捲動時隱藏
+            pwaBanner.classList.add('hidden-scroll');
+
+            // 清除舊的計時器
+            clearTimeout(scrollTimer);
+
+            // 閒置10 秒後重新顯示
+            scrollTimer = setTimeout(() => {
+                pwaBanner.classList.remove('hidden-scroll');
+            }, 10000);
+        }, { passive: true });
 
         // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
