@@ -202,6 +202,53 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* PWA Install Banner */
+        .pwa-install-banner {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 15, 15, 0.9);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(197, 164, 137, 0.3);
+            padding: 15px 25px;
+            border-radius: 16px;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            animation: fadeInUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) both;
+            max-width: 90vw;
+            width: 420px;
+        }
+        .pwa-install-banner.hidden { display: none !important; }
+        .pwa-icon { color: var(--text-accent); font-size: 24px; flex-shrink: 0; }
+        .pwa-info { flex: 1; }
+        .pwa-info h4 { 
+            font-family: 'Bebas Neue'; color: var(--text-accent); font-size: 1.3rem; 
+            margin: 0; letter-spacing: 2px; line-height: 1;
+        }
+        .pwa-info p { 
+            color: #999; font-size: 0.75rem; margin: 4px 0 0; 
+            font-family: 'Noto Sans TC'; letter-spacing: 0.5px;
+        }
+        .pwa-btn {
+            background: var(--text-accent); color: #000; border: none; padding: 8px 18px;
+            border-radius: 6px; font-family: 'Bebas Neue'; font-size: 1rem; cursor: pointer;
+            white-space: nowrap; transition: all 0.3s; letter-spacing: 1px;
+        }
+        .pwa-btn:hover { background: #d6b89f; transform: scale(1.05); }
+        .pwa-close { color: #444; cursor: pointer; font-size: 1.5rem; line-height: 1; margin-left: 5px; transition: color 0.3s; }
+        .pwa-close:hover { color: #888; }
+
+        @media (max-width: 600px) {
+            .pwa-install-banner { width: calc(100% - 30px); bottom: 20px; padding: 12px 18px; gap: 12px; }
+            .pwa-info h4 { font-size: 1.1rem; }
+            .pwa-info p { font-size: 0.7rem; }
+        }
     </style>
 </head>
 <body class="shared-mode">
@@ -311,8 +358,73 @@
         <div class="scroll-timeline-track bottom"></div>
     </div>
 
+    <!-- PWA Install Prompt -->
+    <div id="pwa-banner" class="pwa-install-banner hidden">
+        <div class="pwa-icon"><i data-lucide="download-cloud"></i></div>
+        <div class="pwa-info">
+            <h4>Install LiveNote</h4>
+            <p>Add to Home Screen for a full experience.</p>
+        </div>
+        <button id="pwa-install-btn" class="pwa-btn">INSTALL</button>
+        <div class="pwa-close" onclick="dismissPwaBanner()">&times;</div>
+    </div>
+
     <script src="script.js"></script>
     <script>
+        // PWA Install Logic
+        let deferredPrompt;
+        const pwaBanner = document.getElementById('pwa-banner');
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        // 偵測是否已是 Web App 模式 (Standalone)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        const isDismissed = localStorage.getItem('pwa-dismissed') === 'true';
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // 防止瀏覽器自動顯示預設提示
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // 只有在非 App 模式且沒被關閉過時才顯示
+            if (!isStandalone && !isDismissed) {
+                setTimeout(() => {
+                    pwaBanner.classList.remove('hidden');
+                    lucide.createIcons();
+                }, 3000); // 延遲 3 秒顯示，避免干擾入口動畫
+            }
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    pwaBanner.classList.add('hidden');
+                }
+                deferredPrompt = null;
+            } else {
+                // 如果瀏覽器不支援直接觸發，給予提示
+                alert('請點擊瀏覽器選單中的「安裝應用程式」或「加入主畫面」。\nPlease use your browser menu to "Install" or "Add to Home Screen".');
+            }
+        });
+
+        window.dismissPwaBanner = () => {
+            pwaBanner.classList.add('hidden');
+            localStorage.setItem('pwa-dismissed', 'true');
+        };
+
+        // iOS 額外提示判定 (iOS 不支援 beforeinstallprompt)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS && !isStandalone && !isDismissed) {
+            setTimeout(() => {
+                const pwaDesc = pwaBanner.querySelector('p');
+                pwaDesc.textContent = 'Tap Share and "Add to Home Screen"';
+                installBtn.style.display = 'none'; // iOS 無法程式觸發，隱藏按鈕改由文字提示
+                pwaBanner.classList.remove('hidden');
+                lucide.createIcons();
+            }, 4000);
+        }
+
         // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
