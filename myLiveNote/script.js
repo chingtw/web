@@ -1130,12 +1130,37 @@ function showAdminForm(editData = null) {
     // 重置翻轉狀態，避免開啟表單時是翻轉的
     modal.querySelector('.modal-content').classList.remove('flipped');
     
-    // 1. 處理場地清單 (來自 venueConfig)
-    const venueMap = {};
-    venueConfig.forEach(v => {
-        if (v.venue_name && v.lat_lng) venueMap[v.venue_name] = v.lat_lng;
+    // --- 處理場地分類邏輯 ---
+    const processedVenues = venueConfig.map(v => {
+        let region = v.region || 'OTHER';
+        if (!v.region && v.lat_lng) {
+            const ln = parseFloat(v.lat_lng.split(',')[1]);
+            if (ln > 128) region = 'JP';
+            else if (ln > 118 && ln < 125) region = 'TW';
+        }
+        return { ...v, _region: region };
     });
-    const venueOptions = Object.keys(venueMap).map(v => `<option value="${v}">`).join('');
+
+    // 產生 DataList 的 Helper
+    window.updateVenueList = (region = 'ALL') => {
+        const dl = document.getElementById('venue-list');
+        const filtered = region === 'ALL' ? processedVenues : processedVenues.filter(v => v._region === region);
+        dl.innerHTML = filtered.map(v => `<option value="${v.venue_name}">`).join('');
+        
+        // 更新按鈕狀態
+        document.querySelectorAll('.venue-cat-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.region === region);
+        });
+    };
+
+    // 場地輸入時自動帶入座標的 Helper
+    window.onVenueInputChange = (val) => {
+        const v = processedVenues.find(x => x.venue_name === val);
+        if (v && v.lat_lng) {
+            const latLngInput = document.querySelector('input[name="lat_lng"]');
+            if (latLngInput) latLngInput.value = v.lat_lng;
+        }
+    };
 
     // 2. 處理藝人建議 (仍來自 allTickets 統計)
     const artistCounts = {};
@@ -1209,9 +1234,15 @@ function showAdminForm(editData = null) {
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>巡迴/活動標題</label><input type="text" name="tour_title" placeholder="例如: ASIA TOUR 2024" required value="${editData ? editData.tour_title : ''}"></div>
                 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>會場名稱 (從 Config 撈取)</label>
-                    <input type="text" name="venue_name" list="venue-list" placeholder="例如: 台北小巨蛋" required value="${editData ? editData.venue_name : ''}" oninput="const coords = ${JSON.stringify(venueMap).replace(/"/g, '&quot;')}[this.value]; if(coords) document.querySelector('input[name=&quot;lat_lng&quot;]').value = coords;">
-                    <datalist id="venue-list">${venueOptions}</datalist>
+                    <label>會場名稱</label>
+                    <div class="venue-cat-container">
+                        <div class="venue-cat-btn active" data-region="ALL" onclick="updateVenueList('ALL')">ALL</div>
+                        <div class="venue-cat-btn" data-region="TW" onclick="updateVenueList('TW')">TAIWAN</div>
+                        <div class="venue-cat-btn" data-region="JP" onclick="updateVenueList('JP')">JAPAN</div>
+                        <div class="venue-cat-btn" data-region="OTHER" onclick="updateVenueList('OTHER')">OTHER</div>
+                    </div>
+                    <input type="text" name="venue_name" list="venue-list" placeholder="例如: 台北巨蛋 (台北)" required value="${editData ? editData.venue_name : ''}" oninput="onVenueInputChange(this.value)">
+                    <datalist id="venue-list"></datalist>
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>經緯度 (Map Coords)</label><input type="text" name="lat_lng" placeholder="例如: 25.051, 121.550" value="${editData ? (editData.lat_lng || '') : ''}"></div>
@@ -1254,6 +1285,9 @@ function showAdminForm(editData = null) {
     `;
     modal.classList.remove('hidden');
     toggleBodyScroll(true);
+    
+    // 初始化場地清單顯示為 ALL
+    updateVenueList('ALL');
 }
 
 window.handleDelete = async function(id) {
