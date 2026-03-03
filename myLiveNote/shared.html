@@ -215,7 +215,7 @@
             border: 1px solid rgba(197, 164, 137, 0.35);
             padding: 10px 16px;
             border-radius: 12px;
-            z-index: 6500; /* 降至選單 (7100) 與 光箱 (6000) 附近，但確保在選單之下 */
+            z-index: 100000; /* 提升至入口遮罩 (99999) 之上 */
             display: flex;
             align-items: center;
             gap: 12px;
@@ -223,18 +223,19 @@
             animation: fadeInUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) both;
             max-width: 95vw;
             width: 380px;
-            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
             box-sizing: border-box;
+            pointer-events: auto;
         }
         /* 滑動時縮下去隱藏的類別 */
         .pwa-install-banner.hidden-scroll {
-            transform: translate(-50%, 180%);
+            transform: translate(-50%, 250%); /* 縮得更深一點 */
             opacity: 0;
             pointer-events: none;
         }
-        /* 當開啟管理選單或登入光箱時，徹底移除 PWA banner */
+        /* 當開啟管理選單或登入光箱時，徹底移除 PWA banner，避免干擾 */
         body.login-open .pwa-install-banner,
-        #side-menu.open ~ .pwa-install-banner {
+        body.no-scroll .pwa-install-banner {
             display: none !important;
         }
         .pwa-install-banner.hidden { display: none !important; }
@@ -449,26 +450,33 @@
             }, 4000);
         }
 
-        // 捲動隱藏邏輯 (優化版：支援多個容器)
+        // 捲動/滑動隱藏邏輯 (強化版：支援 touch 與多個容器)
         let scrollTimer = null;
         const handleScrollHide = () => {
             if (pwaBanner.classList.contains('hidden') || isDismissed) return;
 
-            // 立刻隱藏
+            // 立刻隱藏 (加上 CSS 動態類別)
             pwaBanner.classList.add('hidden-scroll');
 
             // 清除舊的計時器
             clearTimeout(scrollTimer);
 
-            // 停止捲動後 3 秒重新顯示 (比 10 秒更積極，但也確保滑動時不干擾)
+            // 停止捲動後重新顯示
             scrollTimer = setTimeout(() => {
                 pwaBanner.classList.remove('hidden-scroll');
             }, 3000);
         };
 
+        // 監聽 Window (主要列表/Stats)
         window.addEventListener('scroll', handleScrollHide, { passive: true });
-        // 額外監聽入口頁與側邊選單內容的捲動
-        document.getElementById('portal-overlay').addEventListener('scroll', handleScrollHide, { passive: true });
+        window.addEventListener('touchmove', handleScrollHide, { passive: true });
+        
+        // 監聽入口頁 (Portal)
+        const portalOverlay = document.getElementById('portal-overlay');
+        portalOverlay.addEventListener('scroll', handleScrollHide, { passive: true });
+        portalOverlay.addEventListener('touchmove', handleScrollHide, { passive: true });
+        
+        // 監聽側邊選單 (雖然選單開啟時 Banner 會 display:none，但保留監聽以防萬一)
         document.getElementById('menu-content').addEventListener('scroll', handleScrollHide, { passive: true });
 
         // PWA Service Worker Registration
