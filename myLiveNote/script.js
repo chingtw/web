@@ -1,5 +1,5 @@
 // CONFIGURATION
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbz8E_eeWl8iTQ4GWZ2Zdx8psWyZdm6fwq2QuLeM6N-3_iaEYtwXRWubrf1BIX8uXo2S/exec'
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwOD7MlCQbDTOu6SFZ-pNWeNyCFga0nKVvme6WM-X10HUtQMd-dxjR-gEyTJnBdN50/exec'
 
 
 // MOCK DATA
