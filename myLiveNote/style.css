@@ -336,6 +336,58 @@ section.active { display: block; }
 .tag-chip:active {
     transform: scale(0.95);
 }
+
+.upload-btn {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: var(--text-accent);
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+    height: 42px; /* Match standard input height */
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.upload-btn:hover {
+    background: var(--text-accent);
+    color: #000;
+    border-color: var(--text-accent);
+    box-shadow: 0 0 10px rgba(197, 164, 137, 0.2);
+}
+
+.upload-btn:active {
+    transform: scale(0.95);
+}
+
+.upload-btn.loading {
+    opacity: 0.7;
+    cursor: wait;
+    pointer-events: none;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.upload-btn i {
+    width: 16px;
+    height: 16px;
+}
+
 .year-filter-bar:active {
     cursor: grabbing;
 }

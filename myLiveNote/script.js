@@ -1230,13 +1230,13 @@ function showAdminForm(editData = null) {
                 
                 <div style="display:flex; flex-direction:column; gap:5px;">
                     <label>主要藝人 (Artist)</label>
-                    <input type="text" name="artist" list="artist-list" placeholder="專場請填此 (FES可留空)" value="${editData ? editData.artist : ''}">
+                    <input type="text" name="artist" list="artist-list" placeholder="單一藝人專場請填此 (FES可留空)" value="${editData ? editData.artist : ''}">
                     <datalist id="artist-list">${artistOptions}</datalist>
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
                     <label>出演者名單 (用、隔開)</label>
-                    <input type="text" name="artist_list" placeholder="FES 或拼盤請填此" value="${editData ? (editData.artist_list || '') : ''}">
+                    <input type="text" name="artist_list" placeholder="FES、拼盤請填此;ex: LiSA、May'n" value="${editData ? (editData.artist_list || '') : ''}">
                     <div class="quick-add-tags">${quickTags}</div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>巡迴/活動標題</label><input type="text" name="tour_title" placeholder="例如: ASIA TOUR 2024" required value="${editData ? editData.tour_title : ''}"></div>
@@ -1264,13 +1264,13 @@ function showAdminForm(editData = null) {
                 </div>
                 
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>座席資訊</label><input type="text" name="seat_info" placeholder="例如: 特區 B2排 12號" value="${editData ? (editData.seat_info || '') : ''}"></div>
-                <div style="display:flex; flex-direction:column; gap:5px;"><label>歌單&紀錄</label><textarea name="setlist" placeholder="請輸入歌單..." rows="5">${editData ? (editData.setlist || '') : ''}</textarea></div>
+                <div style="display:flex; flex-direction:column; gap:5px;"><label>歌單&紀錄</label><textarea name="setlist" placeholder="請輸入..." rows="5">${editData ? (editData.setlist || '') : ''}</textarea></div>
                 
                 <!-- 封面圖片上傳 -->
-                <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>封面圖片 (Images)</label>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <input type="text" name="images" placeholder="https://..." value="${editData ? (editData.images || '') : ''}" style="flex:1;">
+                <div style="display:flex; flex-direction:column; gap:8px; background: #0a0a0a; padding: 12px; border-radius: 8px; border: 1px solid #222;">
+                    <label style="font-size: 0.8rem; letter-spacing: 1px; color: var(--text-accent); font-family: 'Bebas Neue';">COVER IMAGE / 封面圖片</label>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
+                        <input type="text" name="images" placeholder="https://..." value="${editData ? (editData.images || '') : ''}" style="flex:1; min-width: 150px; border-color: #333; background: #000;">
                         <input type="file" id="file-images" accept="image/*" style="display:none;" onchange="handleFileUpload(this, 'images')">
                         <button type="button" onclick="document.getElementById('file-images').click()" class="upload-btn">
                             <i data-lucide="image-plus"></i> <span>UPLOAD</span>
@@ -1279,10 +1279,10 @@ function showAdminForm(editData = null) {
                 </div>
 
                 <!-- 票券圖片上傳 -->
-                <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>票券圖片 (Ticket Stub)</label>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <input type="text" name="ticket_image" placeholder="https://..." value="${editData ? (editData.ticket_image || '') : ''}" style="flex:1;">
+                <div style="display:flex; flex-direction:column; gap:8px; background: #0a0a0a; padding: 12px; border-radius: 8px; border: 1px solid #222;">
+                    <label style="font-size: 0.8rem; letter-spacing: 1px; color: var(--text-accent); font-family: 'Bebas Neue';">TICKET STUB / 票券圖片</label>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
+                        <input type="text" name="ticket_image" placeholder="https://..." value="${editData ? (editData.ticket_image || '') : ''}" style="flex:1; min-width: 150px; border-color: #333; background: #000;">
                         <input type="file" id="file-ticket" accept="image/*" style="display:none;" onchange="handleFileUpload(this, 'ticket_image')">
                         <button type="button" onclick="document.getElementById('file-ticket').click()" class="upload-btn">
                             <i data-lucide="ticket"></i> <span>UPLOAD</span>
@@ -1315,6 +1315,7 @@ function showAdminForm(editData = null) {
     `;
     modal.classList.remove('hidden');
     toggleBodyScroll(true);
+    lucide.createIcons();
     
     // 初始化場地清單顯示為 ALL
     updateVenueList('ALL');
@@ -1452,8 +1453,14 @@ window.handleFileUpload = async function(fileInput, targetFieldName) {
         originalBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:14px;"></i> UPLOADING...';
         lucide.createIcons();
 
+        // 決定上傳路徑
+        let uploadPath = `LiveNote/user_img/${currentUser}`;
+        if (targetFieldName === 'ticket_image') {
+            uploadPath = `LiveNote/ticket/${currentUser}`;
+        }
+
         // 1. 向 GAS 請求預簽名網址
-        const gasUrl = `${GAS_API_URL}?action=getPresignedUrl&u=${currentUser}&fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`;
+        const gasUrl = `${GAS_API_URL}?action=getPresignedUrl&u=${currentUser}&fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}&path=${encodeURIComponent(uploadPath)}`;
         const res = await fetch(gasUrl);
         const result = await res.json();
 
