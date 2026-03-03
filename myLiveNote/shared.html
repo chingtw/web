@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#C5A489">
     <title>NO LIVE NO LIFE - 参戦者ポータル</title>
-    <!-- 引入所有與 index.html 相同的資源 -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path fill='%23C5A489' d='M2 9a2 2 0 0 1 2-2h24a2 2 0 0 1 2 2v3a3 3 0 0 0 0 6v3a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-3a3 3 0 0 0 0-8V9z'/><line x1='22' y1='7' x2='22' y2='25' stroke='%23000' stroke-width='1' stroke-dasharray='1.5,1.5' opacity='0.5'/><path fill='%23000' opacity='0.3' d='M10 12l1.2 2.4 2.6.4-1.9 1.8.4 2.6-2.3-1.2-2.3 1.2.4-2.6-1.9-1.8 2.6-.4z'/></svg>">
     <link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/180/C5A489/ticket.png">
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
@@ -20,7 +19,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     
     <style>
-        /* Portal Overlay 專屬樣式 (與主站風格統一) */
+        /* Portal Overlay 專屬樣式 */
         #portal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -63,11 +62,6 @@
             border: 1px solid #222;
             transition: all 0.3s ease;
         }
-        .user-card:hover .user-badge {
-            color: var(--text-accent);
-            border-color: var(--text-accent);
-            background: rgba(197, 164, 137, 0.05);
-        }
         .portal-subtitle {
             color: #555;
             font-family: 'Bebas Neue';
@@ -77,15 +71,8 @@
             text-transform: uppercase;
             animation: fadeIn 1s ease 0.3s both;
         }
-        .portal-subtitle span {
-            font-family: 'Noto Sans TC';
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-            margin-left: 10px;
-            opacity: 0.6;
-        }
         
-        /* Quick Switcher Floating UI (右下角) */
+        /* Quick Switcher (右下角) */
         .quick-switch-container {
             position: fixed;
             bottom: 85px;
@@ -125,8 +112,8 @@
 
         #scroll-top-btn { z-index: 100006; }
 
-        /* 當在入口頁 (portal-active) 或詳細頁面 (no-scroll) 時，隱藏切換按鈕 */
-        body.no-scroll .quick-switch-container,
+        /* 隱藏邏輯：當在入口頁或彈窗時 */
+        body.no-scroll:not(.portal-active) .quick-switch-container,
         body.portal-active .quick-switch-container {
             opacity: 0;
             visibility: hidden;
@@ -135,35 +122,36 @@
 
         @media (max-width: 600px) {
             #portal-overlay { padding: 40px 15px; }
-            .portal-title { font-size: 3.5rem; }
-            .user-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 2rem; }
-            .user-card { padding: 20px 10px; }
-            .user-name { font-size: 1.5rem; }
+            .portal-title { font-size: 3rem; }
+            .user-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+            .user-card { padding: 15px 10px; }
+            .user-name { font-size: 1.3rem; }
         }
 
-        /* PWA Install Banner - 終極避讓優化 */
+        /* PWA Install Banner - 終極防穿透設計 */
         .pwa-install-banner {
             position: fixed;
             bottom: 25px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(15, 15, 15, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(197, 164, 137, 0.4);
+            background: rgba(15, 15, 15, 0.98); /* 稍微調深，強化視覺實體感 */
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(197, 164, 137, 0.5);
             padding: 12px 18px;
             border-radius: 14px;
-            z-index: 100000;
+            z-index: 100000; /* 高於 Portal，低於功能按鈕 */
             display: flex;
             align-items: center;
             gap: 15px;
-            box-shadow: 0 15px 45px rgba(0,0,0,0.8);
-            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.9);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
             max-width: 90vw;
             width: 360px;
             box-sizing: border-box;
             animation: pwaSlideUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) both;
             cursor: pointer;
+            pointer-events: auto !important; /* 強制捕捉所有點擊 */
         }
 
         @keyframes pwaSlideUp {
@@ -171,27 +159,27 @@
             to { transform: translate(-50%, 0); opacity: 1; }
         }
 
-        /* 滑動時立刻躲起來 */
+        /* 滑動時立刻隱藏 */
         .pwa-install-banner.hidden-scroll {
-            transform: translate(-50%, 180%) scale(0.9);
+            transform: translate(-50%, 220%) scale(0.8);
             opacity: 0;
-            pointer-events: none;
-            transition: transform 0.1s ease !important;
+            pointer-events: none !important;
+            transition: transform 0.15s ease-in !important;
         }
 
-        /* 僅在側邊選單或編輯彈窗開啟時隱藏 */
+        /* 側邊選單開啟時物理消失 */
         body.no-scroll:not(.portal-active) .pwa-install-banner,
         body.menu-open .pwa-install-banner {
             display: none !important;
         }
 
         .pwa-install-banner.hidden { display: none !important; }
-        .pwa-icon { color: var(--text-accent); display: flex; align-items: center; font-size: 20px; }
+        .pwa-icon { color: var(--text-accent); display: flex; align-items: center; font-size: 22px; }
         .pwa-info { flex: 1; min-width: 0; }
         .pwa-info h4 { font-family: 'Bebas Neue'; color: var(--text-accent); font-size: 1.1rem; margin: 0; letter-spacing: 1px; }
         .pwa-info p { color: #888; font-size: 0.75rem; margin: 2px 0 0; font-family: 'Noto Sans TC'; }
         
-        .pwa-close { color: #555; cursor: pointer; font-size: 1.5rem; line-height: 1; margin-left: 5px; transition: color 0.3s; padding: 5px; z-index: 2; }
+        .pwa-close { color: #555; cursor: pointer; font-size: 1.5rem; line-height: 1; margin-left: 5px; transition: color 0.3s; padding: 8px; z-index: 2; }
         .pwa-close:hover { color: #fff; }
 
         @media (max-width: 600px) {
@@ -202,29 +190,26 @@
                 bottom: 25px; 
                 padding: 10px 14px; 
             }
+            .pwa-install-banner.hidden-scroll {
+                transform: translateY(220%) scale(0.8);
+                left: 15px;
+            }
             @keyframes pwaSlideUp {
                 from { transform: translateY(150%); opacity: 0; }
                 to { transform: translateY(0); opacity: 1; }
             }
-            .pwa-install-banner.hidden-scroll {
-                transform: translateY(180%) scale(0.9);
-                left: 15px;
-            }
-            .pwa-info p { display: none; }
-            .pwa-info h4 { font-size: 0.95rem; }
-            
-            /* 入口頁時，避開底部的 BACK 連結 */
-            body.portal-active .pwa-install-banner { bottom: 55px; }
+            body.portal-active .pwa-install-banner { bottom: 65px; }
         }
     </style>
 </head>
 <body class="shared-mode">
 
+    <!-- PORTAL OVERLAY -->
     <div id="portal-overlay">
         <div class="portal-content">
             <div id="portal-logo" class="dynamic-logo-container circle" style="margin: 0 auto 2rem; width:120px; height:120px;"></div>
             <h1 class="portal-title">LIVE NOTE</h1>
-            <p class="portal-subtitle">SELECT ACCESS PASS <span>/ 参戦者を選択してください</span></p>
+            <p class="portal-subtitle">SELECT ACCESS PASS <span>/ 参戰者を選択してください</span></p>
             <div id="user-list" class="user-grid">
                 <p style="color:#333; grid-column: 1/-1;">Loading Access Passes...</p>
             </div>
@@ -234,6 +219,7 @@
         </div>
     </div>
 
+    <!-- MAIN RECORD SYSTEM -->
     <header>
         <div class="header-container">
             <div class="dynamic-logo-container loading" id="main-logo"></div>
@@ -265,7 +251,9 @@
             <div id="loading" class="skeleton-container"><div class="skeleton-ticket"></div><div class="skeleton-ticket"></div></div>
             <div id="ticket-container" class="ticket-list"></div>
         </section>
+        
         <section id="map-view"><div id="map"></div></section>
+        
         <section id="stats-view">
             <div class="stats-switcher">
                 <button class="switcher-btn active" data-stats="artist">ARTIST RANK</button>
@@ -286,14 +274,18 @@
         </section>
     </main>
 
+    <!-- Floating Actions -->
     <div id="quick-menu-backdrop" class="quick-menu-backdrop" onclick="toggleQuickMenu()"></div>
     <div class="quick-switch-container">
         <div id="quick-user-menu"></div>
-        <div class="quick-switch-btn" onclick="toggleQuickMenu()"><i data-lucide="users"></i></div>
+        <div class="quick-switch-btn" onclick="toggleQuickMenu()">
+            <i data-lucide="users"></i>
+        </div>
     </div>
 
     <button id="scroll-top-btn" class="scroll-top-btn"><i data-lucide="arrow-up"></i></button>
 
+    <!-- Modal & Menu -->
     <div id="modal" class="modal hidden"><div class="modal-content ticket-style-modal"><span class="close-modal" onclick="closeModal()">&times;</span><div id="modal-admin-tool" style="position: absolute; top: 15px; left: 20px; z-index: 101;"></div><div id="modal-body"></div></div></div>
     <div id="login-modal" class="modal hidden"><div class="modal-content login-box"><h2>Admin Access</h2><input type="password" id="admin-pass" placeholder="Enter Password"><button onclick="checkLogin()">Unlock</button></div></div>
     <div id="side-menu-overlay" class="menu-overlay hidden" onclick="toggleMenu()"></div>
@@ -318,13 +310,14 @@
         <div class="pwa-icon"><i data-lucide="download-cloud"></i></div>
         <div class="pwa-info">
             <h4>安裝 LiveNote</h4>
-            <p>將此應用程式加入主畫面。</p>
+            <p>點擊此處將應用程式加入主畫面。</p>
         </div>
         <div class="pwa-close" onclick="dismissPwaBanner(event)">&times;</div>
     </div>
 
     <script src="script.js"></script>
     <script>
+        // --- PWA 終極優化邏輯 ---
         (function() {
             let deferredPrompt;
             const pwaBanner = document.getElementById('pwa-banner');
@@ -346,7 +339,12 @@
                 }
             }
 
-            pwaBanner.onclick = async () => {
+            // 強力點擊攔截：確保不穿透到列表卡片或使用者卡片
+            pwaBanner.onclick = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                
                 if (deferredPrompt) {
                     deferredPrompt.prompt();
                     const { outcome } = await deferredPrompt.userChoice;
@@ -360,29 +358,45 @@
             };
 
             window.dismissPwaBanner = (e) => {
-                if (e) e.stopPropagation();
+                if (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
                 pwaBanner.classList.add('hidden');
                 sessionStorage.setItem('pwa-dismissed', 'true');
             };
 
+            // 全方位滑動/觸控隱藏邏輯
             let scrollTimer = null;
-            const handleUserActivity = () => {
+            const handleActivity = () => {
                 if (pwaBanner.classList.contains('hidden')) return;
+                
+                // 1. 瞬間隱藏 (極速過渡)
                 pwaBanner.classList.add('hidden-scroll');
+                
+                // 2. 清除計時器
                 clearTimeout(scrollTimer);
+                
+                // 3. 停止活動 2.5 秒後，且非選單模式才顯現
                 scrollTimer = setTimeout(() => {
-                    if (!document.body.classList.contains('no-scroll') || document.body.classList.contains('portal-active')) {
+                    const isMenuOpen = document.body.classList.contains('no-scroll') && !document.body.classList.contains('portal-active');
+                    if (!isMenuOpen) {
                         pwaBanner.classList.remove('hidden-scroll');
                     }
-                }, 3000);
+                }, 2500);
             };
 
-            window.addEventListener('scroll', handleUserActivity, { passive: true });
-            window.addEventListener('touchmove', handleUserActivity, { passive: true });
-            document.getElementById('portal-overlay').addEventListener('scroll', handleUserActivity, { passive: true });
-            document.getElementById('portal-overlay').addEventListener('touchmove', handleUserActivity, { passive: true });
+            // 監聽所有可能滑動的來源 (移除 touchstart 避免點擊時 Banner 跑掉導致穿透)
+            const targets = [window, document, document.getElementById('portal-overlay'), document.querySelector('main')];
+            targets.forEach(t => {
+                if (!t) return;
+                t.addEventListener('scroll', handleActivity, { passive: true });
+                t.addEventListener('touchmove', handleActivity, { passive: true });
+            });
+
+            // 確保手指在 Banner 上滑動或點擊時，不會觸發外層的隱藏邏輯
+            pwaBanner.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
+            pwaBanner.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
         })();
 
+        // --- Portal & Quick Switch ---
         const overlay = document.getElementById('portal-overlay');
         const userList = document.getElementById('user-list');
         const quickUserMenu = document.getElementById('quick-user-menu');
@@ -392,10 +406,10 @@
 
         window.toggleQuickMenu = () => {
             quickUserMenu.classList.toggle('open'); quickBackdrop.classList.toggle('open');
-            const btn = document.querySelector('.quick-switch-btn'); if (btn) btn.classList.toggle('active');
+            document.querySelector('.quick-switch-btn').classList.toggle('active');
         };
 
-        async function initPortalAndQuickSwitch() {
+        async function initPortal() {
             if (!userParam) {
                 document.body.classList.add('no-scroll');
                 document.body.classList.add('portal-active');
@@ -415,6 +429,7 @@
                 const masterData = users.find(u => u.username === 'ching') || { username: 'ching', display_name: 'CHING (MASTER)' };
                 const filteredUsers = users.filter(u => u.username !== 'ching');
                 const usersWithMaster = [{ ...masterData, display_name: 'CHING (MASTER)', isMaster: true }, ...filteredUsers];
+                
                 usersWithMaster.forEach((u, index) => {
                     const isCurrent = (u.username === userParam) || (u.isMaster && !userParam);
                     const card = document.createElement('div');
@@ -429,7 +444,6 @@
                     userList.appendChild(card);
                     const item = document.createElement('div');
                     item.className = `quick-user-item ${isCurrent ? 'active' : ''}`;
-                    item.title = u.display_name;
                     item.onclick = () => {
                         document.body.classList.remove('portal-active');
                         if (u.isMaster) window.location.href = 'index.html';
@@ -443,7 +457,7 @@
             } catch (e) { userList.innerHTML = '<p style="color:red; grid-column: 1/-1;">Error fetching users.</p>'; }
         }
         if (userParam) { overlay.classList.add('hidden'); document.body.classList.remove('portal-active'); }
-        initPortalAndQuickSwitch();
+        initPortal();
         window.addEventListener('click', (e) => {
             if (!e.target.closest('.quick-switch-container')) {
                 quickUserMenu.classList.remove('open'); quickBackdrop.classList.remove('open');
