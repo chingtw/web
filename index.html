@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHINGX | Portfolio & Projects</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #2d3436;
+            --accent-color: #0984e3;
+            --card-bg: #ffffff;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 600;
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        p.tagline {
+            font-size: 1.1rem;
+            color: #636e72;
+            font-weight: 300;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #2d3436;
+        }
+
+        .card p {
+            font-size: 0.95rem;
+            color: #636e72;
+            margin-bottom: 20px;
+        }
+
+        .card .btn {
+            padding: 10px 25px;
+            background-color: var(--bg-color);
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+            transition: var(--transition);
+        }
+
+        .card:hover .btn {
+            background-color: var(--accent-color);
+            color: #fff;
+        }
+
+        footer {
+            margin-top: 80px;
+            font-size: 0.85rem;
+            color: #b2bec3;
+            font-weight: 300;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>CHINGX</h1>
+            <p class="tagline">Personal Projects & Digital Experiments</p>
+        </header>
+
+        <main class="grid">
+            <a href="myLiveNote/" class="card">
+                <h2>MyLiveNote</h2>
+                <p>個人演唱會參戰紀錄系統。紀錄每一場感動，珍藏音樂足跡與數據分析。</p>
+                <span class="btn">進入專案</span>
+            </a>
+
+            <a href="form/" class="card">
+                <h2>Form Design</h2>
+                <p>現代化表單設計與互動實驗室，探索使用者介面的極致體驗。</p>
+                <span class="btn">進入專案</span>
+            </a>
+        </main>
+
+        <footer>
+            &copy; 2026 CHINGX.COM. All rights reserved.
+        </footer>
+    </div>
+
+</body>
+</html>
