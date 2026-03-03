@@ -1,5 +1,5 @@
 // CONFIGURATION
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwOD7MlCQbDTOu6SFZ-pNWeNyCFga0nKVvme6WM-X10HUtQMd-dxjR-gEyTJnBdN50/exec'
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbz3-AHB_n47LT-pUK9YjF97QoVQXxuLYm6lvXRErjv4Qciwtt4AcA6TFCCI6Vea_y9K/exec'
 
 
 // MOCK DATA
@@ -1265,8 +1265,30 @@ function showAdminForm(editData = null) {
                 
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>座席資訊</label><input type="text" name="seat_info" placeholder="例如: 特區 B2排 12號" value="${editData ? (editData.seat_info || '') : ''}"></div>
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>歌單&紀錄</label><textarea name="setlist" placeholder="請輸入歌單..." rows="5">${editData ? (editData.setlist || '') : ''}</textarea></div>
-                <div style="display:flex; flex-direction:column; gap:5px;"><label>封面圖片網址</label><input type="text" name="images" placeholder="https://..." value="${editData ? (editData.images || '') : ''}"></div>
-                <div style="display:flex; flex-direction:column; gap:5px;"><label>票券圖片網址</label><input type="text" name="ticket_image" placeholder="https://..." value="${editData ? (editData.ticket_image || '') : ''}"></div>
+                
+                <!-- 封面圖片上傳 -->
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                    <label>封面圖片 (Images)</label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="text" name="images" placeholder="https://..." value="${editData ? (editData.images || '') : ''}" style="flex:1;">
+                        <input type="file" id="file-images" accept="image/*" style="display:none;" onchange="handleFileUpload(this, 'images')">
+                        <button type="button" onclick="document.getElementById('file-images').click()" class="upload-btn">
+                            <i data-lucide="image-plus"></i> <span>UPLOAD</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 票券圖片上傳 -->
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                    <label>票券圖片 (Ticket Stub)</label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="text" name="ticket_image" placeholder="https://..." value="${editData ? (editData.ticket_image || '') : ''}" style="flex:1;">
+                        <input type="file" id="file-ticket" accept="image/*" style="display:none;" onchange="handleFileUpload(this, 'ticket_image')">
+                        <button type="button" onclick="document.getElementById('file-ticket').click()" class="upload-btn">
+                            <i data-lucide="ticket"></i> <span>UPLOAD</span>
+                        </button>
+                    </div>
+                </div>
                 
                 <div style="background:#1a1a1a; padding:15px; border-radius:8px; margin-top:5px; border:1px solid #333;">
                     <label style="display:block; margin-bottom:12px; font-weight:bold; color:var(--text-accent); font-size:0.9rem; letter-spacing:1px;">MILESTONES / 紀念紀錄</label>
@@ -1403,6 +1425,74 @@ window.addArtistToField = function(fieldName, artistName) {
     // 觸發閃爍效果提示已加入
     input.style.borderColor = 'var(--text-accent)';
     setTimeout(() => { input.style.borderColor = '#333'; }, 300);
+}
+
+// --- CLOUDFLARE R2 UPLOAD LOGIC ---
+
+window.handleFileUpload = async function(fileInput, targetFieldName) {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    // 限制檔案大小 (例如 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('檔案太大了！請上傳小於 10MB 的圖片。');
+        return;
+    }
+
+    const originalBtn = fileInput.nextElementSibling;
+    const originalText = originalBtn.innerHTML;
+    const textInput = document.querySelector(`input[name="${targetFieldName}"]`);
+    
+    // 取得當前使用者名稱
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching';
+
+    try {
+        originalBtn.disabled = true;
+        originalBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:14px;"></i> UPLOADING...';
+        lucide.createIcons();
+
+        // 1. 向 GAS 請求預簽名網址
+        const gasUrl = `${GAS_API_URL}?action=getPresignedUrl&u=${currentUser}&fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`;
+        const res = await fetch(gasUrl);
+        const result = await res.json();
+
+        if (result.status !== 'success') throw new Error(result.message);
+
+        // 2. 直接上傳到 Cloudflare R2
+        const uploadRes = await fetch(result.uploadUrl, {
+            method: 'PUT',
+            body: file,
+            headers: {
+                'Content-Type': file.type
+            }
+        });
+
+        if (!uploadRes.ok) throw new Error('R2 Upload Failed');
+
+        // 3. 更新輸入框
+        textInput.value = result.publicUrl;
+        textInput.style.borderColor = 'var(--text-accent)';
+        
+        // 成功提示效果
+        originalBtn.style.background = '#1a4a1a';
+        originalBtn.innerHTML = '<i data-lucide="check" style="width:14px;"></i> DONE';
+        lucide.createIcons();
+        
+        setTimeout(() => {
+            originalBtn.style.background = '';
+            originalBtn.innerHTML = originalText;
+            originalBtn.disabled = false;
+            lucide.createIcons();
+        }, 2000);
+
+    } catch (e) {
+        console.error('Upload error:', e);
+        alert('上傳失敗：' + e.toString());
+        originalBtn.disabled = false;
+        originalBtn.innerHTML = originalText;
+        lucide.createIcons();
+    }
 }
 
 window.onclick = (e) => { 

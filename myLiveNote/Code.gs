@@ -11,6 +11,16 @@ const VENUE_SHEET = 'venue_config';
 // 1. 全域變數快取：在單次執行中重用物件，減少開啟 API 次數
 const ss = SpreadsheetApp.getActiveSpreadsheet();
 const cache = CacheService.getScriptCache();
+const props = PropertiesService.getScriptProperties();
+
+// Cloudflare R2 配置
+const R2_CONFIG = {
+  accessKeyId: props.getProperty('R2_ACCESS_KEY_ID'),
+  secretAccessKey: props.getProperty('R2_SECRET_ACCESS_KEY'),
+  bucketName: props.getProperty('R2_BUCKET_NAME'),
+  endpoint: props.getProperty('R2_ENDPOINT'), // https://<id>.r2.cloudflarestorage.com
+  region: 'auto'
+};
 
 function doGet(e) {
   try {
@@ -32,6 +42,28 @@ function doGet(e) {
     // 模式 1.2: 取得場地設定 (快取優化)
     if (action === 'getVenues') {
       return response(getCachedConfig(VENUE_SHEET));
+    }
+
+    // 模式 1.3: 取得 R2 預簽名上傳網址 (Pre-signed URL)
+    if (action === 'getPresignedUrl') {
+      const fileName = e.parameter.fileName;
+      const contentType = e.parameter.contentType;
+      const path = e.parameter.path || `LiveNote/user_img/${username || 'guest'}`;
+      
+      if (!fileName || !contentType) return response({ status: 'error', message: 'Missing params' });
+      
+      const objectKey = `${path}/${Date.now()}_${fileName}`;
+      const url = getS3PresignedUrl(objectKey, contentType);
+      
+      // 使用自定義網域 img.chingx.com，且自定義網域通常直接指向桶內，不需包含 bucketName
+      const customDomain = 'https://img.chingx.com'; 
+      
+      return response({ 
+        status: 'success', 
+        uploadUrl: url, 
+        publicUrl: `${customDomain}/${objectKey}`,
+        objectKey: objectKey
+      });
     }
 
     // 模式 1.5: 驗證登入
@@ -194,4 +226,95 @@ function getOrCreateUserSheet(name) {
  */
 function clearAllCache() {
   cache.removeAll([`CONFIG_${CONFIG_SHEET}`, `CONFIG_${VENUE_SHEET}`]);
+}
+
+// --- S3 V4 SIGNATURE GENERATOR ---
+
+function getS3PresignedUrl(objectKey, contentType) {
+  const method = 'PUT';
+  const region = R2_CONFIG.region;
+  const service = 's3';
+  const accessKey = R2_CONFIG.accessKeyId;
+  const secretKey = R2_CONFIG.secretAccessKey;
+  const bucket = R2_CONFIG.bucketName;
+  
+  if (!accessKey || !secretKey || !R2_CONFIG.endpoint) {
+    throw new Error('R2 配置缺失，請檢查 Script Properties');
+  }
+  
+  const host = R2_CONFIG.endpoint.replace('https://', '');
+  const urlBase = `${R2_CONFIG.endpoint}/${bucket}/${objectKey}`;
+
+  const now = new Date();
+  const amzDate = Utilities.formatDate(now, "GMT", "yyyyMMdd'T'HHmmss'Z'");
+  const datestamp = amzDate.substr(0, 8);
+  const expiration = 3600;
+
+  const credentialScope = `${datestamp}/${region}/${service}/aws4_request`;
+  
+  const queryParams = {
+    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+    'X-Amz-Credential': `${accessKey}/${credentialScope}`,
+    'X-Amz-Date': amzDate,
+    'X-Amz-Expires': expiration.toString(),
+    'X-Amz-SignedHeaders': 'host'
+  };
+
+  const canonicalQuerystring = Object.keys(queryParams).sort().map(k => 
+    encodeURIComponent(k) + '=' + encodeURIComponent(queryParams[k])
+  ).join('&');
+  
+  const canonicalHeaders = `host:${host}\n`;
+  const payloadHash = 'UNSIGNED-PAYLOAD';
+  
+  const canonicalRequest = [
+    method,
+    `/${bucket}/${objectKey}`,
+    canonicalQuerystring,
+    canonicalHeaders,
+    'host',
+    payloadHash
+  ].join('\n');
+
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    amzDate,
+    credentialScope,
+    hashedHex(canonicalRequest)
+  ].join('\n');
+
+  // 強制將 stringToSign 轉為 Byte Array 計算簽名
+  const signingKey = getSignatureKey(secretKey, datestamp, region, service);
+  const signature = bytesToHex(Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, Utilities.newBlob(stringToSign).getBytes(), signingKey));
+
+  return `${urlBase}?${canonicalQuerystring}&X-Amz-Signature=${signature}`;
+}
+
+function hashedHex(data) {
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, data);
+  return bytesToHex(digest);
+}
+
+function getSignatureKey(key, dateStamp, regionName, serviceName) {
+  // kDate: 字串與字串的計算
+  const kDate = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, dateStamp, "AWS4" + key);
+  
+  // 後續層級：必須是 (Byte[], Byte[]) 的組合，因此要將字串用 Utilities.newBlob().getBytes() 轉型
+  const kRegion = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, Utilities.newBlob(regionName).getBytes(), kDate);
+  const kService = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, Utilities.newBlob(serviceName).getBytes(), kRegion);
+  const kSigning = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, Utilities.newBlob("aws4_request").getBytes(), kService);
+  
+  return kSigning;
+}
+
+function bytesToHex(bytes) {
+  let hex = "";
+  for (let i = 0; i < bytes.length; i++) {
+    let b = bytes[i];
+    if (b < 0) b += 256;
+    let s = b.toString(16);
+    if (s.length === 1) hex += "0";
+    hex += s;
+  }
+  return hex;
 }
