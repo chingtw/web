@@ -1,7 +1,7 @@
 {
   "id": "mylivenote-ching",
   "name": "NO LIVE NO LIFE - ライブ参戦記録",
-  "short_name": "LiveNote",
+  "short_name": "NO LIVE NO LIFE",
   "description": "LiveNote Records - ライブ参戦記録ポータル",
   "start_url": "./shared.html",
   "scope": "./",
