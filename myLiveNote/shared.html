@@ -232,8 +232,9 @@
             opacity: 0;
             pointer-events: none;
         }
-        /* 當開啟光箱或選單時，完全移除 PWA banner，確保不遮擋 Admin Access */
-        body.no-scroll .pwa-install-banner {
+        /* 當開啟管理選單或登入光箱時，徹底移除 PWA banner */
+        body.login-open .pwa-install-banner,
+        #side-menu.open ~ .pwa-install-banner {
             display: none !important;
         }
         .pwa-install-banner.hidden { display: none !important; }
@@ -448,22 +449,27 @@
             }, 4000);
         }
 
-        // 捲動隱藏邏輯
+        // 捲動隱藏邏輯 (優化版：支援多個容器)
         let scrollTimer = null;
-        window.addEventListener('scroll', () => {
+        const handleScrollHide = () => {
             if (pwaBanner.classList.contains('hidden') || isDismissed) return;
 
-            // 開始捲動時隱藏
+            // 立刻隱藏
             pwaBanner.classList.add('hidden-scroll');
 
             // 清除舊的計時器
             clearTimeout(scrollTimer);
 
-            // 閒置10 秒後重新顯示
+            // 停止捲動後 3 秒重新顯示 (比 10 秒更積極，但也確保滑動時不干擾)
             scrollTimer = setTimeout(() => {
                 pwaBanner.classList.remove('hidden-scroll');
-            }, 10000);
-        }, { passive: true });
+            }, 3000);
+        };
+
+        window.addEventListener('scroll', handleScrollHide, { passive: true });
+        // 額外監聽入口頁與側邊選單內容的捲動
+        document.getElementById('portal-overlay').addEventListener('scroll', handleScrollHide, { passive: true });
+        document.getElementById('menu-content').addEventListener('scroll', handleScrollHide, { passive: true });
 
         // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
