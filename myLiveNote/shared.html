@@ -352,8 +352,8 @@
                     deferredPrompt = null;
                 } else {
                     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                    if (isIOS) alert('iOS 使用者請點擊分享按鈕並選擇「加入主畫面」。');
-                    else alert('請點擊瀏覽器選單中的「安裝應用程式」。');
+                    if (isIOS) showAlert('iOS 使用者請點擊分享按鈕並選擇「加入主畫面」。', 'info');
+                    else showAlert('請點擊瀏覽器選單中的「安裝應用程式」。', 'info');
                 }
             };
 

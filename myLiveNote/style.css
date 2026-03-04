@@ -1466,3 +1466,179 @@ body.no-scroll .scroll-top-btn {
     margin: 0;
     opacity: 0.6;
 }
+/* --- CUSTOM DIALOG SYSTEM --- */
+.custom-dialog-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+.custom-dialog-overlay.visible { 
+    display: flex; 
+    opacity: 1; 
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+}
+
+.custom-dialog-box {
+    background: #111;
+    border: 1px solid #333;
+    padding: 2.5rem 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    transform: translateY(40px) scale(0.85);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.custom-dialog-overlay.visible .custom-dialog-box {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.custom-dialog-icon {
+    font-size: 2.5rem;
+    color: var(--text-accent);
+    margin-bottom: 1rem;
+    display: flex; justify-content: center;
+}
+
+.custom-dialog-message {
+    font-size: 1.1rem;
+    color: #eee;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: pre-wrap;
+}
+
+.custom-dialog-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.custom-dialog-btn {
+    padding: 12px 24px;
+    border-radius: 6px;
+    border: none;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 100px;
+}
+
+.custom-dialog-btn.primary {
+    background: var(--text-accent);
+    color: #000;
+}
+.custom-dialog-btn.primary:hover {
+    background: #e0bc9d;
+    transform: translateY(-2px);
+}
+
+.custom-dialog-btn.secondary {
+    background: #222;
+    color: #888;
+    border: 1px solid #333;
+}
+.custom-dialog-btn.secondary:hover {
+    background: #333;
+    color: #fff;
+}
+/* --- CUSTOM DIALOG SYSTEM --- */
+.custom-dialog-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+.custom-dialog-overlay.visible { 
+    display: flex; 
+    opacity: 1; 
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+}
+
+.custom-dialog-box {
+    background: #111;
+    border: 1px solid #333;
+    padding: 2.5rem 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    transform: translateY(40px) scale(0.85);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.custom-dialog-overlay.visible .custom-dialog-box {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.custom-dialog-icon {
+    font-size: 2.5rem;
+    color: var(--text-accent);
+    margin-bottom: 1rem;
+    display: flex; justify-content: center;
+}
+
+.custom-dialog-message {
+    font-size: 1.1rem;
+    color: #eee;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: pre-wrap;
+}
+
+.custom-dialog-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.custom-dialog-btn {
+    padding: 12px 24px;
+    border-radius: 6px;
+    border: none;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 100px;
+}
+
+.custom-dialog-btn.primary {
+    background: var(--text-accent);
+    color: #000;
+}
+.custom-dialog-btn.primary:hover {
+    background: #e0bc9d;
+    transform: translateY(-2px);
+}
+
+.custom-dialog-btn.secondary {
+    background: #222;
+    color: #888;
+    border: 1px solid #333;
+}
+.custom-dialog-btn.secondary:hover {
+    background: #333;
+    color: #fff;
+}

@@ -8,7 +8,7 @@ const MOCK_DATA = [
 ];
 
 const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'ONLINE': 'ONLINE', 'SIGNING': 'EVENT', 'FAN_MEETING': 'EVENT', 'EVENT': 'EVENT', 'SPORTS': 'SPORTS' };
-const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン会', 'FAN_MEETING': 'ファンミーティング', 'EVENT': '展示会 / イベント', 'SPORTS': 'スポーツ / 試合' };
+const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン會', 'FAN_MEETING': 'ファンミーティング', 'EVENT': '展示會 / イベント', 'SPORTS': 'スポーツ / 試合' };
 
 let allTickets = [];
 let venueConfig = [];
@@ -50,6 +50,75 @@ document.addEventListener('DOMContentLoaded', () => {
     setupScrollTop();
     setupScrollTimeline(); // 初始化時間軸指示器
 });
+
+// --- CUSTOM DIALOG SYSTEM (HAND-CRAFTED) ---
+window.showAlert = function(message, type = 'info') {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-dialog-overlay';
+        
+        let icon = 'info';
+        if (type === 'success') icon = 'check-circle-2';
+        if (type === 'error') icon = 'alert-triangle';
+
+        overlay.innerHTML = `
+            <div class="custom-dialog-box">
+                <div class="custom-dialog-icon"><i data-lucide="${icon}"></i></div>
+                <div class="custom-dialog-message">${message}</div>
+                <div class="custom-dialog-btns">
+                    <button class="custom-dialog-btn primary">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        lucide.createIcons();
+        
+        overlay.style.display = 'flex';
+        setTimeout(() => overlay.classList.add('visible'), 10);
+
+        overlay.querySelector('.primary').onclick = () => {
+            overlay.classList.remove('visible');
+            setTimeout(() => {
+                document.body.removeChild(overlay);
+                resolve();
+            }, 300);
+        };
+    });
+};
+
+window.showConfirm = function(message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-dialog-overlay';
+
+        overlay.innerHTML = `
+            <div class="custom-dialog-box">
+                <div class="custom-dialog-icon"><i data-lucide="help-circle"></i></div>
+                <div class="custom-dialog-message">${message}</div>
+                <div class="custom-dialog-btns">
+                    <button class="custom-dialog-btn secondary">CANCEL</button>
+                    <button class="custom-dialog-btn primary">CONFIRM</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        lucide.createIcons();
+        
+        overlay.style.display = 'flex';
+        setTimeout(() => overlay.classList.add('visible'), 10);
+
+        const close = (result) => {
+            overlay.classList.remove('visible');
+            setTimeout(() => {
+                document.body.removeChild(overlay);
+                resolve(result);
+            }, 300);
+        };
+
+        overlay.querySelector('.primary').onclick = () => close(true);
+        overlay.querySelector('.secondary').onclick = () => close(false);
+    });
+};
 
 // --- UTILITIES ---
 
@@ -349,7 +418,7 @@ async function fetchData() {
             // 如果有使用者名稱，更新副標題視覺
             if (currentUser) {
                 const subtitle = document.querySelector('.subtitle');
-                if (subtitle) subtitle.textContent = `${currentUser.toUpperCase()} 参戦記録`;
+                if (subtitle) subtitle.textContent = `${currentUser.toUpperCase()} 參戰紀錄`;
             }
         }, 1200);
 
@@ -450,7 +519,7 @@ function renderFilterBar() {
             };
             displayVal = map[val] || val;
         } else if (currentFilterCategory === 'milestone') {
-            const map = { 'ARTIST': '初参戦', 'EXPEDITION': '初遠征', 'VENUE': '初会場', 'EVENT': '初參加' };
+            const map = { 'ARTIST': '初參戰', 'EXPEDITION': '初遠征', 'VENUE': '初会場', 'EVENT': '初參加' };
             displayVal = map[val] || val;
         }
 
@@ -506,7 +575,7 @@ function filterTickets() {
 }
 
 const MILESTONE_MAP = {
-    'ARTIST': { label: '初参戦', class: 'badge-artist', icon: 'mic-2' },
+    'ARTIST': { label: '初參戰', class: 'badge-artist', icon: 'mic-2' },
     'EXPEDITION': { label: '初遠征', class: 'badge-expedition', icon: 'plane' },
     'VENUE': { label: '初会場', class: 'badge-venue', icon: 'map-pin' },
     'EVENT': { label: '初參加', class: 'badge-event', icon: 'star' }
@@ -974,7 +1043,7 @@ window.openDetail = function(id) {
                             <div class="modal-meta-item"><strong>料金</strong><span>${formatPrice(rawT.ticket_price, rawT.currency)}</span></div>
                             <div class="modal-meta-item"><strong>座席</strong><span>${seatDisplay}</span></div>
                         ` : ''}
-                        <div class="modal-meta-item" style="grid-column:span 2;"><strong>会場</strong><span>${rawT.venue_name}</span></div>
+                        <div class="modal-meta-item" style="grid-column:span 2;"><strong>會場</strong><span>${rawT.venue_name}</span></div>
                     </div>
 
                     ${!isFailed ? `
@@ -1112,13 +1181,13 @@ window.checkLogin = async () => {
                 }
             }
         } else {
-            alert('密碼錯誤！Invalid Password.');
+            await showAlert('密碼錯誤！Invalid Password.', 'error');
             passInput.value = '';
             passInput.focus();
         }
     } catch (e) {
         console.error('Login error:', e);
-        alert('驗證時發生錯誤，請稍後再試。');
+        await showAlert('驗證時發生錯誤，請稍後再試。', 'error');
     } finally {
         loginBtn.disabled = false;
         loginBtn.textContent = 'Unlock';
@@ -1293,7 +1362,7 @@ function showAdminForm(editData = null) {
                 <div style="background:#1a1a1a; padding:15px; border-radius:8px; margin-top:5px; border:1px solid #333;">
                     <label style="display:block; margin-bottom:12px; font-weight:bold; color:var(--text-accent); font-size:0.9rem; letter-spacing:1px;">MILESTONES / 紀念紀錄</label>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="ARTIST" ${ms.includes('ARTIST')?'checked':''}> 初参戦</label>
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="ARTIST" ${ms.includes('ARTIST')?'checked':''}> 初參戰</label>
                         <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="EXPEDITION" ${ms.includes('EXPEDITION')?'checked':''}> 初遠征</label>
                         <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="VENUE" ${ms.includes('VENUE')?'checked':''}> 初会場</label>
                         <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="EVENT" ${ms.includes('EVENT')?'checked':''}> 初參加</label>
@@ -1305,7 +1374,7 @@ function showAdminForm(editData = null) {
                         ${editData ? 'UPDATE TICKET' : 'SAVE TICKET'}
                     </button>
                     ${editData ? `
-                        <button type="button" onclick="handleDelete('${editData.id}')" style="flex:1; background:#441111; color:#ff6666; border:1px solid #662222; padding:15px; font-weight:bold; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:1.2rem;">
+                        <button type="button" id="delete-btn" onclick="handleDelete('${editData.id}')" style="flex:1; background:#441111; color:#ff6666; border:1px solid #662222; padding:15px; font-weight:bold; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:1.2rem;">
                             DELETE
                         </button>
                     ` : ''}
@@ -1322,15 +1391,16 @@ function showAdminForm(editData = null) {
 }
 
 window.handleDelete = async function(id) {
-    if (!confirm('確定要刪除這筆紀錄嗎？(Delete this record?)')) return;
+    const delBtn = document.getElementById('delete-btn');
+    const saveBtn = document.getElementById('save-btn');
+    if (delBtn && delBtn.disabled) return;
+
+    if (!await showConfirm('確定要刪除這筆紀錄嗎？(Delete this record?)')) return;
     if (!GAS_API_URL) return;
 
     const urlParams = new URLSearchParams(window.location.search);
     const currentUser = urlParams.get('u') || 'ching';
 
-    const saveBtn = document.querySelector('#admin-form button[type="submit"]');
-    const delBtn = document.querySelector('button[onclick^="handleDelete"]');
-    
     if (saveBtn) saveBtn.disabled = true;
     if (delBtn) {
         delBtn.disabled = true;
@@ -1347,11 +1417,12 @@ window.handleDelete = async function(id) {
                 data: { id: id, status: 'HIDDEN' } // 軟刪除：僅傳送 ID 與 HIDDEN 狀態
             }) 
         }); 
-        alert('紀錄已刪除！'); 
+        await showAlert('紀錄已刪除！', 'success'); 
         closeModal(); 
         location.reload(); 
     } catch (e) { 
-        alert('刪除失敗：' + e.toString()); 
+        await showAlert('刪除失敗：' + e.toString(), 'error'); 
+        if (saveBtn) saveBtn.disabled = false;
         if (delBtn) {
             delBtn.disabled = false;
             delBtn.textContent = 'DELETE';
@@ -1360,7 +1431,11 @@ window.handleDelete = async function(id) {
 }
 
 window.handleSave = async function() {
-    if (!GAS_API_URL) { alert('請先設定 GAS_API_URL'); return; }
+    const saveBtn = document.getElementById('save-btn');
+    const delBtn = document.getElementById('delete-btn');
+    if (saveBtn && saveBtn.disabled) return;
+
+    if (!GAS_API_URL) { await showAlert('請先設定 GAS_API_URL', 'error'); return; }
     
     // 取得當前使用者名稱
     const urlParams = new URLSearchParams(window.location.search);
@@ -1375,13 +1450,15 @@ window.handleSave = async function() {
 
     const skipArtistCheck = ['EVENT', 'SPORTS'].includes(data.type);
     if (!skipArtistCheck && !data.artist.trim() && !data.artist_list.trim()) {
-        alert('請至少填寫「主要藝人」或「出演者名單」其中一項！');
+        await showAlert('請至少填寫「主要藝人」或「出演者名單」其中一項！', 'error');
         return;
     }
 
-    const saveBtn = document.getElementById('save-btn'); 
-    saveBtn.disabled = true; 
-    saveBtn.textContent = 'Saving...';
+    if (saveBtn) {
+        saveBtn.disabled = true; 
+        saveBtn.textContent = 'Saving...';
+    }
+    if (delBtn) delBtn.disabled = true;
     
     const milestones = [];
     form.querySelectorAll('input[name="milestone"]:checked').forEach(cb => milestones.push(cb.value));
@@ -1398,13 +1475,16 @@ window.handleSave = async function() {
                 data: data 
             }) 
         }); 
-        alert('紀錄已送出！'); 
+        await showAlert('紀錄已送出！', 'success'); 
         closeModal(); 
         location.reload(); 
     } catch (e) { 
-        alert('儲存失敗：' + e.toString()); 
-        saveBtn.disabled = false; 
-        saveBtn.textContent = 'SAVE TICKET'; 
+        await showAlert('儲存失敗：' + e.toString(), 'error'); 
+        if (saveBtn) {
+            saveBtn.disabled = false; 
+            saveBtn.textContent = 'SAVE TICKET'; 
+        }
+        if (delBtn) delBtn.disabled = false;
     }
 }
 
@@ -1434,15 +1514,19 @@ window.handleFileUpload = async function(fileInput, targetFieldName) {
     const file = fileInput.files[0];
     if (!file) return;
 
+    const originalBtn = fileInput.nextElementSibling;
+    if (originalBtn && originalBtn.disabled) return;
+
     // 限制檔案大小 (例如 10MB)
     if (file.size > 10 * 1024 * 1024) {
-        alert('檔案太大了！請上傳小於 10MB 的圖片。');
+        await showAlert('檔案太大了！請上傳小於 10MB 的圖片。', 'error');
         return;
     }
 
-    const originalBtn = fileInput.nextElementSibling;
     const originalText = originalBtn.innerHTML;
     const textInput = document.querySelector(`input[name="${targetFieldName}"]`);
+    const saveBtn = document.getElementById('save-btn');
+    const delBtn = document.getElementById('delete-btn');
     
     // 取得當前使用者名稱
     const urlParams = new URLSearchParams(window.location.search);
@@ -1450,17 +1534,14 @@ window.handleFileUpload = async function(fileInput, targetFieldName) {
 
     try {
         originalBtn.disabled = true;
+        if (saveBtn) saveBtn.disabled = true;
+        if (delBtn) delBtn.disabled = true;
+
         originalBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:14px;"></i> UPLOADING...';
         lucide.createIcons();
 
-        // 決定上傳路徑
-        let uploadPath = `LiveNote/user_img/${currentUser}`;
-        if (targetFieldName === 'ticket_image') {
-            uploadPath = `LiveNote/ticket/${currentUser}`;
-        }
-
         // 1. 向 GAS 請求預簽名網址
-        const gasUrl = `${GAS_API_URL}?action=getPresignedUrl&u=${currentUser}&fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}&path=${encodeURIComponent(uploadPath)}`;
+        const gasUrl = `${GAS_API_URL}?action=getPresignedUrl&u=${currentUser}&fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}&path=LiveNote/user_img/${currentUser}`;
         const res = await fetch(gasUrl);
         const result = await res.json();
 
@@ -1490,13 +1571,17 @@ window.handleFileUpload = async function(fileInput, targetFieldName) {
             originalBtn.style.background = '';
             originalBtn.innerHTML = originalText;
             originalBtn.disabled = false;
+            if (saveBtn) saveBtn.disabled = false;
+            if (delBtn) delBtn.disabled = false;
             lucide.createIcons();
         }, 2000);
 
     } catch (e) {
         console.error('Upload error:', e);
-        alert('上傳失敗：' + e.toString());
+        await showAlert('上傳失敗：' + e.toString(), 'error');
         originalBtn.disabled = false;
+        if (saveBtn) saveBtn.disabled = false;
+        if (delBtn) delBtn.disabled = false;
         originalBtn.innerHTML = originalText;
         lucide.createIcons();
     }
@@ -1507,5 +1592,3 @@ window.onclick = (e) => {
         closeModal();
     }
 };
-
-
