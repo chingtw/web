@@ -621,6 +621,10 @@ function renderTickets(tickets) {
             }
         }
 
+        // 處理多會場標籤拆分
+        const venues = (t.venue_name || '').split(/[、,]+/).map(v => v.trim()).filter(v => v !== '');
+        const venuePillsHtml = venues.map(v => `<div class="pill venue-pill"><i data-lucide="map-pin" style="width:10px;"></i> ${v}</div>`).join('');
+
         const card = document.createElement('div');
         const ticketYear = cleanDate(t.date).split('-')[0];
         card.className = `ticket ${statusClass} animate-up`;
@@ -638,7 +642,7 @@ function renderTickets(tickets) {
                 <div class="ticket-subtitle">${t.artist}</div>
                 <div class="ticket-meta-top"><div class="info-box"><span>PRICE</span><span>${formatPrice(t.ticket_price, t.currency)}</span></div><div class="info-box"><span>SEAT</span><span>${t.seat_info || '-'}</span></div></div>
                 <div class="ticket-pills">
-                    <div class="pill"><i data-lucide="map-pin" style="width:10px;"></i> ${t.venue_name}</div>
+                    ${venuePillsHtml}
                     <div class="pill"><i data-lucide="calendar" style="width:10px;"></i> ${cleanDate(t.date)}</div>
                     ${cleanTime(t.time) ? `<div class="pill"><i data-lucide="clock" style="width:10px;"></i> ${cleanTime(t.time)}</div>` : ''}
                 </div>
@@ -701,8 +705,16 @@ function initMap() {
     const venueGroups = {};
     allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET').forEach(t => {
         if (t.lat_lng) {
-            if (!venueGroups[t.lat_lng]) venueGroups[t.lat_lng] = [];
-            venueGroups[t.lat_lng].push(t);
+            // 支援多座標解析：以 | 分隔
+            const coordsArray = t.lat_lng.split('|').map(s => s.trim()).filter(s => s !== '');
+            const venueArray = (t.venue_name || '').split(/[、,]+/).map(s => s.trim()).filter(s => s !== '');
+            
+            coordsArray.forEach((coords, idx) => {
+                if (!venueGroups[coords]) venueGroups[coords] = [];
+                // 將票券與對應的舞台名稱封裝
+                const specificVenueName = venueArray[idx] || t.venue_name; // 若索引對不到則用完整名稱
+                venueGroups[coords].push({ ticket: t, displayName: specificVenueName });
+            });
         }
     });
 
@@ -716,25 +728,30 @@ function initMap() {
 
     Object.keys(venueGroups).forEach(coords => {
         const [la, ln] = coords.split(',').map(Number);
+        if (isNaN(la) || isNaN(ln)) return; // 跳過無效座標
+
         // 排序該場館的所有活動 (日期由新到舊)
-        const ticketsAtVenue = venueGroups[coords].sort((a, b) => new Date(cleanDate(b.date)) - new Date(cleanDate(a.date)));
+        const itemsAtVenue = venueGroups[coords].sort((a, b) => new Date(cleanDate(b.ticket.date)) - new Date(cleanDate(a.ticket.date)));
         
         const marker = L.marker([la, ln], { icon: customIcon }).addTo(mapInstance);
         
         // 建立包含所有活動的清單
-        let listHtml = ticketsAtVenue.map(t => `
-            <div style="margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
-                <strong style="color:var(--text-accent); font-size:1rem;">${getDisplayName(t).name}</strong><br>
-                <span style="font-size:0.85rem; color:#eee; word-break:keep-all; line-break:strict; display:block; margin-top:2px;">${t.tour_title}</span><br>
-                <span style="color:#aaa; font-size:0.75rem;">${cleanDate(t.date)}</span>
-                <button onclick="openDetail('${t.id}')" style="background:var(--text-accent); border:none; color:black; width:100%; margin-top:5px; padding:2px; font-size:0.75rem; font-weight:bold; cursor:pointer; border-radius:2px;">DETAIL</button>
-            </div>
-        `).join('');
+        let listHtml = itemsAtVenue.map(item => {
+            const t = item.ticket;
+            return `
+                <div style="margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
+                    <strong style="color:var(--text-accent); font-size:1rem;">${getDisplayName(t).name}</strong><br>
+                    <span style="font-size:0.85rem; color:#eee; word-break:keep-all; line-break:strict; display:block; margin-top:2px;">${t.tour_title}</span><br>
+                    <span style="color:#aaa; font-size:0.75rem;">${cleanDate(t.date)}</span>
+                    <button onclick="openDetail('${t.id}')" style="background:var(--text-accent); border:none; color:black; width:100%; margin-top:5px; padding:2px; font-size:0.75rem; font-weight:bold; cursor:pointer; border-radius:2px;">DETAIL</button>
+                </div>
+            `;
+        }).join('');
 
         const popupContent = `
             <div style="color:white; font-family:'Noto Sans TC'; max-height:200px; overflow-y:auto; padding-right:5px;">
                 <div style="font-size:0.8rem; color:var(--text-accent); margin-bottom:8px; font-weight:bold; border-left:3px solid var(--text-accent); padding-left:5px;">
-                    ${ticketsAtVenue[0].venue_name}
+                    ${itemsAtVenue[0].displayName}
                 </div>
                 ${listHtml}
             </div>
@@ -768,7 +785,11 @@ function initStats() {
         });
 
         if (t.venue_name && t.venue_name.trim() !== '') {
-            venC[t.venue_name] = (venC[t.venue_name]||0)+1; 
+            // 支援多會場解析：依 、 或 , 分隔
+            const venues = t.venue_name.split(/[、,]+/).map(s => s.trim()).filter(s => s !== '');
+            venues.forEach(v => {
+                venC[v] = (venC[v] || 0) + 1;
+            });
         }
     });
     const sa = Object.entries(artC).sort((a,b)=>b[1]-a[1]); const sv = Object.entries(venC).sort((a,b)=>b[1]-a[1]);
@@ -829,7 +850,8 @@ function renderStatsList(id, data, type = 'artist') {
                 const list = (t.artist_list || '').split(/[、,]+/).map(s => s.trim());
                 return (t.artist === name) || list.includes(name);
             } else {
-                return t.venue_name === name;
+                const venueList = (t.venue_name || '').split(/[、,]+/).map(s => s.trim());
+                return venueList.includes(name);
             }
         }).sort((a, b) => new Date(cleanDate(b.date)) - new Date(cleanDate(a.date)));
 
@@ -1104,8 +1126,11 @@ window.openDetail = function(id) {
     setTimeout(() => {
         if (detailMapInstance) { detailMapInstance.remove(); detailMapInstance = null; }
         if (hasLatLng) { 
-            const [la, ln] = rawT.lat_lng.split(',').map(Number); 
-            detailMapInstance = L.map('detail-map', { zoomControl: false }).setView([la, ln], 16); 
+            const coordsArray = rawT.lat_lng.split('|').map(s => s.trim()).filter(s => s !== '');
+            const latlngs = [];
+            
+            // 初始建立地圖時不設定視圖，等下用 fitBounds 或 setView
+            detailMapInstance = L.map('detail-map', { zoomControl: false }); 
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(detailMapInstance); 
             
             const customIcon = L.divIcon({
@@ -1116,8 +1141,23 @@ window.openDetail = function(id) {
                 popupAnchor: [0, -40]
             });
 
-            const marker = L.marker([la, ln], { icon: customIcon }).addTo(detailMapInstance);
-            marker.bindPopup(`<strong style="color:white;">${rawT.venue_name}</strong>`).openPopup();
+            coordsArray.forEach(coords => {
+                const [la, ln] = coords.split(',').map(Number);
+                if (!isNaN(la) && !isNaN(ln)) {
+                    latlngs.push([la, ln]);
+                    const marker = L.marker([la, ln], { icon: customIcon }).addTo(detailMapInstance);
+                    marker.bindPopup(`<strong style="color:white;">${rawT.venue_name}</strong>`);
+                }
+            });
+
+            if (latlngs.length > 1) {
+                detailMapInstance.fitBounds(latlngs, { padding: [30, 30] });
+            } else if (latlngs.length === 1) {
+                detailMapInstance.setView(latlngs[0], 16);
+                detailMapInstance.eachLayer(layer => {
+                    if (layer instanceof L.Marker) layer.openPopup();
+                });
+            }
         }
     }, 300);
 }
@@ -1194,6 +1234,9 @@ window.checkLogin = async () => {
     }
 }
 
+// --- 全域變數優化 ---
+let processedVenuesGlobal = [];
+
 function showAdminForm(editData = null) {
     // 進入編輯模式時，隱藏左上角的工具按鈕 (EDIT 按鈕或鎖頭)
     const adminTool = document.getElementById('modal-admin-tool-inner');
@@ -1207,8 +1250,8 @@ function showAdminForm(editData = null) {
     // 重置翻轉狀態，避免開啟表單時是翻轉的
     modal.querySelector('.modal-content').classList.remove('flipped');
     
-    // --- 處理場地分類邏輯 ---
-    const processedVenues = venueConfig.map(v => {
+    // 處理並儲存到全域變數，供輸入監聽使用
+    processedVenuesGlobal = venueConfig.map(v => {
         let region = v.region || 'OTHER';
         if (!v.region && v.lat_lng) {
             const ln = parseFloat(v.lat_lng.split(',')[1]);
@@ -1218,25 +1261,82 @@ function showAdminForm(editData = null) {
         return { ...v, _region: region };
     });
 
-    // 產生 DataList 的 Helper
-    window.updateVenueList = (region = 'ALL') => {
-        const dl = document.getElementById('venue-list');
-        const filtered = region === 'ALL' ? processedVenues : processedVenues.filter(v => v._region === region);
-        dl.innerHTML = filtered.map(v => `<option value="${v.venue_name}">`).join('');
+    // 產生會場建議標籤 (過濾已選、支援搜尋)
+    window.updateVenueList = (region = 'ALL', searchTerm = '') => {
+        const container = document.getElementById('venue-quick-tags');
+        const vInput = document.querySelector('input[name="venue_name"]');
+        if (!container || !vInput) return;
+
+        // 取得目前輸入框中已有的所有會場名稱 (用於排除)
+        const selectedVenues = vInput.value.split(/[、,，]+/).map(s => s.trim()).filter(s => s !== '');
+
+        let filtered = region === 'ALL' ? processedVenuesGlobal : processedVenuesGlobal.filter(v => v._region === region);
         
-        // 更新按鈕狀態
+        // 1. 排除已選會場
+        filtered = filtered.filter(v => !selectedVenues.includes(v.venue_name));
+
+        // 2. 如果有搜尋字串，進一步過濾
+        if (searchTerm.trim() !== '') {
+            const s = searchTerm.toLowerCase();
+            filtered = filtered.filter(v => v.venue_name.toLowerCase().includes(s));
+        }
+
+        // 只顯示前 15 個結果
+        container.innerHTML = filtered.slice(0, 15).map(v => 
+            `<span class="tag-chip" onclick="addVenueToField('${v.venue_name.replace(/'/g, "\\'")}', '${v.lat_lng}')">+ ${v.venue_name}</span>`
+        ).join('');
+        
         document.querySelectorAll('.venue-cat-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.region === region);
         });
     };
 
-    // 場地輸入時自動帶入座標的 Helper
-    window.onVenueInputChange = (val) => {
-        const v = processedVenues.find(x => x.venue_name === val);
-        if (v && v.lat_lng) {
-            const latLngInput = document.querySelector('input[name="lat_lng"]');
-            if (latLngInput) latLngInput.value = v.lat_lng;
+    // 自動同步座標的邏輯
+    window.syncCoordinates = () => {
+        const vInput = document.querySelector('input[name="venue_name"]');
+        const lInput = document.querySelector('input[name="lat_lng"]');
+        if (!vInput || !lInput) return;
+
+        const venues = vInput.value.split(/[、,，]+/).map(s => s.trim()).filter(s => s !== '');
+        const coords = [];
+
+        venues.forEach(name => {
+            const config = processedVenuesGlobal.find(v => v.venue_name === name);
+            if (config && config.lat_lng) {
+                coords.push(config.lat_lng);
+            }
+        });
+
+        if (coords.length > 0) {
+            lInput.value = coords.join(' | ');
         }
+    };
+
+    // 會場輸入變更時觸發
+    window.onVenueInputChange = (val) => {
+        const vInput = document.querySelector('input[name="venue_name"]');
+        if (!vInput) return;
+
+        // 1. 統一轉換分隔符號
+        const converted = val.replace(/[,，]/g, '、');
+        if (converted !== val) {
+            const start = vInput.selectionStart;
+            vInput.value = converted;
+            vInput.setSelectionRange(start, start);
+        }
+
+        // 2. 取得目前正在輸入的片段 (最後一個 、 之後的文字)
+        const parts = converted.split('、');
+        const currentSearch = parts[parts.length - 1].trim();
+
+        // 3. 讀取目前地區並更新下方標籤
+        const activeRegionBtn = document.querySelector('.venue-cat-btn.active');
+        const currentRegion = activeRegionBtn ? activeRegionBtn.dataset.region : 'ALL';
+        
+        updateVenueList(currentRegion, currentSearch);
+
+        // 4. 嘗試同步座標
+        syncCoordinates();
     };
 
     // 2. 處理藝人建議 (仍來自 allTickets 統計)
@@ -1261,6 +1361,11 @@ function showAdminForm(editData = null) {
     // 產生前 12 名常用藝人標籤供快速新增
     const quickTags = sortedArtists.slice(0, 12).map(a => 
         `<span class="tag-chip" onclick="addArtistToField('artist_list', '${a[0].replace(/'/g, "\\'")}')">+ ${a[0]}</span>`
+    ).join('');
+
+    // 產生熱門會場標籤 (從 venueConfig 取得)
+    const quickVenues = processedVenuesGlobal.slice(0, 12).map(v => 
+        `<span class="tag-chip" onclick="addVenueToField('${v.venue_name.replace(/'/g, "\\'")}', '${v.lat_lng}')">+ ${v.venue_name}</span>`
     ).join('');
 
     // 如果是編輯模式，預設里程碑處理
@@ -1318,11 +1423,14 @@ function showAdminForm(editData = null) {
                         <div class="venue-cat-btn" data-region="JP" onclick="updateVenueList('JP')">JAPAN</div>
                         <div class="venue-cat-btn" data-region="OTHER" onclick="updateVenueList('OTHER')">OTHER</div>
                     </div>
-                    <input type="text" name="venue_name" list="venue-list" placeholder="例如: 台北巨蛋 (台北)" required value="${editData ? editData.venue_name : ''}" oninput="onVenueInputChange(this.value)">
-                    <datalist id="venue-list"></datalist>
+                    <input type="text" name="venue_name" placeholder="例如: 台北巨蛋 (台北)" required value="${editData ? editData.venue_name : ''}" oninput="onVenueInputChange(this.value)">
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:5px;"><label>經緯度 (Map Coords)</label><input type="text" name="lat_lng" placeholder="例如: 25.051, 121.550" value="${editData ? (editData.lat_lng || '') : ''}"></div>
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                    <label>經緯度 (Map Coords)</label>
+                    <input type="text" name="lat_lng" placeholder="例如: 25.051, 121.550" value="${editData ? (editData.lat_lng || '') : ''}">
+                    <div id="venue-quick-tags" class="quick-add-tags">${quickVenues}</div>
+                </div>
                 
                 <div style="display:flex; gap:10px;">
                     <div style="width:100px;"><label>幣別</label><select name="currency" style="width:100%;">
@@ -1506,6 +1614,43 @@ window.addArtistToField = function(fieldName, artistName) {
     // 觸發閃爍效果提示已加入
     input.style.borderColor = 'var(--text-accent)';
     setTimeout(() => { input.style.borderColor = '#333'; }, 300);
+}
+
+window.addVenueToField = function(venueName, latLng) {
+    const vInput = document.querySelector('input[name="venue_name"]');
+    const lInput = document.querySelector('input[name="lat_lng"]');
+    if (!vInput || !lInput) return;
+
+    // 處理會場名稱：智慧型取代最後一個片段
+    let vVal = vInput.value.trim();
+    if (!vVal) {
+        vInput.value = venueName;
+    } else {
+        const parts = vVal.split('、');
+        // 取代最後一個正在輸入的殘缺片段
+        parts[parts.length - 1] = venueName;
+        // 確保沒有重複 (雖然 updateVenueList 已過濾，但手動輸入可能發生)
+        const uniqueParts = [...new Set(parts.map(p => p.trim()).filter(p => p !== ''))];
+        vInput.value = uniqueParts.join('、');
+    }
+
+    // 自動追加一個頓號，方便輸入下一個會場
+    vInput.value += '、';
+
+    // 觸發座標同步
+    syncCoordinates();
+    
+    // 更新建議清單 (因為已選項目改變了，且前綴也變了)
+    const activeRegionBtn = document.querySelector('.venue-cat-btn.active');
+    updateVenueList(activeRegionBtn ? activeRegionBtn.dataset.region : 'ALL', '');
+
+    // 視覺回饋
+    vInput.style.borderColor = 'var(--text-accent)';
+    lInput.style.borderColor = 'var(--text-accent)';
+    setTimeout(() => { 
+        vInput.style.borderColor = '#333'; 
+        lInput.style.borderColor = '#333'; 
+    }, 300);
 }
 
 // --- CLOUDFLARE R2 UPLOAD LOGIC ---
