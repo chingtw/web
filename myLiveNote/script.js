@@ -1288,7 +1288,8 @@ window.checkLogin = async () => {
             
             // 儲存登入資訊 (有效期 24 小時)
             const expiry = new Date().getTime() + LOGIN_EXPIRY_MS;
-            localStorage.setItem('livenote_auth', JSON.stringify({ pass, expiry }));
+            // 修正：統一使用包含使用者名稱的 Key
+            localStorage.setItem(`livenote_auth_${currentUser}`, JSON.stringify({ pass, expiry }));
 
             document.getElementById('login-modal').classList.add('hidden');
             document.body.classList.remove('login-open'); 
@@ -1456,6 +1457,53 @@ function showAdminForm(editData = null) {
         `<span class="tag-chip" onclick="addArtistToField('artist_list', '${a[0].replace(/'/g, "\\'")}')">+ ${a[0]}</span>`
     ).join('');
 
+    // 產生熱門藝人標籤 (從 allTickets 統計)
+    window.updateArtistList = (searchTerm = '') => {
+        const container = document.getElementById('artist-quick-tags');
+        const aInput = document.getElementById('form-artist-list');
+        if (!container || !aInput) return;
+
+        // 取得目前已輸入的所有藝人 (用於排除)
+        const selectedArtists = aInput.value.split(/[、,，]+/).map(s => s.trim()).filter(s => s !== '');
+
+        let filtered = sortedArtists;
+        
+        // 1. 排除已選藝人
+        filtered = filtered.filter(a => !selectedArtists.includes(a[0]));
+
+        // 2. 如果有搜尋字串，進一步過濾
+        if (searchTerm.trim() !== '') {
+            const s = searchTerm.toLowerCase();
+            filtered = filtered.filter(a => a[0].toLowerCase().includes(s));
+        }
+
+        // 只顯示前 15 個結果
+        container.innerHTML = filtered.slice(0, 15).map(a => 
+            `<span class="tag-chip" onclick="addArtistToField('artist_list', '${a[0].replace(/'/g, "\\'")}')">+ ${a[0]}</span>`
+        ).join('');
+    };
+
+    // 出演者名單輸入變更時觸發
+    window.onArtistListInputChange = (val) => {
+        const aInput = document.getElementById('form-artist-list');
+        if (!aInput) return;
+
+        // 1. 統一轉換分隔符號 (將逗號轉換為頓號)
+        const converted = val.replace(/[,，]/g, '、');
+        if (converted !== val) {
+            const start = aInput.selectionStart;
+            aInput.value = converted;
+            aInput.setSelectionRange(start, start);
+        }
+
+        // 2. 取得目前正在輸入的片段 (最後一個 、 之後的文字)
+        const parts = converted.split('、');
+        const currentSearch = parts[parts.length - 1].trim();
+
+        // 3. 更新下方標籤
+        updateArtistList(currentSearch);
+    };
+
     // 產生熱門會場標籤 (從 venueConfig 取得)
     const quickVenues = processedVenuesGlobal.slice(0, 12).map(v => 
         `<span class="tag-chip" onclick="addVenueToField('${v.venue_name.replace(/'/g, "\\'")}', '${v.lat_lng}')">+ ${v.venue_name}</span>`
@@ -1528,8 +1576,8 @@ function showAdminForm(editData = null) {
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
                     <label>出演者名單 (用、隔開)</label>
-                    <input type="text" name="artist_list" placeholder="FES、拼盤請填此;ex: LiSA、May'n" value="${editData ? (editData.artist_list || '') : ''}">
-                    <div class="quick-add-tags">${quickTags}</div>
+                    <input type="text" name="artist_list" id="form-artist-list" placeholder="FES、拼盤請填此;ex: LiSA、May'n" value="${editData ? (editData.artist_list || '') : ''}" oninput="onArtistListInputChange(this.value)">
+                    <div id="artist-quick-tags" class="quick-add-tags">${quickTags}</div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>巡迴/活動標題</label><input type="text" name="tour_title" placeholder="例如: ASIA TOUR 2024" required value="${editData ? editData.tour_title : ''}"></div>
                 
@@ -1767,14 +1815,21 @@ window.addArtistToField = function(fieldName, artistName) {
     if (!current) {
         input.value = artistName;
     } else {
-        // 使用、或逗號拆分現有名單，檢查是否已存在
-        const items = current.split(/[、,]+/).map(s => s.trim()).filter(s => s !== '');
-        if (!items.includes(artistName)) {
-            items.push(artistName);
-            input.value = items.join('、');
-        }
+        // 取得目前的藝人片段 (以、隔開)
+        const parts = current.split('、');
+        // 取代最後一個正在輸入的片段 (例如 "li" -> "LiSA")
+        parts[parts.length - 1] = artistName;
+        // 確保沒有重複且過濾空項
+        const uniqueParts = [...new Set(parts.map(p => p.trim()).filter(p => p !== ''))];
+        input.value = uniqueParts.join('、');
     }
-    // 觸發閃爍效果提示已加入
+
+    // 觸發藝人建議清單更新 (搜尋清空)
+    if (window.updateArtistList) {
+        updateArtistList('');
+    }
+
+    // 視覺回饋
     input.style.borderColor = 'var(--text-accent)';
     setTimeout(() => { input.style.borderColor = '#333'; }, 300);
 }
