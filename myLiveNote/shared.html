@@ -83,6 +83,10 @@
             align-items: flex-end;
             gap: 10px;
             transition: all 0.3s ease;
+            pointer-events: none; /* 防止容器阻礙點擊 */
+        }
+        .quick-switch-container > * {
+            pointer-events: auto; /* 恢復子元素的互動 */
         }
 
         #quick-user-menu {

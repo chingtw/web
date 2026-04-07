@@ -339,7 +339,14 @@ function cleanTime(timeStr) {
     }
     return s.substring(0, 5);
 }
-function formatPrice(price, currency) { if (!price) return '-'; const symbol = currency === 'JPY' ? '¥' : 'NT$'; return `${symbol}${Number(price).toLocaleString()}`; }
+function formatPrice(price, currency) { 
+    if (!price) return '-'; 
+    let symbol = 'NT$';
+    if (currency === 'JPY') symbol = '¥';
+    else if (currency === 'HKD') symbol = 'HK$';
+    else if (currency === 'USD') symbol = 'US$';
+    return `${symbol}${Number(price).toLocaleString()}`; 
+}
 function getDisplayName(t) {
     if (t.artist && t.artist.trim() !== '') return { name: t.artist, isType: false };
     return { name: TYPE_MAP_JP[t.type] || 'イベント', isType: true };
@@ -1483,6 +1490,8 @@ function showAdminForm(editData = null) {
                     <div style="width:100px;"><label>幣別</label><select name="currency" style="width:100%;">
                         <option value="TWD" ${editData?.currency==='TWD'?'selected':''}>TWD</option>
                         <option value="JPY" ${editData?.currency==='JPY'?'selected':''}>JPY</option>
+                        <option value="HKD" ${editData?.currency==='HKD'?'selected':''}>HKD</option>
+                        <option value="USD" ${editData?.currency==='USD'?'selected':''}>USD</option>
                     </select></div>
                     <div style="flex:1;"><label>票價</label><input type="number" name="ticket_price" placeholder="票價" style="width:100%;" value="${editData ? editData.ticket_price : ''}"></div>
                 </div>
