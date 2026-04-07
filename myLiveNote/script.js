@@ -16,6 +16,8 @@ let currentFilterCategory = 'date'; // date, artist, status, milestone
 let currentFilterValue = 'ALL';
 let showAllArtists = false;
 let adminPassword = '';
+const LOGIN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 小時
+
 let mapInstance = null;
 let detailMapInstance = null;
 let artistChartInstance = null;
@@ -37,6 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentUser = urlParams.get('u');
     const isSharedPortal = window.location.pathname.includes('shared.html') && !currentUser;
 
+    // 1. 初始化登入狀態
+    checkPersistentLogin();
+
     // 如果是在入口選擇頁面，跳過資料抓取，節省效能
     if (!isSharedPortal) {
         fetchData(); 
@@ -50,6 +55,33 @@ document.addEventListener('DOMContentLoaded', () => {
     setupScrollTop();
     setupScrollTimeline(); // 初始化時間軸指示器
 });
+
+function checkPersistentLogin() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching';
+    
+    // 使用者帳號綁定的 Key
+    const saved = localStorage.getItem(`livenote_auth_${currentUser}`);
+    
+    if (saved) {
+        try {
+            const auth = JSON.parse(saved);
+            const now = new Date().getTime();
+            if (now < auth.expiry) {
+                adminPassword = auth.pass;
+                // 更新 UI 狀態：僅顯示該使用者有權限的操作
+                setTimeout(() => {
+                    const addBtn = document.getElementById('admin-add-btn');
+                    if (addBtn) addBtn.classList.remove('hidden');
+                }, 500);
+            } else {
+                localStorage.removeItem(`livenote_auth_${currentUser}`);
+            }
+        } catch (e) {
+            localStorage.removeItem(`livenote_auth_${currentUser}`);
+        }
+    }
+}
 
 // --- CUSTOM DIALOG SYSTEM (HAND-CRAFTED) ---
 window.showAlert = function(message, type = 'info') {
@@ -623,7 +655,7 @@ function renderTickets(tickets) {
 
         // 處理多會場標籤拆分
         const venues = (t.venue_name || '').split(/[、,]+/).map(v => v.trim()).filter(v => v !== '');
-        const venuePillsHtml = venues.map(v => `<div class="pill venue-pill"><i data-lucide="map-pin" style="width:10px;"></i> ${v}</div>`).join('');
+        const venuePillsHtml = venues.map(v => `<div class="pill venue-pill"><i data-lucide="map-pin"></i> ${v}</div>`).join('');
 
         const card = document.createElement('div');
         const ticketYear = cleanDate(t.date).split('-')[0];
@@ -642,9 +674,13 @@ function renderTickets(tickets) {
                 <div class="ticket-subtitle">${t.artist}</div>
                 <div class="ticket-meta-top"><div class="info-box"><span>PRICE</span><span>${formatPrice(t.ticket_price, t.currency)}</span></div><div class="info-box"><span>SEAT</span><span>${t.seat_info || '-'}</span></div></div>
                 <div class="ticket-pills">
-                    ${venuePillsHtml}
-                    <div class="pill"><i data-lucide="calendar" style="width:10px;"></i> ${cleanDate(t.date)}</div>
-                    ${cleanTime(t.time) ? `<div class="pill"><i data-lucide="clock" style="width:10px;"></i> ${cleanTime(t.time)}</div>` : ''}
+                    <div class="pill-row venue-row">
+                        ${venuePillsHtml}
+                    </div>
+                    <div class="pill-row time-row">
+                        <div class="pill"><i data-lucide="calendar"></i> ${cleanDate(t.date)}</div>
+                        ${cleanTime(t.time) ? `<div class="pill"><i data-lucide="clock"></i> ${cleanTime(t.time)}</div>` : ''}
+                    </div>
                 </div>
             </div>
             <div class="ticket-visual" onclick="openDetail('${t.id}')" style="background-image: url('${t.images || ''}')"></div>
@@ -1171,7 +1207,7 @@ window.closeModal = () => {
     toggleBodyScroll(false);
 };
 
-window.openLogin = () => { 
+window.openLogin = (callback = null) => { 
     // 如果選單是開啟狀態，則關閉它
     if (document.getElementById('side-menu').classList.contains('open')) {
         toggleMenu();
@@ -1180,6 +1216,7 @@ window.openLogin = () => {
     document.body.classList.add('login-open'); // 開啟登入時加入類別
     document.getElementById('admin-pass').focus(); 
     toggleBodyScroll(true);
+    window.loginCallback = callback;
 };
 
 window.checkLogin = async () => { 
@@ -1202,22 +1239,25 @@ window.checkLogin = async () => {
 
         if (result.success) {
             adminPassword = pass; 
+            
+            // 儲存登入資訊 (有效期 24 小時)
+            const expiry = new Date().getTime() + LOGIN_EXPIRY_MS;
+            localStorage.setItem('livenote_auth', JSON.stringify({ pass, expiry }));
+
             document.getElementById('login-modal').classList.add('hidden');
             document.body.classList.remove('login-open'); 
             
             const addBtn = document.getElementById('admin-add-btn');
-            const entryText = document.getElementById('admin-entry-text');
             if (addBtn) addBtn.classList.remove('hidden');
-            if (entryText) entryText.classList.add('hidden'); 
 
-            const modalContent = document.getElementById('modal');
-            if (!modalContent.classList.contains('hidden')) {
-                if (window.currentDetailId) {
-                    openDetail(window.currentDetailId);
-                }
+            // 執行登入後的回調 (例如開啟表單)
+            if (window.loginCallback) {
+                window.loginCallback();
+                window.loginCallback = null;
             } else {
-                if (!document.getElementById('side-menu').classList.contains('open')) {
-                    toggleMenu();
+                // 如果沒有回調且光箱開著，重新渲染光箱以顯示編輯按鈕
+                if (!document.getElementById('modal').classList.contains('hidden') && window.currentDetailId) {
+                    openDetail(window.currentDetailId);
                 }
             }
         } else {
@@ -1238,6 +1278,12 @@ window.checkLogin = async () => {
 let processedVenuesGlobal = [];
 
 function showAdminForm(editData = null) {
+    // 關鍵優化：如果沒有密碼，先要求登入，登入成功後再回來執行 showAdminForm
+    if (!adminPassword) {
+        openLogin(() => showAdminForm(editData));
+        return;
+    }
+
     // 進入編輯模式時，隱藏左上角的工具按鈕 (EDIT 按鈕或鎖頭)
     const adminTool = document.getElementById('modal-admin-tool-inner');
     if (adminTool) adminTool.innerHTML = '';
@@ -1246,6 +1292,7 @@ function showAdminForm(editData = null) {
     if (document.getElementById('side-menu').classList.contains('open')) {
         toggleMenu();
     }
+// ... (rest of the function)
 
     // 重置翻轉狀態，避免開啟表單時是翻轉的
     modal.querySelector('.modal-content').classList.remove('flipped');
@@ -1553,9 +1600,21 @@ window.handleSave = async function() {
     const formData = new FormData(form); 
     const data = {};
     formData.forEach((val, key) => {
-        if (key !== 'milestone') data[key] = val;
+        if (key !== 'milestone') {
+            let cleanVal = typeof val === 'string' ? val.trim() : val;
+            // 關鍵優化：自動將各種分隔符 (/ , ， | 換行) 轉換為標準頓號 、 且移除各項目間的多餘空白
+            if (key === 'venue_name' || key === 'artist_list') {
+                // 1. 統一轉換所有分隔符為標準頓號
+                let standardized = cleanVal.replace(/[\/,，|、\n\r\t]+/g, '、');
+                // 2. 拆分並針對每個項目進行深度 trim，並過濾掉空項
+                cleanVal = standardized.split('、')
+                    .map(item => item.trim())
+                    .filter(item => item !== '')
+                    .join('、');
+            }
+            data[key] = cleanVal;
+        }
     });
-
     const skipArtistCheck = ['EVENT', 'SPORTS'].includes(data.type);
     if (!skipArtistCheck && !data.artist.trim() && !data.artist_list.trim()) {
         await showAlert('請至少填寫「主要藝人」或「出演者名單」其中一項！', 'error');
@@ -1633,9 +1692,6 @@ window.addVenueToField = function(venueName, latLng) {
         const uniqueParts = [...new Set(parts.map(p => p.trim()).filter(p => p !== ''))];
         vInput.value = uniqueParts.join('、');
     }
-
-    // 自動追加一個頓號，方便輸入下一個會場
-    vInput.value += '、';
 
     // 觸發座標同步
     syncCoordinates();
