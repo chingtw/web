@@ -1288,7 +1288,7 @@ window.checkLogin = async () => {
             
             // 儲存登入資訊 (有效期 24 小時)
             const expiry = new Date().getTime() + LOGIN_EXPIRY_MS;
-            localStorage.setItem('livenote_auth', JSON.stringify({ pass, expiry }));
+            localStorage.setItem(`livenote_auth_${currentUser}`, JSON.stringify({ pass, expiry }));
 
             document.getElementById('login-modal').classList.add('hidden');
             document.body.classList.remove('login-open'); 
