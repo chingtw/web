@@ -442,9 +442,9 @@ section.active { display: block; }
     color: var(--text-accent);
     margin: 0.4rem 0;
     line-height: 1.15;
-    overflow-wrap: break-word;
-    word-break: break-all; /* 改用 break-all 對日韓標題更友善 */
-    line-break: auto;
+    overflow-wrap: break-word; /* 允許長單詞在必要時換行 */
+    word-break: keep-all; /* 防止英文單字從中間被截斷 */
+    line-break: strict; /* 對於 CJK 標點符號更嚴謹 */
     
     /* 強制行數限制 (PC版預設 2 行) */
     display: -webkit-box;
