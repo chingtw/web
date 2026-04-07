@@ -1,5 +1,5 @@
 // CONFIGURATION
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbz3-AHB_n47LT-pUK9YjF97QoVQXxuLYm6lvXRErjv4Qciwtt4AcA6TFCCI6Vea_y9K/exec'
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzhQvDIcEwiUhMcQ_zORbokTnhDxlCgFRjCS_QHByaTF0OJ6sygnYQpoozVIqbO536b/exec'
 
 
 // MOCK DATA
@@ -7,11 +7,12 @@ const MOCK_DATA = [
     { id: '1', date: '2025-01-12', time: '18:30', type: 'ONE_MAN', status: 'CONFIRMED', artist: 'YOASOBI', tour_title: 'ASIA TOUR 2024-2025 “超現實”', venue_name: '台北小巨蛋', lat_lng: '25.051, 121.550', seat_info: '特區 B2排', ticket_price: '4800', currency: 'TWD', is_first_time: true, setlist: '1. 祝福\n2. 夜に駆ける\n3. 勇者\n4. アイドル', images: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=500' }
 ];
 
-const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'ONLINE': 'ONLINE', 'SIGNING': 'EVENT', 'FAN_MEETING': 'EVENT', 'EVENT': 'EVENT', 'SPORTS': 'SPORTS' };
-const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン會', 'FAN_MEETING': 'ファンミーティング', 'EVENT': '展示會 / イベント', 'SPORTS': 'スポーツ / 試合' };
+const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'ONLINE': 'ONLINE', 'SIGNING': 'EVENT', 'FAN_MEETING': 'EVENT', 'EVENT': 'EVENT', 'EXHIBITION': 'EXHIBIT', 'STAGE': 'STAGE', 'SPORTS': 'SPORTS' };
+const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン會', 'FAN_MEETING': 'ファンミーティング', 'EVENT': 'イベント', 'EXHIBITION': '展示會', 'STAGE': '舞台劇 / 演劇', 'SPORTS': 'スポーツ / 試合' };
 
 let allTickets = [];
 let venueConfig = [];
+let allUsers = []; // 全域使用者快取
 let currentFilterCategory = 'date'; // date, artist, status, milestone
 let currentFilterValue = 'ALL';
 let showAllArtists = false;
@@ -46,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isSharedPortal) {
         fetchData(); 
         fetchVenues(); 
+        fetchUsers(); // 撈取夥伴名單
     }
     
     setupTabs(); 
@@ -55,6 +57,16 @@ document.addEventListener('DOMContentLoaded', () => {
     setupScrollTop();
     setupScrollTimeline(); // 初始化時間軸指示器
 });
+
+async function fetchUsers() {
+    try {
+        const res = await fetch(`${GAS_API_URL}?action=getUsers`);
+        allUsers = await res.json();
+    } catch (e) {
+        console.error('Failed to fetch users:', e);
+        allUsers = [];
+    }
+}
 
 function checkPersistentLogin() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -1084,6 +1096,31 @@ window.openDetail = function(id) {
     const statusText = statusMap[rawT.status] || '參戰確定';
     const isFailed = rawT.status === 'FAILED_DRAW' || rawT.status === 'FAILED_TICKET';
 
+    // 處理夥伴標籤顯示
+    let companionsHtml = '';
+    if (rawT.tag && rawT.tag.trim() !== '') {
+        const taggedUsernames = rawT.tag.split(',').map(u => u.trim());
+        const taggedUsers = allUsers.filter(u => taggedUsernames.includes(u.username));
+        
+        if (taggedUsers.length > 0) {
+            companionsHtml = `
+                <div class="companion-display" style="margin-top: 1.5rem;">
+                    <h4 style="color:var(--text-accent); font-family:'Bebas Neue'; letter-spacing:1px; margin-bottom:10px;">WITH COMPANIONS / 參戰夥伴</h4>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        ${taggedUsers.map(u => `
+                            <div class="companion-avatar-box" title="${u.display_name}" style="text-align:center;">
+                                <div style="width:45px; height:45px; border-radius:50%; overflow:hidden; border:2px solid var(--text-accent); background:#111;">
+                                    ${u.avatar_url ? `<img src="${u.avatar_url}" style="width:100%; height:100%; object-fit:cover;">` : '<i data-lucide="user" style="width:20px; color:#555; margin-top:10px;"></i>'}
+                                </div>
+                                <div style="font-size:0.65rem; color:#888; margin-top:4px; font-family:'Bebas Neue';">${u.username.toUpperCase()}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    }
+
     // 重置翻轉狀態
     modal.querySelector('.modal-content').classList.remove('flipped');
 
@@ -1110,6 +1147,8 @@ window.openDetail = function(id) {
                         ` : ''}
                         <div class="modal-meta-item" style="grid-column:span 2;"><strong>會場</strong><span>${rawT.venue_name}</span></div>
                     </div>
+
+                    ${companionsHtml}
 
                     ${!isFailed ? `
                         <hr style="border:0; border-top:1px dashed #444; margin: 1.5rem 0;"><h4 style="color:var(--text-accent); font-family:'Bebas Neue'; letter-spacing:1px; margin-bottom:10px;">SETLIST & MEMO / セトリ・參戰紀錄</h4>
@@ -1422,6 +1461,27 @@ function showAdminForm(editData = null) {
         `<span class="tag-chip" onclick="addVenueToField('${v.venue_name.replace(/'/g, "\\'")}', '${v.lat_lng}')">+ ${v.venue_name}</span>`
     ).join('');
 
+    // 夥伴選擇器渲染
+    const currentCompanions = editData && editData.tag ? String(editData.tag).split(',').map(u => u.trim()).filter(u => u !== '') : [];
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching';
+
+    // 排除自己後的夥伴清單
+    const companionOptionsHtml = allUsers.filter(u => u.username !== currentUser).map(u => {
+        const isActive = currentCompanions.includes(u.username);
+        return `
+            <div class="companion-tag-chip ${isActive ? 'active' : ''}" 
+                 onclick="toggleCompanionTag(this, '${u.username}')"
+                 data-username="${u.username}"
+                 style="display:flex; align-items:center; gap:8px; padding:6px 14px; background:${isActive ? 'rgba(197, 164, 137, 0.15)' : '#111'}; border:1px solid ${isActive ? 'var(--text-accent)' : '#333'}; border-radius:25px; cursor:pointer; transition:all 0.3s; box-shadow: ${isActive ? '0 0 10px rgba(197, 164, 137, 0.2)' : 'none'};">
+                <div style="width:26px; height:26px; border-radius:50%; overflow:hidden; background:#222; flex-shrink:0; border:1.5px solid ${isActive ? 'var(--text-accent)' : 'transparent'}; transition:all 0.3s;">
+                    ${u.avatar_url ? `<img src="${u.avatar_url}" style="width:100%; height:100%; object-fit:cover;">` : '<i data-lucide="user" style="width:14px; color:#555; margin-top:5px; display:block; margin-left:auto; margin-right:auto;"></i>'}
+                </div>
+                <span style="font-size:0.85rem; font-family:'Bebas Neue'; letter-spacing:1px; color:${isActive ? 'var(--text-accent)' : '#888'};">${u.username.toUpperCase()} ${isActive ? '<i data-lucide="check" style="width:12px; vertical-align:middle; margin-left:4px;"></i>' : ''}</span>
+            </div>
+        `;
+    }).join('');
+
     // 如果是編輯模式，預設里程碑處理
     const ms = editData ? (editData.is_first_time || '').toString().split(/[、,]+/).map(s => s.trim()) : [];
 
@@ -1432,6 +1492,8 @@ function showAdminForm(editData = null) {
             </h2>
             <form id="admin-form" onsubmit="event.preventDefault(); handleSave();" style="display:flex; flex-direction:column; gap:15px;">
                 <input type="hidden" name="id" value="${editData ? editData.id : ''}">
+                <input type="hidden" name="tag" id="form-tag-field" value="${editData ? (editData.tag || '') : ''}">
+                
                 <div style="display:flex; gap:12px;">
                     <div style="flex:1;"><label>日期</label><input type="date" name="date" required style="width:100%;" value="${editData ? cleanDate(editData.date) : ''}"></div>
                     <div style="flex:1;"><label>時間</label><input type="time" name="time" style="width:100%;" value="${editData ? cleanTime(editData.time) : '19:00'}"></div>
@@ -1442,9 +1504,11 @@ function showAdminForm(editData = null) {
                         <option value="FES" ${editData?.type==='FES'?'selected':''}>音樂祭 / 拼盤</option>
                         <option value="VIEWING" ${editData?.type==='VIEWING'?'selected':''}>院線直播 (LV)</option>
                         <option value="ONLINE" ${editData?.type==='ONLINE'?'selected':''}>線上直播</option>
+                        <option value="STAGE" ${editData?.type==='STAGE'?'selected':''}>舞台劇 / 演劇</option>
                         <option value="SIGNING" ${editData?.type==='SIGNING'?'selected':''}>簽名會</option>
                         <option value="FAN_MEETING" ${editData?.type==='FAN_MEETING'?'selected':''}>見面會</option>
-                        <option value="EVENT" ${editData?.type==='EVENT'?'selected':''}>展覽 / 活動</option>
+                        <option value="EXHIBITION" ${editData?.type==='EXHIBITION'?'selected':''}>展覽</option>
+                        <option value="EVENT" ${editData?.type==='EVENT'?'selected':''}>活動 (Event)</option>
                         <option value="SPORTS" ${editData?.type==='SPORTS'?'selected':''}>運動賽事</option>
                     </select></div>
                     <div style="flex:1;"><label>狀態</label><select name="status" style="width:100%;">
@@ -1499,6 +1563,14 @@ function showAdminForm(editData = null) {
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>座席資訊</label><input type="text" name="seat_info" placeholder="例如: 特區 B2排 12號" value="${editData ? (editData.seat_info || '') : ''}"></div>
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>歌單&紀錄</label><textarea name="setlist" placeholder="請輸入..." rows="5">${editData ? (editData.setlist || '') : ''}</textarea></div>
                 
+                <!-- 參戰夥伴選擇 (僅限新增模式顯示較佳，但統一放也行) -->
+                <div style="display:flex; flex-direction:column; gap:8px; background: #0a0a0a; padding: 12px; border-radius: 8px; border: 1px solid #222;">
+                    <label style="font-size: 0.8rem; letter-spacing: 1px; color: var(--text-accent); font-family: 'Bebas Neue';">WITH COMPANIONS / 參戰夥伴</label>
+                    <div style="display:flex; gap:10px; flex-wrap: wrap;" id="companion-selector">
+                        ${companionOptionsHtml || '<p style="color:#444; font-size:0.8rem; margin:0;">No other users found.</p>'}
+                    </div>
+                </div>
+
                 <!-- 封面圖片上傳 -->
                 <div style="display:flex; flex-direction:column; gap:8px; background: #0a0a0a; padding: 12px; border-radius: 8px; border: 1px solid #222;">
                     <label style="font-size: 0.8rem; letter-spacing: 1px; color: var(--text-accent); font-family: 'Bebas Neue';">COVER IMAGE / 封面圖片</label>
@@ -1552,6 +1624,29 @@ function showAdminForm(editData = null) {
     
     // 初始化場地清單顯示為 ALL
     updateVenueList('ALL');
+}
+
+window.toggleCompanionTag = function(element, username) {
+    element.classList.toggle('active');
+    
+    // 獲取所有選中的 username
+    const selected = Array.from(document.querySelectorAll('.companion-tag-chip.active'))
+                          .map(el => el.dataset.username);
+    
+    // 更新隱藏欄位
+    const tagField = document.getElementById('form-tag-field');
+    if (tagField) {
+        tagField.value = selected.join(',');
+    }
+
+    // 視覺回饋樣式
+    if (element.classList.contains('active')) {
+        element.style.borderColor = 'var(--text-accent)';
+        element.style.background = 'rgba(197, 164, 137, 0.1)';
+    } else {
+        element.style.borderColor = '#333';
+        element.style.background = '#111';
+    }
 }
 
 window.handleDelete = async function(id) {
