@@ -1288,8 +1288,7 @@ window.checkLogin = async () => {
             
             // 儲存登入資訊 (有效期 24 小時)
             const expiry = new Date().getTime() + LOGIN_EXPIRY_MS;
-            // 修正：統一使用包含使用者名稱的 Key
-            localStorage.setItem(`livenote_auth_${currentUser}`, JSON.stringify({ pass, expiry }));
+            localStorage.setItem('livenote_auth', JSON.stringify({ pass, expiry }));
 
             document.getElementById('login-modal').classList.add('hidden');
             document.body.classList.remove('login-open'); 
@@ -1575,14 +1574,14 @@ function showAdminForm(editData = null) {
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>出演者名單 (用、隔開)</label>
+                    <label>出演者名單 (多演出者用、隔開)</label>
                     <input type="text" name="artist_list" id="form-artist-list" placeholder="FES、拼盤請填此;ex: LiSA、May'n" value="${editData ? (editData.artist_list || '') : ''}" oninput="onArtistListInputChange(this.value)">
                     <div id="artist-quick-tags" class="quick-add-tags">${quickTags}</div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>巡迴/活動標題</label><input type="text" name="tour_title" placeholder="例如: ASIA TOUR 2024" required value="${editData ? editData.tour_title : ''}"></div>
                 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>會場名稱</label>
+                    <label>會場名稱 (多會場用、隔開)</label>
                     <div class="venue-cat-container">
                         <div class="venue-cat-btn active" data-region="ALL" onclick="updateVenueList('ALL')">ALL</div>
                         <div class="venue-cat-btn" data-region="TW" onclick="updateVenueList('TW')">TAIWAN</div>
