@@ -1555,7 +1555,7 @@ function showAdminForm(editData = null) {
                         <option value="SIGNING" ${editData?.type==='SIGNING'?'selected':''}>簽名會</option>
                         <option value="FAN_MEETING" ${editData?.type==='FAN_MEETING'?'selected':''}>見面會</option>
                         <option value="EXHIBITION" ${editData?.type==='EXHIBITION'?'selected':''}>展覽</option>
-                        <option value="EVENT" ${editData?.type==='EVENT'?'selected':''}>活動 (Event)</option>
+                        <option value="EVENT" ${editData?.type==='EVENT'?'selected':''}>活動</option>
                         <option value="SPORTS" ${editData?.type==='SPORTS'?'selected':''}>運動賽事</option>
                     </select></div>
                     <div style="flex:1;"><label>狀態</label><select name="status" style="width:100%;">
@@ -1766,7 +1766,7 @@ window.handleSave = async function() {
             data[key] = cleanVal;
         }
     });
-    const skipArtistCheck = ['EVENT', 'SPORTS'].includes(data.type);
+    const skipArtistCheck = ['EVENT', 'SPORTS','EXHIBITION'].includes(data.type);
     if (!skipArtistCheck && !data.artist.trim() && !data.artist_list.trim()) {
         await showAlert('請至少填寫「主要藝人」或「出演者名單」其中一項！', 'error');
         return;
