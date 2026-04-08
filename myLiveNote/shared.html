@@ -137,44 +137,31 @@
             position: fixed;
             bottom: 25px;
             left: 50%;
-            transform: translateX(-50%);
-            background: rgba(15, 15, 15, 0.98); /* 稍微調深，強化視覺實體感 */
+            transform: translateX(-50%); /* 恢復原本 PC 居中 */
+            background: rgba(15, 15, 15, 0.98); 
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
             border: 1px solid rgba(197, 164, 137, 0.5);
             padding: 12px 18px;
             border-radius: 14px;
-            z-index: 100000; /* 高於 Portal，低於功能按鈕 */
+            z-index: 110000; 
             display: flex;
             align-items: center;
             gap: 15px;
             box-shadow: 0 15px 50px rgba(0,0,0,0.9);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
             max-width: 90vw;
-            width: 360px;
+            width: 360px; /* 恢復原本 PC 寬度 */
             box-sizing: border-box;
-            animation: pwaSlideUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) both;
             cursor: pointer;
-            pointer-events: auto !important; /* 強制捕捉所有點擊 */
-        }
-
-        @keyframes pwaSlideUp {
-            from { transform: translate(-50%, 150%); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
-        }
-
-        /* 滑動時立刻隱藏 */
-        .pwa-install-banner.hidden-scroll {
-            transform: translate(-50%, 220%) scale(0.8);
-            opacity: 0;
-            pointer-events: none !important;
-            transition: transform 0.15s ease-in !important;
-        }
-
-        /* 側邊選單開啟時物理消失 */
-        body.no-scroll:not(.portal-active) .pwa-install-banner,
-        body.menu-open .pwa-install-banner {
-            display: none !important;
+            will-change: transform, opacity;
+            
+            /* 平滑進入動畫 */
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                        opacity 0.4s ease, 
+                        visibility 0.4s step-start;
         }
 
         .pwa-install-banner.hidden { display: none !important; }
@@ -183,24 +170,20 @@
         .pwa-info h4 { font-family: 'Bebas Neue'; color: var(--text-accent); font-size: 1.1rem; margin: 0; letter-spacing: 1px; }
         .pwa-info p { color: #888; font-size: 0.75rem; margin: 2px 0 0; font-family: 'Noto Sans TC'; }
         
-        .pwa-close { color: #555; cursor: pointer; font-size: 1.5rem; line-height: 1; margin-left: 5px; transition: color 0.3s; padding: 8px; z-index: 2; }
+        .pwa-close { color: #555; cursor: pointer; font-size: 1.5rem; line-height: 1; margin-left: 5px; transition: color 0.3s; padding: 8px; z-index: 2; pointer-events: auto !important; }
         .pwa-close:hover { color: #fff; }
 
         @media (max-width: 600px) {
             .pwa-install-banner { 
-                width: 240px; 
+                width: 240px; /* 恢復原本手機版寬度 */
                 left: 15px; 
-                transform: none; 
+                transform: none; /* 恢復原本手機版定位 */
                 bottom: 25px; 
-                padding: 10px 14px; 
+                padding: 10px 14px; /* 恢復原本手機版內距 */
             }
             .pwa-install-banner.hidden-scroll {
-                transform: translateY(220%) scale(0.8);
+                transform: translateY(150%) scale(0.9);
                 left: 15px;
-            }
-            @keyframes pwaSlideUp {
-                from { transform: translateY(150%); opacity: 0; }
-                to { transform: translateY(0); opacity: 1; }
             }
             body.portal-active .pwa-install-banner { bottom: 65px; }
         }
@@ -326,24 +309,28 @@
             const pwaBanner = document.getElementById('pwa-banner');
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             const isDismissed = sessionStorage.getItem('pwa-dismissed') === 'true';
+            let bannerVisibleTime = 0;
+
+            const showBanner = () => {
+                pwaBanner.classList.remove('hidden');
+                bannerVisibleTime = Date.now(); // 紀錄顯示時間
+                lucide.createIcons();
+            };
 
             if (!isStandalone && !isDismissed) {
                 window.addEventListener('beforeinstallprompt', (e) => {
                     e.preventDefault(); deferredPrompt = e;
-                    setTimeout(() => pwaBanner.classList.remove('hidden'), 3000);
+                    setTimeout(showBanner, 3000);
                 });
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                if (isIOS) {
-                    setTimeout(() => {
-                        const pwaDesc = pwaBanner.querySelector('p');
-                        if (pwaDesc) pwaDesc.textContent = '點擊分享並選擇「加入主畫面」';
-                        pwaBanner.classList.remove('hidden'); lucide.createIcons();
-                    }, 4000);
-                }
+                if (isIOS) setTimeout(showBanner, 4000);
             }
 
-            // 強力點擊攔截：確保不穿透到列表卡片或使用者卡片
-            pwaBanner.onclick = async (e) => {
+            // 核心處理邏輯
+            const handlePwaInteraction = async (e) => {
+                // 檢查是否點擊在關閉按鈕上
+                if (e.target.closest('.pwa-close')) return;
+
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
@@ -355,10 +342,15 @@
                     deferredPrompt = null;
                 } else {
                     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                    if (isIOS) showAlert('iOS 使用者請點擊分享按鈕並選擇「加入主畫面」。', 'info');
-                    else showAlert('請點擊瀏覽器選單中的「安裝應用程式」。', 'info');
+                    const msg = isIOS ? 'iOS 使用者請點擊分享按鈕並選擇「加入主畫面」。' : '請點擊瀏覽器選單中的「安裝應用程式」。';
+                    if (typeof showAlert === 'function') showAlert(msg, 'info');
+                    else alert(msg);
                 }
             };
+
+            // 使用「捕獲階段」監聽，確保在事件到達下方票券前攔截
+            pwaBanner.addEventListener('click', handlePwaInteraction, true);
+            pwaBanner.addEventListener('touchstart', handlePwaInteraction, { capture: true, passive: false });
 
             window.dismissPwaBanner = (e) => {
                 if (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
@@ -366,37 +358,42 @@
                 sessionStorage.setItem('pwa-dismissed', 'true');
             };
 
-            // 全方位滑動/觸控隱藏邏輯
+            // 全方位滑動/觸控隱藏邏輯 - 增加抖動排除與初期保護
             let scrollTimer = null;
-            const handleActivity = () => {
+            let lastScrollY = window.scrollY;
+
+            const handleActivity = (e) => {
                 if (pwaBanner.classList.contains('hidden')) return;
+
+                // 1. 初期保護：Banner 顯示的前 1.5 秒內不允許隱藏
+                if (Date.now() - bannerVisibleTime < 1500) return;
+
+                // 2. 增加位移門檻偵測 (30px)，避免極小抖動
+                if (e.type === 'scroll') {
+                    const delta = Math.abs(window.scrollY - lastScrollY);
+                    if (delta < 30) return; 
+                    lastScrollY = window.scrollY;
+                }
                 
-                // 1. 瞬間隱藏 (極速過渡)
+                // 3. 觸發隱藏動畫
                 pwaBanner.classList.add('hidden-scroll');
                 
-                // 2. 清除計時器
                 clearTimeout(scrollTimer);
-                
-                // 3. 停止活動 2.5 秒後，且非選單模式才顯現
                 scrollTimer = setTimeout(() => {
                     const isMenuOpen = document.body.classList.contains('no-scroll') && !document.body.classList.contains('portal-active');
-                    if (!isMenuOpen) {
-                        pwaBanner.classList.remove('hidden-scroll');
-                    }
+                    if (!isMenuOpen) pwaBanner.classList.remove('hidden-scroll');
                 }, 2500);
             };
 
-            // 監聽所有可能滑動的來源 (移除 touchstart 避免點擊時 Banner 跑掉導致穿透)
             const targets = [window, document, document.getElementById('portal-overlay'), document.querySelector('main')];
             targets.forEach(t => {
                 if (!t) return;
                 t.addEventListener('scroll', handleActivity, { passive: true });
-                t.addEventListener('touchmove', handleActivity, { passive: true });
+                // 移除 touchmove 監聽，因為 scroll 已經足夠偵測意圖，且 touchmove 容易造成點擊穿透
             });
 
-            // 確保手指在 Banner 上滑動或點擊時，不會觸發外層的隱藏邏輯
+            // 確保 Banner 內部的滑動不會觸發外層隱藏
             pwaBanner.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
-            pwaBanner.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
         })();
 
         // --- Portal & Quick Switch ---

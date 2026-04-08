@@ -434,6 +434,7 @@ section.active { display: block; }
     z-index: 5; /* Keep text on top */
     clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
     background: #000;
+    min-width: 0; /* 防止長內容撐破 Flex 容器 */
 }
 
 .ticket-title {
@@ -442,9 +443,9 @@ section.active { display: block; }
     color: var(--text-accent);
     margin: 0.4rem 0;
     line-height: 1.15;
-    overflow-wrap: break-word; /* 允許長單詞在必要時換行 */
-    word-break: keep-all; /* 防止英文單字從中間被截斷 */
-    line-break: strict; /* 對於 CJK 標點符號更嚴謹 */
+    overflow-wrap: anywhere; /* 允許在任何地方斷行，防止撐破容器 */
+    word-break: normal; 
+    line-break: loose; /* 對於 CJK 提供更多斷行機會 */
     
     /* 強制行數限制 (PC版預設 2 行) */
     display: -webkit-box;
@@ -453,8 +454,8 @@ section.active { display: block; }
     overflow: hidden;
     text-overflow: ellipsis;
     
-    /* 避免文字太貼近右側斜切線 */
-    padding-right: 1.5rem;
+    /* 避免文字太貼近右側斜切線 (12% 為 clip-path 的斜切比例) */
+    padding-right: 15%;
 }
 
 .ticket-subtitle { font-size: 1rem; color: #aaa; font-weight: bold; padding-right: 1rem; }
@@ -478,7 +479,7 @@ section.active { display: block; }
     flex-direction: column;
     gap: 0.6rem; 
     margin-top: auto; 
-    padding-right: 1rem; /* 標籤也不要太貼圖片 */
+    padding-right: 15%; /* 與標題一致，避開右側斜切圖片區域 */
 }
 
 .pill-row {
