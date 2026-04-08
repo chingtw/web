@@ -1212,9 +1212,9 @@ window.openDetail = function(id) {
         if (detailMapInstance) { detailMapInstance.remove(); detailMapInstance = null; }
         if (hasLatLng) { 
             const coordsArray = rawT.lat_lng.split('|').map(s => s.trim()).filter(s => s !== '');
+            const venueNames = (rawT.venue_name || '').split('、').map(v => v.trim()).filter(v => v !== '');
             const latlngs = [];
             
-            // 初始建立地圖時不設定視圖，等下用 fitBounds 或 setView
             detailMapInstance = L.map('detail-map', { zoomControl: false }); 
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(detailMapInstance); 
             
@@ -1226,12 +1226,14 @@ window.openDetail = function(id) {
                 popupAnchor: [0, -40]
             });
 
-            coordsArray.forEach(coords => {
+            coordsArray.forEach((coords, idx) => {
                 const [la, ln] = coords.split(',').map(Number);
                 if (!isNaN(la) && !isNaN(ln)) {
                     latlngs.push([la, ln]);
                     const marker = L.marker([la, ln], { icon: customIcon }).addTo(detailMapInstance);
-                    marker.bindPopup(`<strong style="color:white;">${rawT.venue_name}</strong>`);
+                    // 關鍵：依索引匹配對應的會場名稱
+                    const specificName = venueNames[idx] || venueNames[venueNames.length - 1] || rawT.venue_name;
+                    marker.bindPopup(`<strong style="color:white;">${specificName}</strong>`);
                 }
             });
 
