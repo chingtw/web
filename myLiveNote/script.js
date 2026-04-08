@@ -876,7 +876,7 @@ function initStats() {
     
     renderCostList(sc, yearlyAttendance);
 }
-
+ 
 function renderCostList(data, yearlyData) {
     const container = document.getElementById('cost-stats-list');
     const annualContainer = document.getElementById('annual-attendance-list');
