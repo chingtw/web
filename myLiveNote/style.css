@@ -52,8 +52,85 @@ body {
     animation: fadeInUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
 }
 
+/* 通用淡入類別 (恢復正常，僅負責動畫) */
 .animate-fade {
     animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* --- ELEGANT SECTION TITLES (僅針對 H2 標題優化) --- */
+h2.animate-fade {
+    font-family: 'Bebas Neue', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 10px; 
+    font-size: 1.8rem;
+    color: var(--text-accent);
+    margin: 3rem 0 2rem 0;
+    text-align: center;
+    position: relative;
+    display: flex;
+    flex-direction: column; /* 強制縱向排列 */
+    align-items: center;
+    gap: 8px;
+    font-weight: 400;
+    animation: elegant-entrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+h2.animate-fade span.stats-total-hint {
+    display: block;
+    font-size: 0.8rem;
+    letter-spacing: 4px;
+    color: #555;
+    margin-top: 5px;
+}
+
+h2.animate-fade::after {
+    content: "";
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 40px;
+    height: 1px;
+    background: var(--text-accent);
+    opacity: 0.4;
+    animation: line-expand 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+}
+
+@media (max-width: 600px) {
+    h2.animate-fade {
+        font-size: 1.5rem;
+        letter-spacing: 6px;
+        margin: 2.5rem 0 1.5rem 0;
+    }
+    h2.animate-fade span.stats-total-hint {
+        font-size: 0.7rem;
+        letter-spacing: 3px;
+    }
+}
+
+@keyframes elegant-entrance {
+    0% {
+        opacity: 0;
+        transform: translateY(8px);
+        letter-spacing: 4px;
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+        letter-spacing: 10px;
+    }
+}
+
+@keyframes line-expand {
+    to { transform: translateX(-50%) scaleX(1); }
+}
+
+@media (max-width: 600px) {
+    h2.animate-fade {
+        font-size: 1.4rem;
+        letter-spacing: 6px;
+        margin: 2.5rem 0 1.5rem 0;
+    }
 }
 
 /* Tabs Animation */
@@ -1117,7 +1194,34 @@ section.active { display: block; }
 
 /* STATS */
 .stats-switcher {
-    display: none; /* 電腦版隱藏 */
+    display: flex;
+    background: #111;
+    padding: 4px;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    gap: 4px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.switcher-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #666;
+    padding: 10px;
+    font-family: 'Bebas Neue';
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s;
+    letter-spacing: 1px;
+}
+
+.switcher-btn.active {
+    background: var(--text-accent);
+    color: #000;
 }
 
 .stats-container { 
@@ -1127,6 +1231,8 @@ section.active { display: block; }
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 .stats-card { 
@@ -1135,58 +1241,177 @@ section.active { display: block; }
     padding: 1.5rem; 
     border-radius: 12px;
     width: 100%;
+    min-width: 0; /* 關鍵：防止內容（如圖表）撐破 Grid 容器 */
     max-width: 100%;
     box-sizing: border-box;
     overflow: hidden;
 }
 
+.chart-wrapper { 
+    height: 220px; 
+    margin-bottom: 1.5rem; 
+    position: relative; 
+    width: 100%; 
+    max-width: 100%; /* 強制限制寬度 */
+}
+
+/* --- PREMIUM EXPENDITURE STYLES (Champagne Gold Aesthetic) --- */
+.annual-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 12px;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(197, 164, 137, 0.1);
+}
+
+.annual-item {
+    background: #080808;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    padding: 14px 5px;
+    border-radius: 10px;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* 高質感香檳金水位層 */
+.annual-item::before {
+    content: "";
+    position: absolute;
+    bottom: 0; left: 0; width: 100%;
+    height: var(--level, 0%);
+    /* 漸層改為更柔和的霧面金 */
+    background: linear-gradient(to top, 
+        rgba(197, 164, 137, 0.15) 0%, 
+        rgba(197, 164, 137, 0.05) 50%, 
+        transparent 100%);
+    z-index: -1;
+    transition: height 1.8s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.annual-item:hover {
+    border-color: rgba(197, 164, 137, 0.4);
+    background: #0c0c0c;
+    transform: translateY(-3px); /* 懸停微升 */
+}
+
+.annual-item .year-label {
+    display: block;
+    font-family: 'Bebas Neue';
+    font-size: 0.8rem;
+    color: #444;
+    letter-spacing: 2px;
+}
+
+.annual-item .count-value {
+    display: block;
+    font-family: 'Anton', sans-serif;
+    font-size: 1.3rem;
+    color: var(--text-accent);
+    margin-top: 4px;
+    text-shadow: 0 0 15px rgba(197, 164, 137, 0.3);
+}
+
+.annual-item .unit-label {
+    font-size: 0.6rem;
+    color: #333;
+    margin-left: 3px;
+    font-family: 'Bebas Neue';
+}
+
+/* 支出總額大卡片 - 精品化改裝 */
+#cost-stats-list .stats-item {
+    border: 1px solid rgba(197, 164, 137, 0.15);
+    background: radial-gradient(circle at top left, #0f0f0f 0%, #050505 100%);
+    padding: 2rem 1.5rem;
+    border-radius: 16px;
+    margin-bottom: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(197, 164, 137, 0.02);
+}
+
+/* 頂部裝飾小光條 */
+#cost-stats-list .stats-item::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 30px; height: 2px;
+    background: var(--text-accent);
+    box-shadow: 0 0 10px var(--text-accent);
+    border-radius: 0 0 2px 2px;
+}
+
+#cost-stats-list .name {
+    font-family: 'Bebas Neue';
+    letter-spacing: 4px;
+    color: #666 !important;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+}
+
+#cost-stats-list .count {
+    font-size: 2.4rem !important; 
+    font-family: 'Anton', sans-serif;
+    color: var(--text-accent) !important;
+    letter-spacing: 1px;
+    background: linear-gradient(180deg, #E0BC9D 0%, #C5A489 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+@media (max-width: 600px) {
+    .annual-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    #cost-stats-list .stats-item { padding: 1.5rem 1rem; }
+    #cost-stats-list .count { font-size: 1.8rem !important; }
+}
 @media (max-width: 600px) { 
-    .stats-switcher {
-        display: flex;
-        background: #111;
-        padding: 4px;
-        border-radius: 8px;
-        margin-bottom: 1.5rem;
-        gap: 4px;
-    }
-
-    .switcher-btn {
-        flex: 1;
-        background: transparent;
-        border: none;
-        color: #666;
-        padding: 10px;
-        font-family: 'Bebas Neue';
-        font-size: 1rem;
-        cursor: pointer;
-        border-radius: 6px;
-        transition: all 0.3s;
-    }
-
-    .switcher-btn.active {
-        background: var(--text-accent);
-        color: #000;
-    }
-
     .stats-container { 
-        grid-template-columns: 1fr; 
-        gap: 1.2rem;
-        padding: 0;
-        width: 100%;
-    } 
-
-    /* 手機版隱藏非作用中的卡片 */
-    .stats-container.active-artist .stats-card:last-child { display: none; }
-    .stats-container.active-venue .stats-card:first-child { display: none; }
-
+        grid-template-columns: 1fr !important; 
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        display: block; /* 手機版改回 block 降低排版複雜度 */
+    }
+    
     .stats-card {
-        padding: 1rem;
-        width: 100%;
-        max-width: 100%;
+        padding: 1.2rem 1rem;
+        display: none;
+        width: 100% !important;
+        max-width: 100% !important;
     }
-    .chart-wrapper {
-        height: 180px;
+    
+    .stats-container.active-artist .stats-card:nth-child(1),
+    .stats-container.active-venue .stats-card:nth-child(2),
+    .stats-container.active-type .stats-card:nth-child(3),
+    .stats-container.active-cost .stats-card:nth-child(4) { 
+        display: block !important; 
     }
+    
+    .stats-switcher { 
+        margin-bottom: 1.2rem; 
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+    .switcher-btn { 
+        font-size: 0.75rem; 
+        padding: 10px 2px;
+        letter-spacing: 0.5px;
+    }
+}
+
+@media (min-width: 900px) {
+    .stats-container {
+        grid-template-columns: 1fr 1fr;
+    }
+    .stats-switcher { display: none; }
+    .stats-container .stats-card { display: block !important; }
 }
 
 .stats-card h3 { font-family: 'Bebas Neue'; color: var(--text-accent); text-align: center; margin-bottom: 1.5rem; letter-spacing: 1px; }

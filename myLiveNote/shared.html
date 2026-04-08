@@ -294,20 +294,34 @@
         <section id="map-view"><div id="map"></div></section>
         
         <section id="stats-view">
+            <h2 class="animate-fade">STATS</h2>
             <div class="stats-switcher">
-                <button class="switcher-btn active" data-stats="artist">ARTIST RANK</button>
-                <button class="switcher-btn" data-stats="venue">VENUE RANK</button>
+                <button class="switcher-btn active" data-stats="artist">ARTIST</button>
+                <button class="switcher-btn" data-stats="venue">VENUE</button>
+                <button class="switcher-btn" data-stats="type">TYPE</button>
+                <button class="switcher-btn" data-stats="cost">COST</button>
             </div>
             <div class="stats-container active-artist">
-                <div class="stats-card">
+                <div class="stats-card animate-up">
                     <h3>ARTIST RANKING</h3>
                     <div class="chart-wrapper"><canvas id="artistChart"></canvas></div>
                     <div id="artist-stats-list" class="stats-list"></div>
                 </div>
-                <div class="stats-card">
+                <div class="stats-card animate-up" style="animation-delay: 0.1s;">
                     <h3>VENUE RANKING</h3>
                     <div class="chart-wrapper"><canvas id="venueChart"></canvas></div>
                     <div id="venue-stats-list" class="stats-list"></div>
+                </div>
+                <div class="stats-card animate-up" style="animation-delay: 0.2s;">
+                    <h3>EVENT TYPE</h3>
+                    <div class="chart-wrapper"><canvas id="typeChart"></canvas></div>
+                    <div id="type-stats-list" class="stats-list"></div>
+                </div>
+                <div class="stats-card animate-up" style="animation-delay: 0.3s;">
+                    <h3>EXPENDITURE</h3>
+                    <div id="annual-attendance-list" class="annual-grid"></div>
+                    <div style="margin-top:20px;" id="cost-stats-list"></div>
+                    <p style="color:#444; font-size:0.7rem; margin-top:20px; text-align:center; font-family:'Bebas Neue'; letter-spacing:1px;">* Includes confirmed & completed records only</p>
                 </div>
             </div>
         </section>

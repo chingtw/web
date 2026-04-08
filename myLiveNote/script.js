@@ -259,10 +259,10 @@ function setupStatsSwitcher() {
             btn.classList.add('active');
             
             const type = btn.dataset.stats;
-            container.classList.remove('active-artist', 'active-venue');
+            // 先移除所有可能的狀態類別
+            container.classList.remove('active-artist', 'active-venue', 'active-type', 'active-cost');
+            // 再加入目前的狀態
             container.classList.add(`active-${type}`);
-            
-            // 如果切換時圖表跑掉，可以觸發 resize (Chart.js 自動處理)
         };
     });
 }
@@ -816,49 +816,98 @@ function initMap() {
 }
 
 function initStats() {
-    const artC = {}; const venC = {};
+    const artC = {}; const venC = {}; const typC = {}; const costC = {};
+    const yearlyAttendance = {}; // 用於儲存每年場次
+    let totalCount = 0;
+
     allTickets.forEach(t => { 
         if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET'].includes(t.status)) return; 
+        totalCount++;
 
-        // 收集這一場所有的藝人
-        const currentEventArtists = new Set();
-        
-        // 1. 加入主要藝人
-        if (t.artist && t.artist.trim() !== '') {
-            currentEventArtists.add(t.artist.trim());
+        const year = cleanDate(t.date).split('-')[0];
+
+        // 0. 年度場次統計
+        if (year) {
+            yearlyAttendance[year] = (yearlyAttendance[year] || 0) + 1;
         }
-        
-        // 2. 加入名單中的藝人 (支援中文頓號、英文逗號)
+
+        // 1. 藝人統計
+        const currentEventArtists = new Set();
+        if (t.artist && t.artist.trim() !== '') currentEventArtists.add(t.artist.trim());
         if (t.artist_list && t.artist_list.trim() !== '') {
             const list = t.artist_list.split(/[、,]+/).map(s => s.trim()).filter(s => s !== '');
             list.forEach(a => currentEventArtists.add(a));
         }
+        currentEventArtists.forEach(a => { artC[a] = (artC[a] || 0) + 1; });
 
-        // 3. 統一計入統計物件
-        currentEventArtists.forEach(a => {
-            artC[a] = (artC[a] || 0) + 1;
-        });
-
+        // 2. 場地統計
         if (t.venue_name && t.venue_name.trim() !== '') {
-            // 支援多會場解析：依 、 或 , 分隔
             const venues = t.venue_name.split(/[、,]+/).map(s => s.trim()).filter(s => s !== '');
-            venues.forEach(v => {
-                venC[v] = (venC[v] || 0) + 1;
-            });
+            venues.forEach(v => { venC[v] = (venC[v] || 0) + 1; });
+        }
+
+        // 3. 公演種別統計
+        const typeKey = t.type || 'ONE_MAN';
+        typC[typeKey] = (typC[typeKey] || 0) + 1;
+
+        // 4. 金額統計
+        if (t.ticket_price && !isNaN(t.ticket_price)) {
+            const cur = t.currency || 'TWD';
+            costC[cur] = (costC[cur] || 0) + Number(t.ticket_price);
         }
     });
-    const sa = Object.entries(artC).sort((a,b)=>b[1]-a[1]); const sv = Object.entries(venC).sort((a,b)=>b[1]-a[1]);
+
+    const sa = Object.entries(artC).sort((a,b)=>b[1]-a[1]); 
+    const sv = Object.entries(venC).sort((a,b)=>b[1]-a[1]);
+    const st = Object.entries(typC).sort((a,b)=>b[1]-a[1]);
+    const sc = Object.entries(costC).sort((a,b)=>b[1]-a[1]);
+
+    // 更新總場次標題
+    const statsTitle = document.querySelector('#stats-view h2');
+    if (statsTitle) statsTitle.innerHTML = `STATS <span class="stats-total-hint">TOTAL: ${totalCount} RECORDS</span>`;
+
+    renderDonut('artistChart', sa.slice(0, 10), artistChartInstance, (c)=>artistChartInstance=c);
+    renderDonut('venueChart', sv.slice(0, 10), venueChartInstance, (c)=>venueChartInstance=c);
+    renderDonut('typeChart', st.map(i => [TYPE_MAP_JP[i[0]] || i[0], i[1]]), null, (c)=>{}); 
+
+    renderStatsList('artist-stats-list', sa, 'artist'); 
+    renderStatsList('venue-stats-list', sv, 'venue');
+    renderStatsList('type-stats-list', st.map(i => [TYPE_MAP_JP[i[0]] || i[0], i[1]]), 'type');
     
-    // 清除舊的按鈕避免重複
-    document.querySelectorAll('.show-more-btn').forEach(b => b.remove());
+    renderCostList(sc, yearlyAttendance);
+}
 
-    // 圖表顯示門檻調整：只要有 1 回就顯示，最多顯示前 10 名
-    const saForChart = sa.filter(d => d[1] >= 1).slice(0, 10);
-    const svForChart = sv.filter(d => d[1] >= 1).slice(0, 10);
+function renderCostList(data, yearlyData) {
+    const container = document.getElementById('cost-stats-list');
+    const annualContainer = document.getElementById('annual-attendance-list');
+    if (!container || !annualContainer) return;
 
-    renderDonut('artistChart', saForChart, artistChartInstance, (c)=>artistChartInstance=c);
-    renderDonut('venueChart', svForChart, venueChartInstance, (c)=>venueChartInstance=c);
-    renderStatsList('artist-stats-list', sa, 'artist'); renderStatsList('venue-stats-list', sv, 'venue');
+    // 找出最高場次的年份，作為 100% 水位基準
+    const counts = Object.values(yearlyData);
+    const maxCount = counts.length > 0 ? Math.max(...counts) : 1;
+
+    // 1. 渲染年度場次 (含動態水位)
+    const sortedYears = Object.keys(yearlyData).sort((a, b) => b - a);
+    annualContainer.innerHTML = sortedYears.map(year => {
+        const count = yearlyData[year];
+        const levelPercent = (count / maxCount) * 100;
+        return `
+            <div class="annual-item" style="--level: ${levelPercent}%">
+                <span class="year-label">${year}</span>
+                <span class="count-value">${count}<span class="unit-label">RECORDS</span></span>
+            </div>
+        `;
+    }).join('');
+
+    // 2. 渲染總額
+    container.innerHTML = data.map(i => `
+        <div class="stats-item no-hover" style="cursor:default;">
+            <div class="stats-header">
+                <span class="name" style="font-family:'Bebas Neue'; letter-spacing:1px; color:#888;">${i[0]} TOTAL EXPENDITURE</span>
+                <span class="count" style="font-size:1.4rem;">${formatPrice(i[1], i[0])}</span>
+            </div>
+        </div>
+    `).join('');
 }
 
 function renderDonut(id, data, inst, save) {
@@ -898,16 +947,21 @@ function renderStatsList(id, data, type = 'artist') {
         const name = i[0];
         const count = i[1];
         
-        // 篩選與該藝人/場地相關的所有場次
+        // 篩選與該藝人/場地/種類相關的所有場次
         const relatedEvents = allTickets.filter(t => {
             if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET'].includes(t.status)) return false;
             if (type === 'artist') {
                 const list = (t.artist_list || '').split(/[、,]+/).map(s => s.trim());
                 return (t.artist === name) || list.includes(name);
-            } else {
+            } else if (type === 'venue') {
                 const venueList = (t.venue_name || '').split(/[、,]+/).map(s => s.trim());
                 return venueList.includes(name);
+            } else if (type === 'type') {
+                // 透過反查 TYPE_MAP_JP 或直接匹配原始值
+                const rawType = Object.keys(TYPE_MAP_JP).find(k => TYPE_MAP_JP[k] === name) || name;
+                return t.type === rawType;
             }
+            return false;
         }).sort((a, b) => new Date(cleanDate(b.date)) - new Date(cleanDate(a.date)));
 
         const detailsHtml = relatedEvents.map(e => `
