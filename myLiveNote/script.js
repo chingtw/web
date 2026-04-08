@@ -1569,13 +1569,13 @@ function showAdminForm(editData = null) {
                 
                 <div style="display:flex; flex-direction:column; gap:5px;">
                     <label>主要藝人 (Artist)</label>
-                    <input type="text" name="artist" list="artist-list" placeholder="單一藝人專場請填此 (FES可留空)" value="${editData ? editData.artist : ''}">
+                    <input type="text" name="artist" list="artist-list" placeholder="單一藝人專場請填此 (FES可留空)" value="${editData ? editData.artist : ''}" autocomplete="off" spellcheck="false">
                     <datalist id="artist-list">${artistOptions}</datalist>
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
                     <label>出演者名單 (多演出者用、隔開)</label>
-                    <input type="text" name="artist_list" id="form-artist-list" placeholder="FES、拼盤請填此;ex: LiSA、May'n" value="${editData ? (editData.artist_list || '') : ''}" oninput="onArtistListInputChange(this.value)">
+                    <input type="text" name="artist_list" id="form-artist-list" placeholder="FES、拼盤請填此;ex: LiSA、May'n" value="${editData ? (editData.artist_list || '') : ''}" oninput="onArtistListInputChange(this.value)" autocomplete="off" spellcheck="false">
                     <div id="artist-quick-tags" class="quick-add-tags">${quickTags}</div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:5px;"><label>巡迴/活動標題</label><input type="text" name="tour_title" placeholder="例如: ASIA TOUR 2024" required value="${editData ? editData.tour_title : ''}"></div>
@@ -1588,7 +1588,7 @@ function showAdminForm(editData = null) {
                         <div class="venue-cat-btn" data-region="JP" onclick="updateVenueList('JP')">JAPAN</div>
                         <div class="venue-cat-btn" data-region="OTHER" onclick="updateVenueList('OTHER')">OTHER</div>
                     </div>
-                    <input type="text" name="venue_name" placeholder="例如: 台北巨蛋 (台北)" required value="${editData ? editData.venue_name : ''}" oninput="onVenueInputChange(this.value)">
+                    <input type="text" name="venue_name" placeholder="例如: 台北巨蛋 (台北)" required value="${editData ? editData.venue_name : ''}" oninput="onVenueInputChange(this.value)" autocomplete="off" spellcheck="false">
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
