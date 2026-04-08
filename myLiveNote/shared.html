@@ -71,6 +71,48 @@
             text-transform: uppercase;
             animation: fadeIn 1s ease 0.3s both;
         }
+
+        /* Loading Bar Styles */
+        .loading-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            animation: fadeIn 0.8s ease forwards;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .loading-wrapper.fade-out {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+        .loading-text {
+            font-family: 'Bebas Neue';
+            color: #444;
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+        }
+        .gold-progress-bar {
+            width: 200px;
+            height: 2px;
+            background: #111;
+            border-radius: 1px;
+            overflow: hidden;
+            position: relative;
+        }
+        .gold-progress-inner {
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: var(--text-accent);
+            box-shadow: 0 0 15px var(--text-accent);
+            animation: goldLoading 1.5s cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
+        }
+        @keyframes goldLoading {
+            0% { left: -100%; }
+            50% { left: 0%; }
+            100% { left: 100%; }
+        }
         
         /* Quick Switcher (右下角) */
         .quick-switch-container {
@@ -186,6 +228,11 @@
                 left: 15px;
             }
             body.portal-active .pwa-install-banner { bottom: 65px; }
+            /* 選單開啟或燈箱開啟 (no-scroll) 時強制隱藏 Banner，避免遮擋 */
+            body.menu-open .pwa-install-banner,
+            body.no-scroll .pwa-install-banner {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -198,7 +245,12 @@
             <h1 class="portal-title">LIVE NOTE</h1>
             <p class="portal-subtitle">SELECT ACCESS PASS <span>/ 参戰者を選択してください</span></p>
             <div id="user-list" class="user-grid">
-                <p style="color:#333; grid-column: 1/-1;">Loading Access Passes...</p>
+                <div class="loading-wrapper" style="grid-column: 1/-1; padding: 40px 0;">
+                    <p class="loading-text">SYNCING ACCESS PASSES...</p>
+                    <div class="gold-progress-bar">
+                        <div class="gold-progress-inner"></div>
+                    </div>
+                </div>
             </div>
             <div style="margin-top: 5rem;">
                 <a href="index.html" style="color: #444; text-decoration: none; font-family: 'Bebas Neue'; font-size: 0.85rem; letter-spacing: 2px; border-bottom: 1px solid #222; padding-bottom: 3px;">BACK TO MASTER SITE</a>
@@ -235,7 +287,7 @@
                 <div id="filter-addon"></div>
             </div>
             <div id="year-filter" class="year-filter-bar"></div>
-            <div id="loading" class="skeleton-container"><div class="skeleton-ticket"></div><div class="skeleton-ticket"></div></div>
+            <div id="loading" class="skeleton-container"><div class="skeleton-ticket"></div><div class="skeleton-ticket"></div><div class="skeleton-ticket"></div></div>
             <div id="ticket-container" class="ticket-list"></div>
         </section>
         
@@ -425,6 +477,15 @@
             try {
                 const res = await fetch(`${GAS_API_URL}?action=getUsers`);
                 const users = await res.json();
+                
+                // 1. 執行淡出動畫
+                const loader = userList.querySelector('.loading-wrapper');
+                if (loader) {
+                    loader.classList.add('fade-out');
+                    await new Promise(r => setTimeout(r, 400)); // 等待動畫結束
+                }
+
+                // 2. 清空並渲染使用者
                 userList.innerHTML = ''; quickUserMenu.innerHTML = '';
                 const masterData = users.find(u => u.username === 'ching') || { username: 'ching', display_name: 'CHING (MASTER)' };
                 const filteredUsers = users.filter(u => u.username !== 'ching');

@@ -920,10 +920,13 @@ function renderStatsList(id, data, type = 'artist') {
         `).join('');
 
         return `
-            <div class="stats-item animate-fade" onclick="this.querySelector('.stats-details').classList.toggle('open')">
+            <div class="stats-item animate-fade" onclick="this.classList.toggle('open'); this.querySelector('.stats-details').classList.toggle('open');">
                 <div class="stats-header">
                     <span class="name">${name}</span>
-                    <span class="count">${count} 回</span>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span class="count">${count} 回</span>
+                        <div class="toggle-icon"></div>
+                    </div>
                 </div>
                 <div class="stats-details">
                     ${detailsHtml}
@@ -967,13 +970,13 @@ function renderStatsList(id, data, type = 'artist') {
     }
 }
 
-window.toggleMenu = () => { 
+window.toggleMenu = () => {
     const sideMenu = document.getElementById('side-menu');
     const isOpen = sideMenu.classList.toggle('open');
-    document.getElementById('side-menu-overlay').classList.toggle('hidden'); 
+    document.getElementById('side-menu-overlay').classList.toggle('hidden');
+    document.body.classList.toggle('menu-open', isOpen); // 加入此行以同步 body 狀態
     toggleBodyScroll(isOpen);
-};
-function renderMenu(tickets) {
+};function renderMenu(tickets) {
     const menu = document.getElementById('menu-content'); 
     const nav = document.getElementById('menu-nav');
     menu.innerHTML = '';
