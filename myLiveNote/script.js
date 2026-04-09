@@ -506,22 +506,42 @@ async function fetchData() {
     const urlParams = new URLSearchParams(window.location.search);
     const currentUser = urlParams.get('u') || 'ching';
     const cacheKey = `livenote_cache_${currentUser}`;
+    const CACHE_TTL = 30 * 60 * 1000; // 30 分鐘時效
 
-    // 1. SWR: 優先載入快取
-    const cached = localStorage.getItem(cacheKey);
+    // 1. SWR 智慧檢查
+    const cachedStr = localStorage.getItem(cacheKey);
     let cachedData = null;
-    if (cached) {
+    let isStale = true;
+
+    if (cachedStr) {
         try {
-            cachedData = JSON.parse(cached);
-            allTickets = cachedData;
-            renderApp(cachedData);
-            setLogoState('circle');
-            toggleBodyScroll(false);
-        } catch (e) { console.error(e); }
+            const cacheObj = JSON.parse(cachedStr);
+            // 檢查是否包含時間戳記與資料
+            if (cacheObj && cacheObj.data) {
+                const now = Date.now();
+                isStale = (now - cacheObj.timestamp) > CACHE_TTL;
+                cachedData = cacheObj.data;
+                
+                // 如果快取還算新，或是雖然舊但還有資料，先呈現給使用者看
+                if (cachedData.length > 0) {
+                    allTickets = cachedData;
+                    renderApp(cachedData);
+                    
+                    // 如果快取沒過期，可以直接關閉 Loading
+                    if (!isStale) {
+                        setLogoState('circle');
+                        toggleBodyScroll(false);
+                    }
+                }
+            }
+        } catch (e) { console.error('Cache error:', e); }
     }
 
+    // 2. 只有在完全沒快取，或快取已判定為過期時，才強制鎖定 UI 顯示 Loading
+    const shouldShowLoading = !cachedData || isStale;
+
     try {
-        if (!cached) {
+        if (shouldShowLoading) {
             setLogoState('loading');
             toggleBodyScroll(true); 
         }
@@ -529,15 +549,21 @@ async function fetchData() {
         const res = await fetch(`${GAS_API_URL}?u=${currentUser}`);
         const serverData = (await res.json()).filter(t => t.id && t.status !== 'HIDDEN');
 
+        // 3. 背景更新 LocalStorage (包含最新時間戳記)
+        const newCacheObj = {
+            timestamp: Date.now(),
+            data: serverData
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(newCacheObj));
+
         if (cachedData) {
-            // 2. 差異化對比更新 (Surgical Patch)
+            // 差異化對比更新
             applySurgicalUpdates(serverData);
         } else {
             allTickets = serverData;
             renderApp(serverData);
         }
 
-        localStorage.setItem(cacheKey, JSON.stringify(serverData));
         setLogoState('circle');
         toggleBodyScroll(false);
 
@@ -546,6 +572,12 @@ async function fetchData() {
 
     } catch (e) { 
         console.error('Fetch error:', e);
+        // 若出錯且原本沒快取，才顯示 Mock Data
+        if (!cachedData) {
+            renderApp(MOCK_DATA);
+            setLogoState('circle');
+            toggleBodyScroll(false);
+        }
     }
 }
 
