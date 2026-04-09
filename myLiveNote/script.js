@@ -1,5 +1,5 @@
 // CONFIGURATION
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzhQvDIcEwiUhMcQ_zORbokTnhDxlCgFRjCS_QHByaTF0OJ6sygnYQpoozVIqbO536b/exec'
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbz8iKKBKn_b9heN9McL_4wPzcUK6MBEtPLimvXLB2nLBoa4rHordfyPzniH_6HNdDMd/exec'
 
 
 // MOCK DATA
@@ -9,6 +9,13 @@ const MOCK_DATA = [
 
 const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'ONLINE': 'ONLINE', 'SIGNING': 'EVENT', 'FAN_MEETING': 'EVENT', 'EVENT': 'EVENT', 'EXHIBITION': 'EXHIBIT', 'STAGE': 'STAGE', 'SPORTS': 'SPORTS' };
 const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン會', 'FAN_MEETING': 'ファンミーティング', 'EVENT': 'イベント', 'EXHIBITION': '展示會', 'STAGE': '舞台劇 / 演劇', 'SPORTS': 'スポーツ / 試合' };
+
+const MILESTONE_MAP = {
+    'ARTIST': { label: '初參戰', class: 'badge-artist', icon: 'mic-2' },
+    'EXPEDITION': { label: '初遠征', class: 'badge-expedition', icon: 'plane' },
+    'VENUE': { label: '初会場', class: 'badge-venue', icon: 'map-pin' },
+    'EVENT': { label: '初參加', class: 'badge-event', icon: 'star' }
+};
 
 let allTickets = [];
 let venueConfig = [];
@@ -426,66 +433,116 @@ window.addEventListener('scroll', () => {
 
 initDynamicLogo();
 
+// --- TICKET ELEMENT GENERATOR ---
+function generateTicketHTML(t, index = 0) {
+    let statusClass = '';
+    let statusText = '';
+    switch(t.status) {
+        case 'APPLIED': statusClass = 'status-applied'; statusText = '抽選中 / 待搶票'; break;
+        case 'CONFIRMED': statusClass = 'status-confirmed'; statusText = '參戰確定'; break;
+        case 'COMPLETED': statusClass = 'status-completed'; statusText = '<i data-lucide="check-circle-2" style="width:12px; vertical-align:middle;"></i> 參戰完畢'; break;
+        case 'FAILED_DRAW': statusClass = 'status-failed'; statusText = '落選'; break;
+        case 'FAILED_TICKET': statusClass = 'status-failed'; statusText = '搶票失敗'; break;
+        default: statusClass = 'status-confirmed'; statusText = '參戰確定'; break;
+    }
+    const proLabel = TYPE_MAP_PRO[t.type] || 'LIVE';
+    
+    let badgesHtml = '';
+    if (t.is_first_time) {
+        const rawMilestones = t.is_first_time.toString().split(/[、,]+/).map(s => s.trim());
+        const uniqueMilestones = new Set();
+        rawMilestones.forEach(m => {
+            if (m === 'true' || m === '1' || m === 'ARTIST') uniqueMilestones.add('ARTIST');
+            else if (MILESTONE_MAP[m]) uniqueMilestones.add(m);
+        });
+
+        if (uniqueMilestones.size > 0) {
+            badgesHtml = `<div class="badge-container">`;
+            Object.keys(MILESTONE_MAP).forEach(key => {
+                if (uniqueMilestones.has(key)) {
+                    const info = MILESTONE_MAP[key];
+                    badgesHtml += `<div class="badge-item ${info.class}"><span>${info.label}</span></div>`;
+                }
+            });
+            badgesHtml += `</div>`;
+        }
+    }
+
+    const venues = (t.venue_name || '').split(/[、,]+/).map(v => v.trim()).filter(v => v !== '');
+    const venuePillsHtml = venues.map(v => `<div class="pill venue-pill"><i data-lucide="map-pin"></i> ${v}</div>`).join('');
+    const ticketYear = cleanDate(t.date).split('-')[0];
+
+    return `
+        ${badgesHtml}
+        <div class="ticket-info-left" onclick="openDetail('${t.id}')">
+            <div class="ticket-header">
+                <div class="ticket-logo">${proLabel}</div>
+                <div class="status-badge">${statusText}</div>
+            </div>
+            <div class="ticket-title">${t.tour_title}</div>
+            <div class="ticket-subtitle">${t.artist}</div>
+            <div class="ticket-meta-top"><div class="info-box"><span>PRICE</span><span>${formatPrice(t.ticket_price, t.currency)}</span></div><div class="info-box"><span>SEAT</span><span>${t.seat_info || '-'}</span></div></div>
+            <div class="ticket-pills">
+                <div class="pill-row venue-row">${venuePillsHtml}</div>
+                <div class="pill-row time-row">
+                    <div class="pill"><i data-lucide="calendar"></i> ${cleanDate(t.date)}</div>
+                    ${cleanTime(t.time) ? `<div class="pill"><i data-lucide="clock"></i> ${cleanTime(t.time)}</div>` : ''}
+                </div>
+            </div>
+        </div>
+        <div class="ticket-visual" onclick="openDetail('${t.id}')" style="background-image: url('${t.images || ''}')"></div>
+        <div class="ticket-stub-right" onclick="openDetail('${t.id}')"><div class="barcode-container"><div class="barcode"></div><div class="ticket-num">${t.id}</div></div></div>
+    `;
+}
+
 async function fetchData() {
     const navBar = document.querySelector('.tabs');
     const menuBtn = document.getElementById('menu-btn');
     const filterBar = document.querySelector('.filter-categories');
-    const userSwitchBtn = document.getElementById('user-switch-btn');
-    const quickSwitchBtn = document.querySelector('.quick-switch-btn');
     
-    // 取得 URL 中的使用者參數
     const urlParams = new URLSearchParams(window.location.search);
-    const currentUser = urlParams.get('u');
+    const currentUser = urlParams.get('u') || 'ching';
+    const cacheKey = `livenote_cache_${currentUser}`;
 
-    try {
-        setLogoState('loading');
-        toggleBodyScroll(true); 
-        
-        navBar.classList.add('nav-locked');
-        menuBtn.classList.add('nav-locked');
-        if (filterBar) filterBar.classList.add('nav-locked');
-        if (userSwitchBtn) userSwitchBtn.classList.add('nav-locked');
-        if (quickSwitchBtn) quickSwitchBtn.classList.add('nav-locked');
-
-        let validData;
-        if (!GAS_API_URL) { 
-            validData = MOCK_DATA;
-        } else {
-            // 如果有指定使用者，則在請求中加入參數
-            const requestUrl = currentUser ? `${GAS_API_URL}?u=${currentUser}` : GAS_API_URL;
-            const res = await fetch(requestUrl);
-            const rawData = await res.json();
-            // 核心修改：排除狀態為 HIDDEN 的紀錄 (軟刪除)
-            validData = (rawData && rawData.length > 0) 
-                ? rawData.filter(t => t.id && String(t.id).trim() !== '' && t.status !== 'HIDDEN') 
-                : MOCK_DATA;
-        }
-
-        setTimeout(() => {
-            renderApp(validData);
+    // 1. SWR: 優先載入快取
+    const cached = localStorage.getItem(cacheKey);
+    let cachedData = null;
+    if (cached) {
+        try {
+            cachedData = JSON.parse(cached);
+            allTickets = cachedData;
+            renderApp(cachedData);
             setLogoState('circle');
             toggleBodyScroll(false);
+        } catch (e) { console.error(e); }
+    }
 
-            // 如果有使用者名稱，更新副標題視覺
-            if (currentUser) {
-                const subtitle = document.querySelector('.subtitle');
-                if (subtitle) subtitle.textContent = `${currentUser.toUpperCase()} 參戰紀錄`;
-            }
-        }, 1200);
+    try {
+        if (!cached) {
+            setLogoState('loading');
+            toggleBodyScroll(true); 
+        }
+        
+        const res = await fetch(`${GAS_API_URL}?u=${currentUser}`);
+        const serverData = (await res.json()).filter(t => t.id && t.status !== 'HIDDEN');
+
+        if (cachedData) {
+            // 2. 差異化對比更新 (Surgical Patch)
+            applySurgicalUpdates(serverData);
+        } else {
+            allTickets = serverData;
+            renderApp(serverData);
+        }
+
+        localStorage.setItem(cacheKey, JSON.stringify(serverData));
+        setLogoState('circle');
+        toggleBodyScroll(false);
+
+        const subtitle = document.querySelector('.subtitle');
+        if (subtitle) subtitle.textContent = `${currentUser.toUpperCase()} 參戰紀錄`;
 
     } catch (e) { 
         console.error('Fetch error:', e);
-        renderApp(MOCK_DATA); 
-        setLogoState('circle');
-        toggleBodyScroll(false);
-    } finally {
-        setTimeout(() => {
-            navBar.classList.remove('nav-locked');
-            menuBtn.classList.remove('nav-locked');
-            if (filterBar) filterBar.classList.remove('nav-locked');
-            if (userSwitchBtn) userSwitchBtn.classList.remove('nav-locked');
-            if (quickSwitchBtn) quickSwitchBtn.classList.remove('nav-locked');
-        }, 1200);
     }
 }
 
@@ -495,7 +552,6 @@ function renderApp(data) {
     if (loadingEl) loadingEl.style.display = 'none';
     
     renderFilterBar(); 
-    // 改為呼叫 filterTickets 確保套用預設過濾邏輯 (隱藏失敗紀錄)
     filterTickets(); 
     renderMenu(data);
 }
@@ -509,7 +565,6 @@ function renderFilterBar() {
     if (currentFilterCategory === 'date') {
         values = ['ALL', ...new Set(allTickets.map(t => cleanDate(t.date).split('-')[0]))].sort((a,b) => b==='ALL'?-1:b-a);
     } else if (currentFilterCategory === 'artist') {
-        // 1. 整合主要藝人與出演名單
         const counts = {};
         allTickets.forEach(t => {
             const eventArtists = new Set();
@@ -525,10 +580,7 @@ function renderFilterBar() {
             });
         });
 
-        // 2. 排序與過濾
         const sortedArtists = Object.entries(counts).sort((a,b) => b[1] - a[1]);
-        
-        // 3. 判斷是否需要「顯示全部」切換鈕
         const hasManyOneTimers = sortedArtists.some(a => a[1] === 1);
         if (hasManyOneTimers) {
             const toggle = document.createElement('button');
@@ -538,10 +590,7 @@ function renderFilterBar() {
             addonContainer.appendChild(toggle);
         }
 
-        // 4. 根據狀態決定顯示的名單 (頻率排序)
         const finalArtists = showAllArtists ? sortedArtists : sortedArtists.filter(a => a[1] > 1 || a[0] === currentFilterValue);
-        
-        // 如果開啟了 showAllArtists，則顯示次數標註，否則只顯示名稱
         values = ['ALL', ...finalArtists.map(a => showAllArtists ? `${a[0]} (${a[1]})` : a[0])];
     } else if (currentFilterCategory === 'status') {
         values = ['ALL', 'CONFIRMED', 'COMPLETED', 'APPLIED', 'FAILED'];
@@ -554,7 +603,6 @@ function renderFilterBar() {
         let realVal = val;
         let displayVal = val;
 
-        // 如果 val 包含次數標註 (例如 "Artist (3)")，則提取真實名稱
         if (currentFilterCategory === 'artist' && val !== 'ALL' && val.includes(' (')) {
             realVal = val.substring(0, val.lastIndexOf(' ('));
         }
@@ -584,129 +632,113 @@ function renderFilterBar() {
         yearFilterContainer.appendChild(chip);
     });
 
-    // 渲染完畢後主動觸發遮罩更新
     if (window.updateYearFilterMask) {
         setTimeout(window.updateYearFilterMask, 50);
     }
 }
 
 function filterTickets() {
-    // 增加過場感：先清空再重新顯示
-    ticketContainer.style.opacity = '0';
-    setTimeout(() => {
-        let filtered = allTickets;
+    let filtered = allTickets;
 
-        // 核心優化：在 YEAR, ARTIST 和 MILESTONE 類別下，預設排除「落選」與「搶票失敗」
-        if (currentFilterCategory === 'date' || currentFilterCategory === 'artist' || currentFilterCategory === 'milestone') {
-            filtered = allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET');
-        }
+    if (currentFilterCategory === 'date' || currentFilterCategory === 'artist' || currentFilterCategory === 'milestone') {
+        filtered = allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET');
+    }
 
-        if (currentFilterValue !== 'ALL') {
-            if (currentFilterCategory === 'date') {
-                filtered = filtered.filter(t => cleanDate(t.date).startsWith(currentFilterValue));
-            } else if (currentFilterCategory === 'artist') {
-                filtered = filtered.filter(t => {
-                    const list = (t.artist_list || '').split(/[、,]+/).map(s => s.trim());
-                    return (t.artist === currentFilterValue) || list.includes(currentFilterValue);
-                });
-            } else if (currentFilterCategory === 'status') {
-                if (currentFilterValue === 'FAILED') {
-                    filtered = allTickets.filter(t => t.status === 'FAILED_DRAW' || t.status === 'FAILED_TICKET');
-                } else {
-                    filtered = allTickets.filter(t => t.status === currentFilterValue);
-                }
-            } else if (currentFilterCategory === 'milestone') {
-                filtered = allTickets.filter(t => (t.is_first_time || '').includes(currentFilterValue));
+    if (currentFilterValue !== 'ALL') {
+        if (currentFilterCategory === 'date') {
+            filtered = filtered.filter(t => cleanDate(t.date).startsWith(currentFilterValue));
+        } else if (currentFilterCategory === 'artist') {
+            filtered = filtered.filter(t => {
+                const list = (t.artist_list || '').split(/[、,]+/).map(s => s.trim());
+                return (t.artist === currentFilterValue) || list.includes(currentFilterValue);
+            });
+        } else if (currentFilterCategory === 'status') {
+            if (currentFilterValue === 'FAILED') {
+                filtered = allTickets.filter(t => t.status === 'FAILED_DRAW' || t.status === 'FAILED_TICKET');
+            } else {
+                filtered = allTickets.filter(t => t.status === currentFilterValue);
             }
+        } else if (currentFilterCategory === 'milestone') {
+            filtered = allTickets.filter(t => (t.is_first_time || '').includes(currentFilterValue));
         }
-        renderTickets(filtered);
-        ticketContainer.style.opacity = '1';
-        ticketContainer.classList.add('animate-fade');
-    }, 200);
+    }
+    renderTickets(filtered);
+    ticketContainer.classList.add('animate-fade');
 }
 
-const MILESTONE_MAP = {
-    'ARTIST': { label: '初參戰', class: 'badge-artist', icon: 'mic-2' },
-    'EXPEDITION': { label: '初遠征', class: 'badge-expedition', icon: 'plane' },
-    'VENUE': { label: '初会場', class: 'badge-venue', icon: 'map-pin' },
-    'EVENT': { label: '初參加', class: 'badge-event', icon: 'star' }
-};
+function applySurgicalUpdates(newData) {
+    const oldMap = new Map(allTickets.map(t => [t.id, t]));
+    const newMap = new Map(newData.map(t => [t.id, t]));
+    let hasChanges = false;
+
+    // A. 找出刪除或修改的
+    allTickets.forEach(oldT => {
+        const newT = newMap.get(oldT.id);
+        const el = document.getElementById(`ticket-${oldT.id}`);
+        
+        if (!newT) {
+            // 刪除：移除 DOM
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'scale(0.9)';
+                setTimeout(() => el.remove(), 400);
+            }
+            hasChanges = true;
+        } else if (JSON.stringify(oldT) !== JSON.stringify(newT)) {
+            // 修改：精準替換內容
+            if (el) {
+                // 1. 同步外層容器的狀態類別 (避免邊框/遮罩跳動)
+                const newStatusClass = newT.status.toLowerCase().replace('_','-');
+                // 移除舊的所有 status- 開頭的 class
+                el.className = el.className.split(' ').filter(c => !c.startsWith('status-')).join(' ');
+                el.classList.add(`status-${newStatusClass}`);
+
+                // 2. 更新內容
+                el.innerHTML = generateTicketHTML(newT);
+                el.classList.add('update-glow');
+                setTimeout(() => el.classList.remove('update-glow'), 2000);
+                lucide.createIcons();
+            }
+            hasChanges = true;
+        }
+    });
+
+    // B. 找出新增的
+    newData.forEach(newT => {
+        if (!oldMap.has(newT.id)) {
+            // 新增：重新執行 filter 以確保排序與過濾正確
+            hasChanges = true;
+        }
+    });
+
+    if (hasChanges) {
+        allTickets = newData;
+        // 如果有新增或大量變動，最保險是重新過濾一次，但因為 allTickets 已更新，這不會產生快取閃爍
+        filterTickets();
+        renderMenu(newData);
+        if (statsView.classList.contains('active')) initStats();
+    }
+}
 
 function renderTickets(tickets) {
-    ticketContainer.innerHTML = '';
+    const fragment = document.createDocumentFragment();
     const sorted = [...tickets].sort((a,b) => new Date(cleanDate(b.date)) - new Date(cleanDate(a.date)));
     
     sorted.forEach((t, index) => {
-        let statusClass = '';
-        let statusText = '';
-        switch(t.status) {
-            case 'APPLIED': statusClass = 'status-applied'; statusText = '抽選中 / 待搶票'; break;
-            case 'CONFIRMED': statusClass = 'status-confirmed'; statusText = '參戰確定'; break;
-            case 'COMPLETED': statusClass = 'status-completed'; statusText = '<i data-lucide="check-circle-2" style="width:12px; vertical-align:middle;"></i> 參戰完畢'; break;
-            case 'FAILED_DRAW': statusClass = 'status-failed'; statusText = '落選'; break;
-            case 'FAILED_TICKET': statusClass = 'status-failed'; statusText = '搶票失敗'; break;
-            default: statusClass = 'status-confirmed'; statusText = '參戰確定'; break;
-        }
-        const proLabel = TYPE_MAP_PRO[t.type] || 'LIVE';
-        
-        // 處理里程碑標籤
-        let badgesHtml = '';
-        if (t.is_first_time) {
-            const rawMilestones = t.is_first_time.toString().split(/[、,]+/).map(s => s.trim());
-            const uniqueMilestones = new Set();
-            
-            rawMilestones.forEach(m => {
-                if (m === 'true' || m === '1' || m === 'ARTIST') uniqueMilestones.add('ARTIST');
-                else if (MILESTONE_MAP[m]) uniqueMilestones.add(m);
-            });
-
-            if (uniqueMilestones.size > 0) {
-                badgesHtml = `<div class="badge-container">`;
-                Object.keys(MILESTONE_MAP).forEach(key => {
-                    if (uniqueMilestones.has(key)) {
-                        const info = MILESTONE_MAP[key];
-                        badgesHtml += `<div class="badge-item ${info.class}"><span>${info.label}</span></div>`;
-                    }
-                });
-                badgesHtml += `</div>`;
-            }
-        }
-
-        // 處理多會場標籤拆分
-        const venues = (t.venue_name || '').split(/[、,]+/).map(v => v.trim()).filter(v => v !== '');
-        const venuePillsHtml = venues.map(v => `<div class="pill venue-pill"><i data-lucide="map-pin"></i> ${v}</div>`).join('');
-
         const card = document.createElement('div');
         const ticketYear = cleanDate(t.date).split('-')[0];
-        card.className = `ticket ${statusClass} animate-up`;
-        card.style.animationDelay = `${index * 0.08}s`;
         card.id = `ticket-${t.id}`;
-        card.setAttribute('data-year', ticketYear); // 注入年份屬性
-        card.innerHTML = `
-            ${badgesHtml}
-            <div class="ticket-info-left" onclick="openDetail('${t.id}')">
-                <div class="ticket-header">
-                    <div class="ticket-logo">${proLabel}</div>
-                    <div class="status-badge">${statusText}</div>
-                </div>
-                <div class="ticket-title">${t.tour_title}</div>
-                <div class="ticket-subtitle">${t.artist}</div>
-                <div class="ticket-meta-top"><div class="info-box"><span>PRICE</span><span>${formatPrice(t.ticket_price, t.currency)}</span></div><div class="info-box"><span>SEAT</span><span>${t.seat_info || '-'}</span></div></div>
-                <div class="ticket-pills">
-                    <div class="pill-row venue-row">
-                        ${venuePillsHtml}
-                    </div>
-                    <div class="pill-row time-row">
-                        <div class="pill"><i data-lucide="calendar"></i> ${cleanDate(t.date)}</div>
-                        ${cleanTime(t.time) ? `<div class="pill"><i data-lucide="clock"></i> ${cleanTime(t.time)}</div>` : ''}
-                    </div>
-                </div>
-            </div>
-            <div class="ticket-visual" onclick="openDetail('${t.id}')" style="background-image: url('${t.images || ''}')"></div>
-            <div class="ticket-stub-right" onclick="openDetail('${t.id}')"><div class="barcode-container"><div class="barcode"></div><div class="ticket-num">${t.id}</div></div></div>
-        `;
-        ticketContainer.appendChild(card);
+        card.setAttribute('data-year', ticketYear);
+        // 修正：補回 status- 前綴
+        const statusClass = `status-${t.status.toLowerCase().replace('_','-')}`;
+        card.className = `ticket ${statusClass} animate-up`;
+        card.style.animationDelay = `${index * 0.05}s`;
+        card.innerHTML = generateTicketHTML(t, index);
+        fragment.appendChild(card);
     });
+    
+    ticketContainer.innerHTML = '';
+    ticketContainer.appendChild(fragment);
     lucide.createIcons();
 }
 
@@ -1807,9 +1839,13 @@ window.handleDelete = async function(id) {
             body: JSON.stringify({ 
                 username: currentUser,
                 password: adminPassword, 
-                data: { id: id, status: 'HIDDEN' } // 軟刪除：僅傳送 ID 與 HIDDEN 狀態
+                data: { id: id, status: 'HIDDEN' } 
             }) 
         }); 
+        
+        // 關鍵：刪除成功後立刻清除快取，強迫下次進入抓最新
+        localStorage.removeItem(`livenote_cache_${currentUser}`);
+        
         await showAlert('紀錄已刪除！', 'success'); 
         closeModal(); 
         location.reload(); 
@@ -1830,9 +1866,8 @@ window.handleSave = async function() {
 
     if (!GAS_API_URL) { await showAlert('請先設定 GAS_API_URL', 'error'); return; }
     
-    // 取得當前使用者名稱
     const urlParams = new URLSearchParams(window.location.search);
-    const currentUser = urlParams.get('u') || 'ching'; // 預設為主站使用者
+    const currentUser = urlParams.get('u') || 'ching';
 
     const form = document.getElementById('admin-form'); 
     const formData = new FormData(form); 
@@ -1840,15 +1875,9 @@ window.handleSave = async function() {
     formData.forEach((val, key) => {
         if (key !== 'milestone') {
             let cleanVal = typeof val === 'string' ? val.trim() : val;
-            // 關鍵優化：自動將各種分隔符 (/ , ， | 換行) 轉換為標準頓號 、 且移除各項目間的多餘空白
             if (key === 'venue_name' || key === 'artist_list') {
-                // 1. 統一轉換所有分隔符為標準頓號
                 let standardized = cleanVal.replace(/[\/,，|、\n\r\t]+/g, '、');
-                // 2. 拆分並針對每個項目進行深度 trim，並過濾掉空項
-                cleanVal = standardized.split('、')
-                    .map(item => item.trim())
-                    .filter(item => item !== '')
-                    .join('、');
+                cleanVal = standardized.split('、').map(item => item.trim()).filter(item => item !== '').join('、');
             }
             data[key] = cleanVal;
         }
@@ -1870,7 +1899,6 @@ window.handleSave = async function() {
     data.is_first_time = milestones.join(',');
 
     try { 
-        // 傳送包含 username 的 payload
         await fetch(GAS_API_URL, { 
             method: 'POST', 
             mode: 'no-cors', 
@@ -1880,6 +1908,10 @@ window.handleSave = async function() {
                 data: data 
             }) 
         }); 
+
+        // 關鍵：儲存成功後立刻清除快取
+        localStorage.removeItem(`livenote_cache_${currentUser}`);
+
         await showAlert('紀錄已送出！', 'success'); 
         closeModal(); 
         location.reload(); 

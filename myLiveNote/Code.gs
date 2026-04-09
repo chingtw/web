@@ -1,5 +1,5 @@
 /**
- * LiveNote 後端多使用者版本 - v4.0 (極速優化版)
+ * LiveNote 後端多使用者版本 - v5.6 (效能優化版)
  */
 
 const MAIN_SHEET = 'LiveRecords';
@@ -47,21 +47,27 @@ function doGet(e) {
     const sheet = ss.getSheetByName(targetSheetName);
     if (!sheet) return response({ status: 'error', message: 'User sheet not found' });
 
-    const range = sheet.getDataRange();
-    const data = range.getValues();
-    const displayValues = range.getDisplayValues();
+    // 優化：移除 getDisplayValues()，改用 getValues() 並在後端統一轉換
+    const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return response([]);
 
-    const headers = data.shift();
-    displayValues.shift();
-    return response(data.map((row, rowIndex) => {
+    const headers = data.shift().map(h => String(h).trim().toLowerCase());
+    const results = data.map((row) => {
       const obj = {};
-      for (let i = 0; i < headers.length; i++) {
-        const h = headers[i];
-        obj[h] = (h === 'date' || h === 'time') ? displayValues[rowIndex][i] : row[i];
-      }
+      headers.forEach((h, i) => {
+        let val = row[i];
+        if (val instanceof Date) {
+          if (val.getFullYear() === 1899) {
+            val = Utilities.formatDate(val, "GMT+8", "HH:mm");
+          } else {
+            val = Utilities.formatDate(val, "GMT+8", "yyyy-MM-dd");
+          }
+        }
+        obj[h] = val;
+      });
       return obj;
-    }));
+    });
+    return response(results);
   } catch (err) {
     return response({ status: 'error', message: err.toString() });
   }
@@ -77,9 +83,11 @@ function doPost(e) {
     const userConfig = validateUser(username, password);
     if (!userConfig) return response({ status: 'error', message: 'Unauthorized' });
 
-    const sheet = getOrCreateUserSheet(username === 'ching' ? MAIN_SHEET : username);
+    const sheetName = username === 'ching' ? MAIN_SHEET : username;
+    const sheet = getOrCreateUserSheet(sheetName);
     const allData = sheet.getDataRange().getValues();
     const headers = allData[0];
+    const lastRow = allData.length;
     
     let rowIndex = -1;
     let oldTags = [];
@@ -99,7 +107,7 @@ function doPost(e) {
     const newCompanions = currentTags.filter(u => u !== username && !oldTags.includes(u));
     const results = [];
 
-    // --- A. 處理主發起人 (您自己) ---
+    // --- A. 處理主發起人 ---
     let finalId = dataObj.id;
     if (!finalId) {
       const dateStr = (dataObj.date || "").replace(/-/g, '');
@@ -117,45 +125,46 @@ function doPost(e) {
     }
 
     const mainRowData = headers.map(h => dataObj[h] === undefined ? '' : dataObj[h]);
+    // 優化：改用 getRange.setValues 替代 appendRow
     if (rowIndex !== -1) {
       sheet.getRange(rowIndex, 1, 1, headers.length).setValues([mainRowData]);
     } else {
-      sheet.appendRow(mainRowData);
+      sheet.getRange(lastRow + 1, 1, 1, headers.length).setValues([mainRowData]);
     }
     results.push({ username: username, id: finalId, action: rowIndex !== -1 ? 'update' : 'append' });
 
-    // --- B. 處理新夥伴 (遞歸互換 Tag 邏輯) ---
-    newCompanions.forEach(u => {
-      const targetUConfig = getCachedConfig(CONFIG_SHEET).find(usr => usr.username === u);
-      if (!targetUConfig) return;
+    // --- B. 處理新夥伴 ---
+    if (newCompanions.length > 0) {
+      const allConfigs = getCachedConfig(CONFIG_SHEET);
+      newCompanions.forEach(u => {
+        const targetUConfig = allConfigs.find(usr => usr.username === u);
+        if (!targetUConfig) return;
 
-      const targetSheet = getOrCreateUserSheet(u === 'ching' ? MAIN_SHEET : u);
-      const targetAllData = targetSheet.getDataRange().getValues();
-      const targetHeaders = targetAllData[0];
+        const targetSheet = getOrCreateUserSheet(u === 'ching' ? MAIN_SHEET : u);
+        const targetAllData = targetSheet.getDataRange().getValues();
+        const targetHeaders = targetAllData[0];
 
-      const dateStr = (dataObj.date || "").replace(/-/g, '');
-      const prefix = `${targetUConfig.id_code || "GU"}-${dateStr}-`;
-      let maxSeq = 0;
-      for (let i = 1; i < targetAllData.length; i++) {
-        const eid = String(targetAllData[i][0]);
-        if (eid.indexOf(prefix) === 0) {
-          const seq = parseInt(eid.split('-').pop());
-          if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+        const dateStr = (dataObj.date || "").replace(/-/g, '');
+        const prefix = `${targetUConfig.id_code || "GU"}-${dateStr}-`;
+        let maxSeq = 0;
+        for (let i = 1; i < targetAllData.length; i++) {
+          const eid = String(targetAllData[i][0]);
+          if (eid.indexOf(prefix) === 0) {
+            const seq = parseInt(eid.split('-').pop());
+            if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+          }
         }
-      }
-      const companionId = prefix + (maxSeq + 1);
-      
-      // 關鍵修正：計算該夥伴在自己表內應該看到的 tag 名單
-      // 邏輯：所有參與者 = [發起人A] + [原名單B, C] -> 對於 B 來說，名單應該是 [A, C]
-      const allParticipants = [username, ...currentTags];
-      const tagsForCompanion = allParticipants.filter(p => p !== u);
+        const companionId = prefix + (maxSeq + 1);
+        const allParticipants = [username, ...currentTags];
+        const tagsForCompanion = allParticipants.filter(p => p !== u);
 
-      const companionData = { ...dataObj, id: companionId, tag: tagsForCompanion.join(',') };
-      const companionRow = targetHeaders.map(h => companionData[h] === undefined ? '' : companionData[h]);
-      
-      targetSheet.appendRow(companionRow);
-      results.push({ username: u, id: companionId, action: 'sync_append' });
-    });
+        const companionData = { ...dataObj, id: companionId, tag: tagsForCompanion.join(',') };
+        const companionRow = targetHeaders.map(h => companionData[h] === undefined ? '' : companionData[h]);
+        
+        targetSheet.getRange(targetAllData.length + 1, 1, 1, targetHeaders.length).setValues([companionRow]);
+        results.push({ username: u, id: companionId, action: 'sync_append' });
+      });
+    }
 
     return response({ status: 'success', results: results });
   } catch (error) {

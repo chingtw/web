@@ -509,15 +509,25 @@ section.active { display: block; }
 
 /* Left Section: Info */
 .ticket-info-left {
-    flex: 1.6;
+    flex: 0 0 62%; /* 固定比例，防止內容更新時抖動 */
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    z-index: 5; /* Keep text on top */
+    z-index: 5;
     clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+    background-color: #000; /* 強制實色背景 */
+    min-width: 0;
+    position: relative;
+}
+
+/* 確保遮罩層高度撐滿 */
+.ticket-info-left::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
     background: #000;
-    min-width: 0; /* 防止長內容撐破 Flex 容器 */
+    z-index: -1;
 }
 
 .ticket-title {
@@ -768,12 +778,17 @@ section.active { display: block; }
         flex: 2;
         clip-path: none;
         /* 恢復手機版最穩定的平滑漸層 */
-        background: linear-gradient(90deg, #000 75%, rgba(0,0,0,0.7) 90%, transparent 100%);
+        background: linear-gradient(90deg, #000 75%, rgba(0,0,0,0.7) 90%, transparent 100%) !important;
         margin-right: -45%; 
         position: relative;
-        z-index: 10; /* 提高層級確保標籤不被遮擋 */
+        z-index: 10;
         padding: 1.2rem 1rem;
-        min-width: 0; /* 允許內容正確收縮 */
+        min-width: 0;
+    }
+
+    /* 手機版關閉剛才新增的實色偽元素 */
+    .ticket-info-left::before {
+        display: none;
     }
 
     .ticket-visual {
@@ -1825,12 +1840,16 @@ body.no-scroll .scroll-top-btn {
     }
 }
 
-/* Nav Lock State */
-.nav-locked {
-    filter: grayscale(1);
-    opacity: 0.5;
-    pointer-events: none;
-    cursor: wait;
+/* 更新時的閃爍效果 */
+.update-glow {
+    animation: update-pulse 2s ease-out;
+    border-color: var(--text-accent) !important;
+}
+
+@keyframes update-pulse {
+    0% { box-shadow: 0 0 0px rgba(197, 164, 137, 0); }
+    30% { box-shadow: 0 0 20px rgba(197, 164, 137, 0.6); }
+    100% { box-shadow: 0 0 0px rgba(197, 164, 137, 0); }
 }
 /* --- SCROLL TIMELINE INDICATOR (Vertical Bookmark Style) --- */
 /* --- SCROLL TIMELINE INDICATOR (Symmetric Ruler Style) --- */
