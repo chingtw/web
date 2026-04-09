@@ -1593,6 +1593,60 @@ function showAdminForm(editData = null) {
         const vInput = document.querySelector('input[name="venue_name"]');
         if (!container || !vInput) return;
 
+        // 當切換到 Google 搜尋模式時的專屬邏輯 (支援語系切換)
+        if (region === 'G_TW' || region === 'G_JP' || region === 'G_OTHER') {
+            clearTimeout(window.googleSearchTimeout);
+            document.querySelectorAll('.venue-cat-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.region === region);
+            });
+            
+            // 如果從點擊標籤進來沒傳 searchTerm，嘗試從輸入框抓取
+            if (!searchTerm) {
+                const parts = vInput.value.split('、');
+                searchTerm = parts[parts.length - 1].trim();
+            }
+            
+            if (searchTerm.trim().length > 0) {
+                container.innerHTML = '<span style="color:#888; font-size:0.8rem;"><i data-lucide="loader-2" class="spin" style="width:12px; height:12px; display:inline-block; vertical-align:middle;"></i> 搜尋 Google Maps 中...</span>';
+                lucide.createIcons();
+                
+                window.googleSearchTimeout = setTimeout(() => {
+                    if (typeof google === 'object' && typeof google.maps === 'object' && google.maps.places) {
+                        if (!window.googleAutocompleteService) window.googleAutocompleteService = new google.maps.places.AutocompleteService();
+                        
+                        // 根據點擊的標籤設定搜尋語系與地區限制
+                        let lang = 'en';
+                        let country = null;
+                        if (region === 'G_TW') { lang = 'zh-TW'; country = 'tw'; }
+                        else if (region === 'G_JP') { lang = 'ja'; country = 'jp'; }
+
+                        const requestObj = { input: searchTerm, language: lang };
+                        if (country) { requestObj.componentRestrictions = { country: country }; }
+
+                        window.googleAutocompleteService.getPlacePredictions(requestObj, (predictions, status) => {
+                            if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+                                container.innerHTML = predictions.slice(0, 5).map(p => {
+                                    return `<span class="tag-chip" style="border-color: #4285F4; color: #4285F4; background: rgba(66, 133, 244, 0.1);" onclick="selectGooglePlace('${p.place_id}', '${p.description.replace(/'/g, "\\'")}', '${lang}')">
+                                        <i data-lucide="map-pin" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right:2px;"></i> ${p.structured_formatting ? p.structured_formatting.main_text : p.description.split(',')[0]}
+                                    </span>`;
+                                }).join('');
+                                lucide.createIcons();
+                            } else {
+                                container.innerHTML = '<span style="color:#888; font-size:0.8rem;">找不到相關地標，請嘗試其他關鍵字。</span>';
+                            }
+                        });
+                    } else {
+                        container.innerHTML = '<span style="color:#888; font-size:0.8rem;">Google Maps API 未載入或 Key 無效。</span>';
+                    }
+                }, 600); // 600ms debounce 防連點
+            } else {
+                container.innerHTML = '<span style="color:#888; font-size:0.8rem;">請在上方輸入會場關鍵字，Google 將為您搜尋座標...</span>';
+            }
+            return;
+        }
+
+        // --- 以下為原本的本地地標 (ALL/TW/JP/OTHER) 邏輯 ---
+
         // 取得目前輸入框中已有的所有會場名稱 (用於排除)
         const selectedVenues = vInput.value.split(/[、,，]+/).map(s => s.trim()).filter(s => s !== '');
 
@@ -1821,12 +1875,17 @@ function showAdminForm(editData = null) {
                         <div class="venue-cat-btn" data-region="JP" onclick="updateVenueList('JP')">JAPAN</div>
                         <div class="venue-cat-btn" data-region="OTHER" onclick="updateVenueList('OTHER')">OTHER</div>
                     </div>
-                    <input type="text" name="venue_name" placeholder="例如: 台北巨蛋 (台北)" required value="${editData ? editData.venue_name : ''}" oninput="onVenueInputChange(this.value)" autocomplete="off" spellcheck="false">
+                    <div class="venue-cat-container" style="margin-top: 5px;">
+                        <div class="venue-cat-btn" data-region="G_TW" onclick="updateVenueList('G_TW')" style="color:#4285F4; border-color:#4285F4;">GOOGLE-TAIWAN</div>
+                        <div class="venue-cat-btn" data-region="G_JP" onclick="updateVenueList('G_JP')" style="color:#4285F4; border-color:#4285F4;">GOOGLE-JAPAN</div>
+                        <div class="venue-cat-btn" data-region="G_OTHER" onclick="updateVenueList('G_OTHER')" style="color:#4285F4; border-color:#4285F4;">GOOGLE-OTHER</div>
+                    </div>
+                    <input type="text" name="venue_name" id="form-venue-name" placeholder="例如: 台北巨蛋 (台北)" required value="${editData ? editData.venue_name : ''}" oninput="onVenueInputChange(this.value)" autocomplete="off" spellcheck="false">
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
                     <label>經緯度 (Map Coords)</label>
-                    <input type="text" name="lat_lng" placeholder="例如: 25.051, 121.550" value="${editData ? (editData.lat_lng || '') : ''}">
+                    <input type="text" name="lat_lng" id="form-lat-lng" placeholder="例如: 25.051, 121.550" value="${editData ? (editData.lat_lng || '') : ''}">
                     <div id="venue-quick-tags" class="quick-add-tags">${quickVenues}</div>
                 </div>
                 
@@ -1905,6 +1964,49 @@ function showAdminForm(editData = null) {
     // 初始化場地清單顯示為 ALL
     updateVenueList('ALL');
 }
+
+window.selectGooglePlace = function(placeId, fallbackName) {
+    if (typeof google !== 'object' || !google.maps || !google.maps.places) return;
+    
+    if (!window.googlePlacesService) {
+        window.googlePlacesService = new google.maps.places.PlacesService(document.createElement('div'));
+    }
+    
+    const vInput = document.querySelector('input[name="venue_name"]');
+    vInput.style.opacity = '0.5';
+    
+    window.googlePlacesService.getDetails({
+        placeId: placeId,
+        fields: ['name', 'geometry', 'address_components'],
+        language: 'ja' // 盡量保留日文等原文
+    }, (place, status) => {
+        vInput.style.opacity = '1';
+        if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry) {
+            const rawName = place.name;
+            const newLatLng = `${place.geometry.location.lat().toFixed(5)}, ${place.geometry.location.lng().toFixed(5)}`;
+            
+            let cityName = '';
+            if (place.address_components) {
+                const admin1 = place.address_components.find(c => c.types.includes('administrative_area_level_1'));
+                const locality = place.address_components.find(c => c.types.includes('locality'));
+                if (admin1) cityName = admin1.short_name || admin1.long_name;
+                else if (locality) cityName = locality.short_name || locality.long_name;
+            }
+            const formattedName = cityName ? `${rawName} (${cityName})` : rawName;
+            
+            addVenueToField(formattedName, newLatLng);
+            updateVenueList('ALL'); // 插入後自動切換回預設清單
+            
+            // 將 GOOGLE 標籤取消 active，ALL 加上 active
+            document.querySelectorAll('.venue-cat-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.region === 'ALL');
+            });
+        } else {
+            addVenueToField(fallbackName.split(' ')[0], ''); 
+            updateVenueList('ALL');
+        }
+    });
+};
 
 window.toggleCompanionTag = function(element, username) {
     element.classList.toggle('active');
@@ -2079,15 +2181,35 @@ window.addVenueToField = function(venueName, latLng) {
         const parts = vVal.split('、');
         // 取代最後一個正在輸入的殘缺片段
         parts[parts.length - 1] = venueName;
-        // 確保沒有重複 (雖然 updateVenueList 已過濾，但手動輸入可能發生)
+        // 確保沒有重複
         const uniqueParts = [...new Set(parts.map(p => p.trim()).filter(p => p !== ''))];
         vInput.value = uniqueParts.join('、');
     }
 
-    // 觸發座標同步
-    syncCoordinates();
+    // 處理經緯度 (Map Coords)：
+    // 如果 latLng 有傳入值 (例如來自 Google 搜尋標籤或預設場地)
+    if (latLng) {
+        let currentCoords = lInput.value.trim();
+        if (!currentCoords) {
+            lInput.value = latLng;
+        } else {
+            // 如果原本已經有座標，確保數量與會場數量一致 (以 | 分隔)
+            const venuesCount = vInput.value.split('、').length;
+            const coordsCount = currentCoords.split('|').length;
+            
+            // 如果數量少於會場數，就把新座標接在後面；否則直接覆蓋確保不混亂
+            if (coordsCount < venuesCount) {
+                lInput.value = currentCoords + ' | ' + latLng;
+            } else {
+                lInput.value = latLng;
+            }
+        }
+    } else {
+        // 如果沒有傳入明確的 latLng，則嘗試從預設 config 中同步
+        syncCoordinates();
+    }
     
-    // 更新建議清單 (因為已選項目改變了，且前綴也變了)
+    // 更新建議清單
     const activeRegionBtn = document.querySelector('.venue-cat-btn.active');
     updateVenueList(activeRegionBtn ? activeRegionBtn.dataset.region : 'ALL', '');
 

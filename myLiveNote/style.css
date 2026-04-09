@@ -2037,6 +2037,36 @@ body.no-scroll .scroll-top-btn {
     background: #333;
     color: #fff;
 }
+
+/* 確保 Google Maps Autocomplete 在 Modal 之上且符合暗色主題 */
+.pac-container {
+    z-index: 10000 !important;
+    background-color: #111;
+    border: 1px solid #333;
+    color: #eee;
+    font-family: 'Noto Sans TC', sans-serif;
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+.pac-item {
+    border-top: 1px solid #222;
+    color: #ccc;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.pac-item:hover, .pac-item-selected {
+    background-color: #222;
+}
+.pac-item-query {
+    color: var(--text-accent);
+    font-size: 1rem;
+    padding-right: 5px;
+}
+.pac-matched {
+    color: #fff;
+    font-weight: bold;
+}
 /* --- CUSTOM DIALOG SYSTEM --- */
 .custom-dialog-overlay {
     position: fixed;
@@ -2124,4 +2154,34 @@ body.no-scroll .scroll-top-btn {
 .custom-dialog-btn.secondary:hover {
     background: #333;
     color: #fff;
+}
+
+/* 確保 Google Maps Autocomplete 在 Modal 之上且符合暗色主題 */
+.pac-container {
+    z-index: 10000 !important;
+    background-color: #111;
+    border: 1px solid #333;
+    color: #eee;
+    font-family: 'Noto Sans TC', sans-serif;
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+.pac-item {
+    border-top: 1px solid #222;
+    color: #ccc;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.pac-item:hover, .pac-item-selected {
+    background-color: #222;
+}
+.pac-item-query {
+    color: var(--text-accent);
+    font-size: 1rem;
+    padding-right: 5px;
+}
+.pac-matched {
+    color: #fff;
+    font-weight: bold;
 }
