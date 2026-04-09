@@ -1053,10 +1053,14 @@ window.toggleMenu = () => {
         const navLink = document.createElement('div');
         navLink.className = 'nav-year-link';
         navLink.textContent = y;
+        navLink.dataset.year = y; // 儲存年份以便查詢
         navLink.onclick = () => {
             const target = document.getElementById(`menu-year-${y}`);
             if (target) {
-                // 計算 target 相對於 menu (捲動容器) 的位置
+                // 移除所有 active 類別並幫自己加上
+                document.querySelectorAll('.nav-year-link').forEach(l => l.classList.remove('active'));
+                navLink.classList.add('active');
+
                 const topPos = target.getBoundingClientRect().top - menu.getBoundingClientRect().top + menu.scrollTop;
                 menu.scrollTo({
                     top: topPos - 20,
@@ -1066,10 +1070,13 @@ window.toggleMenu = () => {
         };
         nav.appendChild(navLink);
 
+        // 預設高亮最新的一年
+        if (y === sortedYears[0]) navLink.classList.add('active');
+
         // 2. 產生年份群組
         const div = document.createElement('div'); 
         div.className = 'menu-group'; 
-        div.innerHTML = `<div class="menu-year" id="menu-year-${y}">${y}</div>`;
+        div.innerHTML = `<div class="menu-year" id="menu-year-${y}" data-year="${y}">${y}</div>`;
         
         years[y].forEach(t => {
             const item = document.createElement('div'); 
@@ -1081,6 +1088,27 @@ window.toggleMenu = () => {
         });
         menu.appendChild(div);
     });
+
+    // --- 捲動監聽：自動追隨高亮 ---
+    menu.onscroll = () => {
+        const yearSections = menu.querySelectorAll('.menu-year');
+        let currentActiveYear = "";
+        
+        yearSections.forEach(section => {
+            const rect = section.getBoundingClientRect();
+            const menuRect = menu.getBoundingClientRect();
+            // 如果年份標題進入了選單頂部附近
+            if (rect.top <= menuRect.top + 100) {
+                currentActiveYear = section.dataset.year;
+            }
+        });
+
+        if (currentActiveYear) {
+            nav.querySelectorAll('.nav-year-link').forEach(link => {
+                link.classList.toggle('active', link.dataset.year === currentActiveYear);
+            });
+        }
+    };
 }
 
 function showSingleTicket(id) { 

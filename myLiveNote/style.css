@@ -1153,6 +1153,11 @@ section.active { display: block; }
     padding: 5px 0;
 }
 .nav-year-link:hover { color: var(--text-accent); }
+.nav-year-link.active { 
+    color: var(--text-accent); 
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(197, 164, 137, 0.5);
+}
 
 .menu-year { color: var(--text-accent); font-family: 'Anton'; font-size: 1.8rem; margin: 1.5rem 0 1rem 0; }
 .menu-item { background: #111; border: 1px solid #1a1a1a; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s; }
