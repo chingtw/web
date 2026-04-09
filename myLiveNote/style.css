@@ -1496,7 +1496,7 @@ section.active { display: block; }
     margin-top: 0;
 }
 .stats-details.open {
-    max-height: 500px;
+    max-height: 2000px;
     margin-top: 10px;
     margin-bottom: 5px;
 }
@@ -1568,6 +1568,28 @@ section.active { display: block; }
 }
 
 /* MAP VIEW */
+.detail-map-container {
+    height: 250px;
+    margin-top: 20px;
+    border-radius: 12px;
+    border: 1px solid #222;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+}
+
+#detail-map {
+    height: 100%;
+    width: 100%;
+    /* 漸層邊界模糊效果 */
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent),
+                        linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent),
+                linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+}
+
 #map-view {
     width: 100%;
 }

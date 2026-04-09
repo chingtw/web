@@ -1209,10 +1209,10 @@ window.openDetail = function(id) {
 
                     ${!isFailed ? `
                         <hr style="border:0; border-top:1px dashed #444; margin: 1.5rem 0;"><h4 style="color:var(--text-accent); font-family:'Bebas Neue'; letter-spacing:1px; margin-bottom:10px;">SETLIST & MEMO / セトリ・參戰紀錄</h4>
-                        <div class="setlist-container" style="background:#0a0a0a; padding:20px; border:1px solid #222; font-family:monospace; max-height:250px; overflow-y:auto; color:#bbb; line-height:1.6; white-space: pre-wrap;">${setlistDisplay ? setlistDisplay : 'No setlist available.'}</div>
+                        <div class="setlist-container" style="background:#0a0a0a; padding:20px; border:1px solid #222; font-family:monospace; max-height:300px; overflow:auto; color:#bbb; line-height:1.6; white-space: pre;">${setlistDisplay ? setlistDisplay : 'No setlist available.'}</div>
                     ` : ''}
 
-                    ${hasLatLng ? '<div id="detail-map" style="height:250px; margin-top:20px; border-radius:8px; border:1px solid #333;"></div>' : ''}
+                    ${hasLatLng ? '<div class="detail-map-container"><div id="detail-map"></div></div>' : ''}
                 </div>
             </div>
 
