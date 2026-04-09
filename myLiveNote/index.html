@@ -90,22 +90,22 @@
                 <button class="switcher-btn" data-stats="cost">COST</button>
             </div>
             <div class="stats-container active-artist">
-                <div class="stats-card animate-up">
+                <div class="stats-card" id="card-artist">
                     <h3>ARTIST RANKING</h3>
                     <div class="chart-wrapper"><canvas id="artistChart"></canvas></div>
                     <div id="artist-stats-list" class="stats-list"></div>
                 </div>
-                <div class="stats-card animate-up" style="animation-delay: 0.1s;">
+                <div class="stats-card" id="card-venue">
                     <h3>VENUE RANKING</h3>
                     <div class="chart-wrapper"><canvas id="venueChart"></canvas></div>
                     <div id="venue-stats-list" class="stats-list"></div>
                 </div>
-                <div class="stats-card animate-up" style="animation-delay: 0.2s;">
+                <div class="stats-card" id="card-type">
                     <h3>EVENT TYPE</h3>
                     <div class="chart-wrapper"><canvas id="typeChart"></canvas></div>
                     <div id="type-stats-list" class="stats-list"></div>
                 </div>
-                <div class="stats-card animate-up" style="animation-delay: 0.3s;">
+                <div class="stats-card" id="card-cost">
                     <h3>EXPENDITURE</h3>
                     <div id="annual-attendance-list" class="annual-grid"></div>
                     <div style="margin-top:20px;" id="cost-stats-list"></div>

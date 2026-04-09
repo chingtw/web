@@ -262,14 +262,17 @@ function setupStatsSwitcher() {
     
     btns.forEach(btn => {
         btn.onclick = () => {
+            if (btn.classList.contains('active')) return;
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
             const type = btn.dataset.stats;
-            // 先移除所有可能的狀態類別
             container.classList.remove('active-artist', 'active-venue', 'active-type', 'active-cost');
-            // 再加入目前的狀態
             container.classList.add(`active-${type}`);
+
+            // if (type === 'cost') {
+            //     triggerCostAnimation();
+            // }
         };
     });
 }
@@ -359,7 +362,7 @@ function cleanTime(timeStr) {
     return s.substring(0, 5);
 }
 function formatPrice(price, currency) { 
-    if (!price) return '-'; 
+    if (price === undefined || price === null || price === '') return '-'; 
     let symbol = 'NT$';
     if (currency === 'JPY') symbol = '¥';
     else if (currency === 'HKD') symbol = 'HK$';
@@ -729,8 +732,14 @@ function renderTickets(tickets) {
         const ticketYear = cleanDate(t.date).split('-')[0];
         card.id = `ticket-${t.id}`;
         card.setAttribute('data-year', ticketYear);
-        // 修正：補回 status- 前綴
-        const statusClass = `status-${t.status.toLowerCase().replace('_','-')}`;
+        
+        // 修正：補回 status- 前綴並統一失敗狀態類別
+        const rawStatus = t.status.toLowerCase().replace('_','-');
+        let statusClass = `status-${rawStatus}`;
+        if (t.status === 'FAILED_DRAW' || t.status === 'FAILED_TICKET') {
+            statusClass += ' status-failed';
+        }
+
         card.className = `ticket ${statusClass} animate-up`;
         card.style.animationDelay = `${index * 0.05}s`;
         card.innerHTML = generateTicketHTML(t, index);
@@ -748,6 +757,8 @@ function setupTabs() {
     statsTab.addEventListener('click', () => switchTab('stats'));
 }
 
+let isStatsInitialized = false;
+
 function switchTab(tab) {
     [listTab, mapTab, statsTab].forEach(t => t.classList.remove('active'));
     [listView, mapView, statsView].forEach(v => v.classList.remove('active'));
@@ -756,7 +767,6 @@ function switchTab(tab) {
     if (tab === 'list') { 
         listTab.classList.add('active'); 
         listView.classList.add('active');
-        // 回到列表時捲動回頂部
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     else if (tab === 'map') { 
@@ -767,16 +777,26 @@ function switchTab(tab) {
     else if (tab === 'stats') { 
         statsTab.classList.add('active'); 
         statsView.classList.add('active'); 
+        
+        const cards = document.querySelectorAll('.stats-card');
+        if (!isStatsInitialized) {
+            cards.forEach((c, idx) => {
+                c.classList.add('animate-up');
+                c.style.animationDelay = `${idx * 0.1}s`;
+            });
+            // 關鍵：動畫跑完就物理移除類別
+            setTimeout(() => {
+                cards.forEach(c => c.classList.remove('animate-up'));
+            }, 1200);
+        }
+
         setTimeout(() => {
             initStats();
-            // 手機版自動下捲到統計區塊頂部
+            isStatsInitialized = true;
             if (window.innerWidth <= 600) {
-                // 使用 getBoundingClientRect 搭配 scrollY 取得絕對位置，避免 offsetParent 造成的誤差
                 const rect = statsView.getBoundingClientRect();
                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                const targetY = rect.top + scrollTop - 20; // 留 20px 邊距，讓按鈕頂部不至於太死貼
-                
-                window.scrollTo({ top: targetY, behavior: 'smooth' });
+                window.scrollTo({ top: rect.top + scrollTop - 20, behavior: 'smooth' });
             }
         }, 200); 
     }
@@ -909,16 +929,57 @@ function initStats() {
     renderCostList(sc, yearlyAttendance);
 }
  
+function triggerCostAnimation() {
+    const container = document.getElementById('cost-stats-list');
+    if (!container) return;
+    container.querySelectorAll('.count-animate').forEach(el => {
+        const target = parseFloat(el.dataset.target);
+        const currency = el.dataset.currency;
+        animateNumber(el, target, currency);
+    });
+}
+
+function animateNumber(element, target, currency = null) {
+    const duration = 1200; 
+    const start = 0;
+    const startTime = performance.now();
+
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = 1 - Math.pow(1 - progress, 4);
+        const currentCount = Math.floor(easeProgress * (target - start) + start);
+        
+        if (currency) {
+            // 金額模式
+            element.textContent = formatPrice(currentCount, currency);
+        } else {
+            // 場次模式 (RECORDS)
+            element.innerHTML = `${currentCount}<span class="unit-label">RECORDS</span>`;
+        }
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            if (currency) {
+                element.textContent = formatPrice(target, currency);
+            } else {
+                element.innerHTML = `${target}<span class="unit-label">RECORDS</span>`;
+            }
+        }
+    }
+    requestAnimationFrame(update);
+}
+
 function renderCostList(data, yearlyData) {
     const container = document.getElementById('cost-stats-list');
     const annualContainer = document.getElementById('annual-attendance-list');
     if (!container || !annualContainer) return;
 
-    // 找出最高場次的年份，作為 100% 水位基準
     const counts = Object.values(yearlyData);
     const maxCount = counts.length > 0 ? Math.max(...counts) : 1;
 
-    // 1. 渲染年度場次 (含動態水位)
+    // 1. 渲染年度場次 (初始值為 0)
     const sortedYears = Object.keys(yearlyData).sort((a, b) => b - a);
     annualContainer.innerHTML = sortedYears.map(year => {
         const count = yearlyData[year];
@@ -926,20 +987,41 @@ function renderCostList(data, yearlyData) {
         return `
             <div class="annual-item" style="--level: ${levelPercent}%">
                 <span class="year-label">${year}</span>
-                <span class="count-value">${count}<span class="unit-label">RECORDS</span></span>
+                <span class="count-value records-animate" data-target="${count}">0<span class="unit-label">RECORDS</span></span>
             </div>
         `;
     }).join('');
 
-    // 2. 渲染總額
+    // 2. 渲染總額容器 (初始值為 0)
     container.innerHTML = data.map(i => `
         <div class="stats-item no-hover" style="cursor:default;">
             <div class="stats-header">
-                <span class="name" style="font-family:'Bebas Neue'; letter-spacing:1px; color:#888;">${i[0]} TOTAL EXPENDITURE</span>
-                <span class="count" style="font-size:1.4rem;">${formatPrice(i[1], i[0])}</span>
+                <span class="name" style="font-family:'Bebas Neue'; letter-spacing:4px; color:#888;">${i[0]} TOTAL EXPENDITURE</span>
+                <span class="count count-animate" data-target="${i[1]}" data-currency="${i[0]}" style="font-size:1.4rem;">${formatPrice(0, i[0])}</span>
             </div>
         </div>
     `).join('');
+
+    // 使用 IntersectionObserver 確保僅在顯示時「首次」跳動
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const el = entry.target;
+                const target = parseFloat(el.dataset.target);
+                const currency = el.dataset.currency || null;
+                
+                setTimeout(() => {
+                    animateNumber(el, target, currency);
+                }, 100);
+                
+                observer.unobserve(el); // 關鍵：觸發後停止觀察，達成「僅首次載入有動畫」
+            }
+        });
+    }, { threshold: 0.1 });
+
+    // 同時監視金額與場次數字
+    container.querySelectorAll('.count-animate').forEach(el => observer.observe(el));
+    annualContainer.querySelectorAll('.records-animate').forEach(el => observer.observe(el));
 }
 
 function renderDonut(id, data, inst, save) {
