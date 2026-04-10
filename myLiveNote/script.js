@@ -1366,7 +1366,7 @@ window.openDetail = function(id) {
                 </div>
                 <div class="modal-text-content">
                     <h2 style="color:var(--text-accent); font-family:'Anton'; font-size:2.2rem;">${rawT.tour_title}</h2><h3 style="color:#aaa; font-size:1.2rem; margin-top:0;">${rawT.artist}</h3>
-                    ${rawT.artist_list ? `<div style="margin:1rem 0; background:#1a1a1a; padding:15px; border-left:3px solid var(--text-accent);"><strong style="color:var(--text-accent);">藝人/出演名單</strong><br>${rawT.artist_list}</div>` : ''}
+                    ${rawT.artist_list ? `<div style="margin:1rem 0; background:#1a1a1a; padding:15px; border-left:3px solid var(--text-accent);"><strong style="color:var(--text-accent);">共演陣容/嘉賓</strong><br>${rawT.artist_list}</div>` : ''}
                     <div class="modal-meta-grid">
                         <div class="modal-meta-item"><strong>狀態</strong><span>${statusText}</span></div>
                         <div class="modal-meta-item"><strong>公演種別</strong><span>${typeLabelJP}</span></div>
@@ -1855,13 +1855,13 @@ function showAdminForm(editData = null) {
                 </div>
                 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>主要藝人 (Artist)</label>
+                    <label>主角/出演・出賽 (Main Focus)</label>
                     <input type="text" name="artist" list="artist-list" placeholder="單一藝人專場請填此 (FES可留空)" value="${editData ? editData.artist : ''}" autocomplete="off" spellcheck="false">
                     <datalist id="artist-list">${artistOptions}</datalist>
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>藝人/出演者名單 (多位使用、隔開)</label>
+                    <label>共演陣容/嘉賓 (多位使用、隔開)</label>
                     <input type="text" name="artist_list" id="form-artist-list" placeholder="FES、拼盤請填此;ex: LiSA、May'n" value="${editData ? (editData.artist_list || '') : ''}" oninput="onArtistListInputChange(this.value)" autocomplete="off" spellcheck="false">
                     <div id="artist-quick-tags" class="quick-add-tags">${quickTags}</div>
                 </div>
