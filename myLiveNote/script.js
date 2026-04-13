@@ -547,6 +547,8 @@ async function fetchData() {
             toggleBodyScroll(true); 
             if (hasDataToDisplay && isStale) {
                 document.body.classList.add('updating-data');
+            } else if (!hasDataToDisplay) {
+                document.body.classList.add('initial-loading');
             }
         }
         
@@ -570,7 +572,7 @@ async function fetchData() {
 
         setLogoState('circle');
         toggleBodyScroll(false);
-        document.body.classList.remove('updating-data');
+        document.body.classList.remove('updating-data', 'initial-loading');
 
         const subtitle = document.querySelector('.subtitle');
         if (subtitle) subtitle.textContent = `${currentUser.toUpperCase()} 參戰紀錄`;
@@ -584,7 +586,7 @@ async function fetchData() {
         // 確保發生錯誤時也能解除 Loading 與遮罩狀態
         setLogoState('circle');
         toggleBodyScroll(false);
-        document.body.classList.remove('updating-data');
+        document.body.classList.remove('updating-data', 'initial-loading');
     }
 }
 
