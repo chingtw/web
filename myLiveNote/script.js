@@ -1981,47 +1981,74 @@ function showAdminForm(editData = null) {
     updateVenueList('ALL');
 }
 
-window.selectGooglePlace = function(placeId, fallbackName, lang = 'zh-TW') {
-    if (typeof google !== 'object' || !google.maps || !google.maps.places) return;
-    
-    if (!window.googlePlacesService) {
-        window.googlePlacesService = new google.maps.places.PlacesService(document.createElement('div'));
-    }
-    
+window.selectGooglePlace = async function(placeId, fallbackName, lang = 'zh-TW') {
+    // 1. 檢查 Google SDK 是否載入
+    if (typeof google !== 'object' || !google.maps) return;
+
     const vInput = document.querySelector('input[name="venue_name"]');
-    vInput.style.opacity = '0.5';
-    
-    window.googlePlacesService.getDetails({
-        placeId: placeId,
-        fields: ['name', 'geometry', 'address_components'],
-        language: lang // 使用傳入的語系參數，預設日文
-    }, (place, status) => {
-        vInput.style.opacity = '1';
-        if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry) {
-            const rawName = place.name;
-            const newLatLng = `${place.geometry.location.lat().toFixed(5)}, ${place.geometry.location.lng().toFixed(5)}`;
+    if (vInput) vInput.style.opacity = '0.5';
+
+    try {
+        // 2. 匯入新的 Places 程式庫並建立 Place 實例
+        const { Place } = await google.maps.importLibrary("places");
+        const place = new Place({
+            id: placeId,
+            requestedLanguage: lang
+        });
+
+        // 3. 請求欄位資料 (新版欄位名稱略有不同)
+        // displayName 對應舊版的 name
+        // location 對應舊版的 geometry.location
+        // addressComponents 對應舊版的 address_components
+        await place.fetchFields({
+            fields: ['displayName', 'location', 'addressComponents']
+        });
+
+        if (vInput) vInput.style.opacity = '1';
+
+        if (place.location) {
+            const rawName = place.displayName.replace(/臺/g, "台");
+            // location.lat() 與 lng() 依然是函數
+            const newLatLng = `${place.location.lat().toFixed(5)}, ${place.location.lng().toFixed(5)}`;
             
             let cityName = '';
-            if (place.address_components) {
-                const admin1 = place.address_components.find(c => c.types.includes('administrative_area_level_1'));
-                const locality = place.address_components.find(c => c.types.includes('locality'));
-                if (admin1) cityName = admin1.short_name || admin1.long_name;
-                else if (locality) cityName = (locality.short_name || locality.long_name).replace(/臺/g, "台").replace(/[市縣]/g, "");
+            if (place.addressComponents) {
+                // 注意：新版屬性名為小駝峰 (shortText, longText)
+                const admin1 = place.addressComponents.find(c => c.types.includes('administrative_area_level_1'));
+                const locality = place.addressComponents.find(c => c.types.includes('locality'));
+                
+                if (admin1) {
+                    cityName = (admin1.shortText || admin1.longText)
+                        .replace(/臺/g, "台")
+                        .replace(/[市縣]/g, "");
+                } else if (locality) {
+                    cityName = (locality.shortText || locality.longText)
+                        .replace(/臺/g, "台")
+                        .replace(/[市縣]/g, "");
+                }
             }
+            
             const formattedName = cityName ? `${rawName} (${cityName})` : rawName;
             
+            // 執行你原本的 UI 更新邏輯
             addVenueToField(formattedName, newLatLng);
-            updateVenueList('ALL'); // 插入後自動切換回預設清單
+            updateVenueList('ALL');
             
-            // 將 GOOGLE 標籤取消 active，ALL 加上 active
             document.querySelectorAll('.venue-cat-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.region === 'ALL');
             });
         } else {
-            addVenueToField(fallbackName.split(' ')[0], ''); 
-            updateVenueList('ALL');
+            throw new Error('Place location not found');
         }
-    });
+
+    } catch (error) {
+        console.error("Google Places API Error:", error);
+        if (vInput) vInput.style.opacity = '1';
+        
+        // 錯誤時的回退邏輯
+        addVenueToField(fallbackName.split(' ')[0], ''); 
+        updateVenueList('ALL');
+    }
 };
 
 window.toggleCompanionTag = function(element, username) {
@@ -2185,6 +2212,7 @@ window.addArtistToField = function(fieldName, artistName) {
 }
 
 window.addVenueToField = function(venueName, latLng) {
+    console.log("Adding venue:", venueName, "with coords:", latLng);
     const vInput = document.querySelector('input[name="venue_name"]');
     const lInput = document.querySelector('input[name="lat_lng"]');
     if (!vInput || !lInput) return;
