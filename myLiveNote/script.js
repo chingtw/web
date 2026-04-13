@@ -7,8 +7,8 @@ const MOCK_DATA = [
     { id: '1', date: '2025-01-12', time: '18:30', type: 'ONE_MAN', status: 'CONFIRMED', artist: 'YOASOBI', tour_title: 'ASIA TOUR 2024-2025 “超現實”', venue_name: '台北小巨蛋', lat_lng: '25.051, 121.550', seat_info: '特區 B2排', ticket_price: '4800', currency: 'TWD', is_first_time: true, setlist: '1. 祝福\n2. 夜に駆ける\n3. 勇者\n4. アイドル', images: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=500' }
 ];
 
-const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'ONLINE': 'ONLINE', 'SIGNING': 'EVENT', 'FAN_MEETING': 'EVENT', 'EVENT': 'EVENT', 'EXHIBITION': 'EXHIBIT', 'STAGE': 'STAGE', 'SPORTS': 'SPORTS' };
-const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン會', 'FAN_MEETING': 'ファンミーティング', 'EVENT': 'イベント', 'EXHIBITION': '展示會', 'STAGE': '舞台劇 / 演劇', 'SPORTS': 'スポーツ / 試合' };
+const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'ONLINE': 'ONLINE', 'SIGNING': 'EVENT', 'FAN_MEETING': 'EVENT', 'EVENT': 'EVENT', 'EXHIBITION': 'EXHIBIT', 'STAGE': 'STAGE', 'SPORTS': 'SPORTS', 'SCREENING': 'SCREENING' };
+const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン會', 'FAN_MEETING': 'ファンミーティング', 'EVENT': 'イベント', 'EXHIBITION': '展示會', 'STAGE': '舞台劇 / 演劇', 'SPORTS': 'スポーツ / 試合', 'SCREENING': '映像上映' };
 
 const MILESTONE_MAP = {
     'ARTIST': { label: '初參戰', class: 'badge-artist', icon: 'mic-2' },
@@ -539,11 +539,15 @@ async function fetchData() {
 
     // 2. 只有在完全沒快取，或快取已判定為過期時，才強制鎖定 UI 顯示 Loading
     const shouldShowLoading = !cachedData || isStale;
+    const hasDataToDisplay = cachedData && cachedData.length > 0;
 
     try {
         if (shouldShowLoading) {
             setLogoState('loading');
             toggleBodyScroll(true); 
+            if (hasDataToDisplay && isStale) {
+                document.body.classList.add('updating-data');
+            }
         }
         
         const res = await fetch(`${GAS_API_URL}?u=${currentUser}`);
@@ -566,6 +570,7 @@ async function fetchData() {
 
         setLogoState('circle');
         toggleBodyScroll(false);
+        document.body.classList.remove('updating-data');
 
         const subtitle = document.querySelector('.subtitle');
         if (subtitle) subtitle.textContent = `${currentUser.toUpperCase()} 參戰紀錄`;
@@ -575,9 +580,11 @@ async function fetchData() {
         // 若出錯且原本沒快取，才顯示 Mock Data
         if (!cachedData) {
             renderApp(MOCK_DATA);
-            setLogoState('circle');
-            toggleBodyScroll(false);
         }
+        // 確保發生錯誤時也能解除 Loading 與遮罩狀態
+        setLogoState('circle');
+        toggleBodyScroll(false);
+        document.body.classList.remove('updating-data');
     }
 }
 
@@ -602,17 +609,19 @@ function renderFilterBar() {
     } else if (currentFilterCategory === 'artist') {
         const counts = {};
         allTickets.forEach(t => {
-            const eventArtists = new Set();
-            if (t.artist) eventArtists.add(t.artist.trim());
-            if (t.artist_list) {
-                t.artist_list.split(/[、,]+/).forEach(a => {
-                    const name = a.trim();
-                    if (name) eventArtists.add(name);
+            if (!['EXHIBITION', 'SCREENING'].includes(t.type)) {
+                const eventArtists = new Set();
+                if (t.artist) eventArtists.add(t.artist.trim());
+                if (t.artist_list) {
+                    t.artist_list.split(/[、,]+/).forEach(a => {
+                        const name = a.trim();
+                        if (name) eventArtists.add(name);
+                    });
+                }
+                eventArtists.forEach(name => {
+                    counts[name] = (counts[name] || 0) + 1;
                 });
             }
-            eventArtists.forEach(name => {
-                counts[name] = (counts[name] || 0) + 1;
-            });
         });
 
         const sortedArtists = Object.entries(counts).sort((a,b) => b[1] - a[1]);
@@ -916,13 +925,15 @@ function initStats() {
         }
 
         // 1. 藝人統計
-        const currentEventArtists = new Set();
-        if (t.artist && t.artist.trim() !== '') currentEventArtists.add(t.artist.trim());
-        if (t.artist_list && t.artist_list.trim() !== '') {
-            const list = t.artist_list.split(/[、,]+/).map(s => s.trim()).filter(s => s !== '');
-            list.forEach(a => currentEventArtists.add(a));
+        if (!['EXHIBITION', 'SCREENING'].includes(t.type)) {
+            const currentEventArtists = new Set();
+            if (t.artist && t.artist.trim() !== '') currentEventArtists.add(t.artist.trim());
+            if (t.artist_list && t.artist_list.trim() !== '') {
+                const list = t.artist_list.split(/[、,]+/).map(s => s.trim()).filter(s => s !== '');
+                list.forEach(a => currentEventArtists.add(a));
+            }
+            currentEventArtists.forEach(a => { artC[a] = (artC[a] || 0) + 1; });
         }
-        currentEventArtists.forEach(a => { artC[a] = (artC[a] || 0) + 1; });
 
         // 2. 場地統計
         if (t.venue_name && t.venue_name.trim() !== '') {
@@ -1722,17 +1733,19 @@ function showAdminForm(editData = null) {
     // 2. 處理藝人建議 (仍來自 allTickets 統計)
     const artistCounts = {};
     allTickets.forEach(t => {
-        const eventArtists = new Set();
-        if (t.artist) eventArtists.add(t.artist.trim());
-        if (t.artist_list) {
-            t.artist_list.split(/[、,]+/).forEach(a => {
-                const name = a.trim();
-                if (name) eventArtists.add(name);
+        if (!['EXHIBITION', 'SCREENING'].includes(t.type)) {
+            const eventArtists = new Set();
+            if (t.artist) eventArtists.add(t.artist.trim());
+            if (t.artist_list) {
+                t.artist_list.split(/[、,]+/).forEach(a => {
+                    const name = a.trim();
+                    if (name) eventArtists.add(name);
+                });
+            }
+            eventArtists.forEach(name => {
+                artistCounts[name] = (artistCounts[name] || 0) + 1;
             });
         }
-        eventArtists.forEach(name => {
-            artistCounts[name] = (artistCounts[name] || 0) + 1;
-        });
     });
 
     const sortedArtists = Object.entries(artistCounts).sort((a,b) => b[1] - a[1]);
@@ -1838,6 +1851,7 @@ function showAdminForm(editData = null) {
                         <option value="FES" ${editData?.type==='FES'?'selected':''}>音樂祭 / 拼盤</option>
                         <option value="VIEWING" ${editData?.type==='VIEWING'?'selected':''}>院線直播 (LV)</option>
                         <option value="ONLINE" ${editData?.type==='ONLINE'?'selected':''}>線上直播</option>
+                        <option value="SCREENING" ${editData?.type==='SCREENING'?'selected':''}>映像上映</option>
                         <option value="STAGE" ${editData?.type==='STAGE'?'selected':''}>舞台劇 / 演劇</option>
                         <option value="SIGNING" ${editData?.type==='SIGNING'?'selected':''}>簽名會</option>
                         <option value="FAN_MEETING" ${editData?.type==='FAN_MEETING'?'selected':''}>見面會</option>
@@ -2098,7 +2112,7 @@ window.handleSave = async function() {
             data[key] = cleanVal;
         }
     });
-    const skipArtistCheck = ['EVENT', 'SPORTS','EXHIBITION'].includes(data.type);
+    const skipArtistCheck = ['EVENT', 'SPORTS','EXHIBITION','SCREENING'].includes(data.type);
     if (!skipArtistCheck && !data.artist.trim() && !data.artist_list.trim()) {
         await showAlert('請至少填寫「主要藝人」或「出演者名單」其中一項！', 'error');
         return;

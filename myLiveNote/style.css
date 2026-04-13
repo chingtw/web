@@ -1784,6 +1784,50 @@ body.no-scroll {
     height: 100%;
 }
 
+/* Updating Data Overlay - Premium Aesthetic */
+body.updating-data {
+    overflow: hidden;
+}
+
+/* 1. Base Glassmorphism Shield */
+body.updating-data::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 4998;
+    pointer-events: auto; /* Blocks clicks */
+    background: rgba(10, 10, 10, 0.65); /* Deep dark tint */
+    backdrop-filter: blur(6px) grayscale(0.5); /* Blur + slight grayscale for focus */
+    -webkit-backdrop-filter: blur(6px) grayscale(0.5);
+    opacity: 0;
+    animation: overlayFadeIn 0.4s ease-out forwards;
+}
+
+/* 2. Elegant Breathing Gold Vignette */
+body.updating-data::after {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 4999;
+    pointer-events: none;
+    /* Soft gold glow from the center outwards */
+    background: radial-gradient(circle at center, rgba(197, 164, 137, 0.15) 0%, rgba(0, 0, 0, 0.4) 100%);
+    box-shadow: inset 0 0 100px rgba(0,0,0,0.8); /* Dark vignette edges */
+    opacity: 0;
+    animation: overlayFadeIn 0.4s ease-out forwards, premium-glow-pulse 2s ease-in-out 0.4s infinite alternate;
+}
+
+@keyframes overlayFadeIn {
+    to { opacity: 1; }
+}
+
+@keyframes premium-glow-pulse {
+    0% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
 /* Scroll to Top Button */
 .scroll-top-btn {
     display: flex;
