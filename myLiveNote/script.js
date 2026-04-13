@@ -1981,7 +1981,7 @@ function showAdminForm(editData = null) {
     updateVenueList('ALL');
 }
 
-window.selectGooglePlace = function(placeId, fallbackName) {
+window.selectGooglePlace = function(placeId, fallbackName, lang = 'ja') {
     if (typeof google !== 'object' || !google.maps || !google.maps.places) return;
     
     if (!window.googlePlacesService) {
@@ -1994,7 +1994,7 @@ window.selectGooglePlace = function(placeId, fallbackName) {
     window.googlePlacesService.getDetails({
         placeId: placeId,
         fields: ['name', 'geometry', 'address_components'],
-        language: 'ja' // 盡量保留日文等原文
+        language: lang // 使用傳入的語系參數，預設日文
     }, (place, status) => {
         vInput.style.opacity = '1';
         if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry) {
@@ -2006,7 +2006,7 @@ window.selectGooglePlace = function(placeId, fallbackName) {
                 const admin1 = place.address_components.find(c => c.types.includes('administrative_area_level_1'));
                 const locality = place.address_components.find(c => c.types.includes('locality'));
                 if (admin1) cityName = admin1.short_name || admin1.long_name;
-                else if (locality) cityName = locality.short_name || locality.long_name;
+                else if (locality) cityName = (locality.short_name || locality.long_name).replace(/臺/g, "台").replace(/[市縣]/g, "");
             }
             const formattedName = cityName ? `${rawName} (${cityName})` : rawName;
             
