@@ -1981,7 +1981,7 @@ function showAdminForm(editData = null) {
     updateVenueList('ALL');
 }
 
-window.selectGooglePlace = function(placeId, fallbackName, lang = 'ja') {
+window.selectGooglePlace = function(placeId, fallbackName, lang = 'zh-TW') {
     if (typeof google !== 'object' || !google.maps || !google.maps.places) return;
     
     if (!window.googlePlacesService) {
