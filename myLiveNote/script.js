@@ -7,8 +7,20 @@ const MOCK_DATA = [
     { id: '1', date: '2025-01-12', time: '18:30', type: 'ONE_MAN', status: 'CONFIRMED', artist: 'YOASOBI', tour_title: 'ASIA TOUR 2024-2025 “超現實”', venue_name: '台北小巨蛋', lat_lng: '25.051, 121.550', seat_info: '特區 B2排', ticket_price: '4800', currency: 'TWD', is_first_time: true, setlist: '1. 祝福\n2. 夜に駆ける\n3. 勇者\n4. アイドル', images: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=500' }
 ];
 
-const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'ONLINE': 'ONLINE', 'SIGNING': 'EVENT', 'FAN_MEETING': 'EVENT', 'EVENT': 'EVENT', 'EXHIBITION': 'EXHIBIT', 'STAGE': 'STAGE', 'SPORTS': 'SPORTS', 'SCREENING': 'SCREENING' };
-const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン會', 'FAN_MEETING': 'ファンミーティング', 'EVENT': 'イベント', 'EXHIBITION': '展示會', 'STAGE': '舞台劇 / 演劇', 'SPORTS': 'スポーツ / 試合', 'SCREENING': '映像上映' };
+const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'ONLINE': 'ONLINE', 'SIGNING': 'EVENT', 'FAN_MEETING': 'EVENT', 'GREETING': 'EVENT', 'EVENT': 'EVENT', 'EXHIBITION': 'EXHIBIT', 'STAGE': 'STAGE', 'SPORTS': 'SPORTS', 'SCREENING': 'SCREENING' };
+const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン會', 'FAN_MEETING': 'ファンミーティング', 'GREETING': '挨拶 / 舞台挨拶', 'EVENT': 'イベント', 'EXHIBITION': '展示會', 'STAGE': '舞台劇 / 演劇', 'SPORTS': 'スポーツ / 試合', 'SCREENING': '映像上映' };
+
+const ARTIST_RANKING_EXCLUDED_TYPES = {
+    full: ['EXHIBITION', 'SCREENING'],
+    inPerson: ['EXHIBITION', 'SCREENING', 'VIEWING', 'ONLINE']
+};
+const ARTIST_NAME_COLLATOR = new Intl.Collator('ja-JP', { numeric: true, sensitivity: 'base' });
+const TAIWAN_VENUE_REGIONS = new Set([
+    '台北', '臺北', '新北', '桃園', '台中', '臺中', '台南', '臺南', '高雄',
+    '基隆', '新竹', '苗栗', '彰化', '南投', '雲林', '嘉義', '屏東',
+    '宜蘭', '花蓮', '台東', '臺東', '澎湖', '金門', '連江', '馬祖'
+]);
+const NON_OVERSEAS_VENUE_LABELS = new Set(['VRLIVE', 'LIVE配信']);
 
 const MILESTONE_MAP = {
     'ARTIST': { label: '初參戰', class: 'badge-artist', icon: 'mic-2' },
@@ -24,12 +36,16 @@ let currentFilterCategory = 'date'; // date, artist, status, milestone
 let currentFilterValue = 'ALL';
 let showAllArtists = false;
 let adminPassword = '';
+let artistRankingMode = 'inPerson';
+let artistRankingSort = 'count';
+let venueRankingSort = 'count';
 const LOGIN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 小時
 
 let mapInstance = null;
 let detailMapInstance = null;
 let artistChartInstance = null;
 let venueChartInstance = null;
+let typeChartInstance = null;
 
 const listTab = document.querySelector('[data-tab="list"]');
 const mapTab = document.querySelector('[data-tab="map"]');
@@ -60,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTabs(); 
     setupYearScroll();
     setupStatsSwitcher();
+    setupArtistRankingModeSwitcher();
     setupCategorySwitcher();
     setupScrollTop();
     setupScrollTimeline(); // 初始化時間軸指示器
@@ -273,6 +290,52 @@ function setupStatsSwitcher() {
             // if (type === 'cost') {
             //     triggerCostAnimation();
             // }
+        };
+    });
+}
+function setupArtistRankingModeSwitcher() {
+    const btns = document.querySelectorAll('.ranking-mode-btn');
+    const sortBtns = document.querySelectorAll('.ranking-sort-btn');
+    const venueSortBtns = document.querySelectorAll('.venue-sort-btn');
+    if (!btns.length && !sortBtns.length && !venueSortBtns.length) return;
+
+    if (!ARTIST_RANKING_EXCLUDED_TYPES[artistRankingMode]) {
+        artistRankingMode = 'inPerson';
+    }
+
+    btns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.rankingMode === artistRankingMode);
+        btn.onclick = () => {
+            const nextMode = btn.dataset.rankingMode;
+            if (!ARTIST_RANKING_EXCLUDED_TYPES[nextMode] || nextMode === artistRankingMode) return;
+
+            artistRankingMode = nextMode;
+            btns.forEach(b => b.classList.toggle('active', b.dataset.rankingMode === artistRankingMode));
+            if (statsView.classList.contains('active')) initStats();
+        };
+    });
+
+    sortBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.rankingSort === artistRankingSort);
+        btn.onclick = () => {
+            const nextSort = btn.dataset.rankingSort;
+            if (!['count', 'name'].includes(nextSort) || nextSort === artistRankingSort) return;
+
+            artistRankingSort = nextSort;
+            sortBtns.forEach(b => b.classList.toggle('active', b.dataset.rankingSort === artistRankingSort));
+            if (statsView.classList.contains('active')) initStats();
+        };
+    });
+
+    venueSortBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.venueSort === venueRankingSort);
+        btn.onclick = () => {
+            const nextSort = btn.dataset.venueSort;
+            if (!['count', 'overseas'].includes(nextSort) || nextSort === venueRankingSort) return;
+
+            venueRankingSort = nextSort;
+            venueSortBtns.forEach(b => b.classList.toggle('active', b.dataset.venueSort === venueRankingSort));
+            if (statsView.classList.contains('active')) initStats();
         };
     });
 }
@@ -845,6 +908,61 @@ function switchTab(tab) {
     }
 }
 
+function isArtistRankingEligible(t) {
+    const excludedTypes = ARTIST_RANKING_EXCLUDED_TYPES[artistRankingMode] || ARTIST_RANKING_EXCLUDED_TYPES.full;
+    return !excludedTypes.includes(t.type);
+}
+
+function sortArtistRanking(entries) {
+    if (artistRankingSort === 'name') {
+        return entries.sort((a, b) => ARTIST_NAME_COLLATOR.compare(a[0], b[0]) || b[1] - a[1]);
+    }
+    return entries.sort((a, b) => b[1] - a[1] || ARTIST_NAME_COLLATOR.compare(a[0], b[0]));
+}
+
+function getVenueRegionLabel(venueName) {
+    const match = String(venueName || '').match(/[（(]([^()（）]+)[）)]\s*$/);
+    return match ? match[1].trim() : '';
+}
+
+function normalizeTaiwanRegion(region) {
+    return String(region || '').replace(/[縣市\s]/g, '').replace(/^臺/, '台');
+}
+
+function isTaiwanVenue(venueName) {
+    const label = normalizeTaiwanRegion(getVenueRegionLabel(venueName));
+    if (label) {
+        const compactLabel = label.replace(/\s/g, '').toUpperCase();
+        if (NON_OVERSEAS_VENUE_LABELS.has(compactLabel)) return true;
+        return TAIWAN_VENUE_REGIONS.has(label) || TAIWAN_VENUE_REGIONS.has(label.replace(/^台/, '臺'));
+    }
+
+    const config = venueConfig.find(v => v.venue_name === venueName);
+    if (config && config.region) return config.region === 'TW';
+    return true;
+}
+
+function sortVenueRanking(entries) {
+    if (venueRankingSort === 'overseas') {
+        return entries.sort((a, b) => {
+            const aTaiwan = isTaiwanVenue(a[0]);
+            const bTaiwan = isTaiwanVenue(b[0]);
+            if (aTaiwan !== bTaiwan) return aTaiwan ? 1 : -1;
+            return b[1] - a[1] || ARTIST_NAME_COLLATOR.compare(a[0], b[0]);
+        });
+    }
+    return entries.sort((a, b) => {
+        const countDiff = b[1] - a[1];
+        if (countDiff !== 0) return countDiff;
+
+        const aTaiwan = isTaiwanVenue(a[0]);
+        const bTaiwan = isTaiwanVenue(b[0]);
+        if (aTaiwan !== bTaiwan) return aTaiwan ? 1 : -1;
+
+        return ARTIST_NAME_COLLATOR.compare(a[0], b[0]);
+    });
+}
+
 function initMap() {
     if (mapInstance) return;
     // 設定中心點約在沖繩附近，並調整縮放級別為 4，以同時涵蓋台灣與日本
@@ -927,7 +1045,7 @@ function initStats() {
         }
 
         // 1. 藝人統計
-        if (!['EXHIBITION', 'SCREENING'].includes(t.type)) {
+        if (isArtistRankingEligible(t)) {
             const currentEventArtists = new Set();
             if (t.artist && t.artist.trim() !== '') currentEventArtists.add(t.artist.trim());
             if (t.artist_list && t.artist_list.trim() !== '') {
@@ -954,8 +1072,8 @@ function initStats() {
         }
     });
 
-    const sa = Object.entries(artC).sort((a,b)=>b[1]-a[1]); 
-    const sv = Object.entries(venC).sort((a,b)=>b[1]-a[1]);
+    const sa = sortArtistRanking(Object.entries(artC)); 
+    const sv = sortVenueRanking(Object.entries(venC));
     const st = Object.entries(typC).sort((a,b)=>b[1]-a[1]);
     const sc = Object.entries(costC).sort((a,b)=>b[1]-a[1]);
 
@@ -965,7 +1083,7 @@ function initStats() {
 
     renderDonut('artistChart', sa.slice(0, 10), artistChartInstance, (c)=>artistChartInstance=c);
     renderDonut('venueChart', sv.slice(0, 10), venueChartInstance, (c)=>venueChartInstance=c);
-    renderDonut('typeChart', st.map(i => [TYPE_MAP_JP[i[0]] || i[0], i[1]]), null, (c)=>{}); 
+    renderDonut('typeChart', st.map(i => [TYPE_MAP_JP[i[0]] || i[0], i[1]]), typeChartInstance, (c)=>typeChartInstance=c); 
 
     renderStatsList('artist-stats-list', sa, 'artist'); 
     renderStatsList('venue-stats-list', sv, 'venue');
@@ -1101,6 +1219,10 @@ function renderStatsList(id, data, type = 'artist') {
     const container = document.getElementById(id);
     const limit = 10;
     const hasMore = data.length > limit;
+    const existingShowMoreBtn = container.nextElementSibling;
+    if (existingShowMoreBtn && existingShowMoreBtn.classList.contains('show-more-btn')) {
+        existingShowMoreBtn.remove();
+    }
     
     const renderItems = (items) => items.map(i => {
         const name = i[0];
@@ -1110,6 +1232,7 @@ function renderStatsList(id, data, type = 'artist') {
         const relatedEvents = allTickets.filter(t => {
             if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET'].includes(t.status)) return false;
             if (type === 'artist') {
+                if (!isArtistRankingEligible(t)) return false;
                 const list = (t.artist_list || '').split(/[、,]+/).map(s => s.trim());
                 return (t.artist === name) || list.includes(name);
             } else if (type === 'venue') {
@@ -1857,6 +1980,7 @@ function showAdminForm(editData = null) {
                         <option value="STAGE" ${editData?.type==='STAGE'?'selected':''}>舞台劇 / 演劇</option>
                         <option value="SIGNING" ${editData?.type==='SIGNING'?'selected':''}>簽名會</option>
                         <option value="FAN_MEETING" ${editData?.type==='FAN_MEETING'?'selected':''}>見面會</option>
+                        <option value="GREETING" ${editData?.type==='GREETING'?'selected':''}>挨拶 / 舞台挨拶</option>
                         <option value="EXHIBITION" ${editData?.type==='EXHIBITION'?'selected':''}>展覽</option>
                         <option value="EVENT" ${editData?.type==='EVENT'?'selected':''}>活動</option>
                         <option value="SPORTS" ${editData?.type==='SPORTS'?'selected':''}>運動賽事</option>

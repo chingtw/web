@@ -1250,6 +1250,79 @@ section.active { display: block; }
     color: #000;
 }
 
+.ranking-mode-switcher {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    margin: -0.5rem auto 1rem;
+    max-width: 360px;
+    background: #0d0d0d;
+    border: 1px solid #181818;
+    border-radius: 8px;
+}
+
+.ranking-sort-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: -0.55rem auto 1rem;
+}
+
+.ranking-sort-label {
+    color: #555;
+    font-family: 'Bebas Neue';
+    font-size: 0.72rem;
+    letter-spacing: 1.5px;
+    line-height: 1;
+}
+
+.ranking-sort-switcher {
+    display: inline-flex;
+    gap: 3px;
+    padding: 3px;
+    background: #0d0d0d;
+    border: 1px solid #181818;
+    border-radius: 999px;
+}
+
+.ranking-mode-btn {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    color: #666;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Bebas Neue';
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    transition: all 0.25s ease;
+}
+
+.ranking-sort-btn,
+.venue-sort-btn {
+    min-width: 54px;
+    background: transparent;
+    border: 0;
+    color: #666;
+    padding: 5px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: 'Bebas Neue';
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+    transition: all 0.25s ease;
+}
+
+.ranking-mode-btn.active,
+.ranking-sort-btn.active,
+.venue-sort-btn.active {
+    background: var(--text-accent);
+    color: #000;
+}
+
 .stats-container { 
     display: grid; 
     grid-template-columns: 1fr 1fr; 

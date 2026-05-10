@@ -306,11 +306,29 @@
             <div class="stats-container active-artist">
                 <div class="stats-card animate-up">
                     <h3>ARTIST RANKING</h3>
+                    <div class="ranking-mode-switcher" aria-label="Artist ranking mode">
+                        <button class="ranking-mode-btn active" data-ranking-mode="inPerson" type="button">REAL ATTENDANCE</button>
+                        <button class="ranking-mode-btn" data-ranking-mode="full" type="button">FULL EXPERIENCE</button>
+                    </div>
+                    <div class="ranking-sort-control" aria-label="Artist ranking sort">
+                        <span class="ranking-sort-label">SORT BY</span>
+                        <div class="ranking-sort-switcher">
+                            <button class="ranking-sort-btn active" data-ranking-sort="count" type="button">COUNT</button>
+                            <button class="ranking-sort-btn" data-ranking-sort="name" type="button">NAME</button>
+                        </div>
+                    </div>
                     <div class="chart-wrapper"><canvas id="artistChart"></canvas></div>
                     <div id="artist-stats-list" class="stats-list"></div>
                 </div>
                 <div class="stats-card animate-up" style="animation-delay: 0.1s;">
                     <h3>VENUE RANKING</h3>
+                    <div class="ranking-sort-control" aria-label="Venue ranking sort">
+                        <span class="ranking-sort-label">SORT BY</span>
+                        <div class="ranking-sort-switcher">
+                            <button class="venue-sort-btn active" data-venue-sort="count" type="button">COUNT</button>
+                            <button class="venue-sort-btn" data-venue-sort="overseas" type="button">OVERSEAS</button>
+                        </div>
+                    </div>
                     <div class="chart-wrapper"><canvas id="venueChart"></canvas></div>
                     <div id="venue-stats-list" class="stats-list"></div>
                 </div>
