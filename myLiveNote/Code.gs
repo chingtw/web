@@ -251,3 +251,60 @@ function bytesToHex(bytes) {
   }
   return hex;
 }
+
+function updateStatusToCompleted() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  
+  // 取得今日日期，並將時間歸零至凌晨 00:00:00 以便精準備較
+  var today = new Date();
+  today.setHours(0, 0, 0, 0); 
+
+  // 定義不需要執行此排查的工作表名稱（可自行增減）
+  var excludeSheets = ['_Config_', '_Template_', 'venue_config'];
+
+  for (var s = 0; s < sheets.length; s++) {
+    var sheet = sheets[s];
+    var sheetName = sheet.getName();
+
+    // 略過不需要處理的工作表
+    if (excludeSheets.includes(sheetName)) continue;
+
+    var dataRange = sheet.getDataRange();
+    var values = dataRange.getValues();
+
+    // 如果工作表只有標題或為空，則跳過
+    if (values.length <= 1) continue; 
+
+    // 自動尋找 'date' 與 'status' 所在的欄位索引
+    var headers = values[0];
+    var dateColIdx = headers.indexOf('date');
+    var statusColIdx = headers.indexOf('status');
+
+    // 若該工作表沒有這兩個欄位，則跳過
+    if (dateColIdx === -1 || statusColIdx === -1) continue; 
+
+    var statusUpdated = false;
+
+    // 從第 2 列開始逐筆檢查（索引值為 1）
+    for (var i = 1; i < values.length; i++) {
+      var rowStatus = values[i][statusColIdx];
+      var rowDateVal = values[i][dateColIdx];
+
+      if (rowStatus === 'CONFIRMED') {
+        var parsedDate = new Date(rowDateVal);
+        
+        // 確保日期格式有效，並且日期早於今天
+        if (!isNaN(parsedDate.getTime()) && parsedDate < today) {
+          values[i][statusColIdx] = 'COMPLETED';
+          statusUpdated = true;
+        }
+      }
+    }
+
+    // 若有資料被修改，則將整批資料寫回工作表以提升執行效能
+    if (statusUpdated) {
+      sheet.getRange(1, 1, values.length, values[0].length).setValues(values);
+    }
+  }
+}
