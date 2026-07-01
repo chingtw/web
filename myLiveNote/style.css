@@ -261,7 +261,7 @@ body.login-open .dynamic-logo-container {
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
@@ -297,6 +297,178 @@ body.login-open .dynamic-logo-container {
     background: var(--text-accent);
     color: black;
     border-color: var(--text-accent);
+}
+
+/* Live Status Strip */
+.live-status-strip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+    padding: 12px 1.5rem;
+    background: var(--bg-dark);
+    border-top: 1px solid rgba(197, 164, 137, 0.08);
+    border-bottom: 1px solid rgba(197, 164, 137, 0.08);
+    margin: 1.5rem 0 0.5rem 0;
+    font-size: 0.8rem;
+    color: #ccc;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 4000;
+}
+
+.live-status-strip.hidden {
+    display: none !important;
+}
+
+.live-status-strip.hidden-single-ticket {
+    display: none !important;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 6px 12px;
+    border-radius: 6px;
+    min-width: 0; /* 讓 text-overflow 生效 */
+    flex: 1;
+    max-width: 450px;
+}
+
+.status-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.status-item:hover .status-main-row {
+    color: var(--text-accent);
+}
+
+.status-icon {
+    display: flex;
+    align-items: center;
+    color: var(--text-accent);
+    flex-shrink: 0;
+    background: rgba(197, 164, 137, 0.08);
+    padding: 8px;
+    border-radius: 50%;
+}
+
+.status-icon i,
+.status-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.status-info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+    text-align: left;
+}
+
+.status-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.status-label {
+    font-family: 'Bebas Neue', sans-serif;
+    color: var(--text-accent);
+    letter-spacing: 1px;
+    font-weight: bold;
+    font-size: 0.75rem;
+}
+
+.status-date {
+    font-family: 'Bebas Neue', monospace;
+    font-size: 0.75rem;
+    color: #888;
+    letter-spacing: 0.5px;
+}
+
+.status-main-row {
+    font-family: 'Noto Sans TC', sans-serif;
+    color: #eee;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    transition: color 0.2s ease;
+    text-align: left;
+}
+
+.status-venue-row {
+    font-family: 'Noto Sans TC', sans-serif;
+    color: #888;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.status-venue-row i,
+.status-venue-row svg {
+    width: 11px;
+    height: 11px;
+    color: var(--text-accent);
+}
+
+.status-countdown {
+    background: rgba(197, 164, 137, 0.15);
+    color: var(--text-accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.5px;
+    animation: countdown-pulse 2s infinite ease-in-out;
+}
+
+@keyframes countdown-pulse {
+    0% { opacity: 0.8; }
+    50% { opacity: 1; box-shadow: 0 0 4px rgba(197, 164, 137, 0.2); }
+    100% { opacity: 0.8; }
+}
+
+.status-divider {
+    width: 1px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .live-status-strip {
+        gap: 16px;
+    }
+}
+
+@media (max-width: 600px) {
+    .live-status-strip {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 1rem;
+        align-items: center;
+    }
+    .status-divider {
+        display: none;
+    }
+    .status-item {
+        width: 100%;
+        max-width: 100%;
+        padding: 4px 8px;
+    }
 }
 
 /* Main Layout */
@@ -1167,7 +1339,9 @@ section.active { display: block; }
     writing-mode: vertical-lr;
     padding: 5px 0;
 }
-.nav-year-link:hover { color: var(--text-accent); }
+@media (hover: hover) {
+    .nav-year-link:hover { color: var(--text-accent); }
+}
 .nav-year-link.active { 
     color: var(--text-accent); 
     font-weight: bold;
@@ -1175,6 +1349,23 @@ section.active { display: block; }
 }
 
 .menu-year { color: var(--text-accent); font-family: 'Anton'; font-size: 1.8rem; margin: 1.5rem 0 1rem 0; }
+.menu-month {
+    color: #888;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    margin: 1.2rem 0 0.6rem 0;
+    letter-spacing: 1.5px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    padding-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.menu-month span.jp-month {
+    font-size: 0.75rem;
+    color: #444;
+    letter-spacing: 1px;
+}
 .menu-item { background: #111; border: 1px solid #1a1a1a; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s; }
 .menu-item:hover { border-color: var(--text-accent); background: #161616; }
 .menu-artist { color: var(--text-accent); font-weight: bold; font-size: 1.1rem; }

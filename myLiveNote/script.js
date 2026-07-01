@@ -658,6 +658,7 @@ function renderApp(data) {
     const loadingEl = document.getElementById('loading'); 
     if (loadingEl) loadingEl.style.display = 'none';
     
+    renderStatusStrip(data);
     renderFilterBar(); 
     filterTickets(); 
     renderMenu(data);
@@ -825,6 +826,7 @@ function applySurgicalUpdates(newData) {
         // 如果有新增或大量變動，最保險是重新過濾一次，但因為 allTickets 已更新，這不會產生快取閃爍
         filterTickets();
         renderMenu(newData);
+        renderStatusStrip(newData);
         if (statsView.classList.contains('active')) initStats();
     }
 }
@@ -1318,6 +1320,12 @@ window.toggleMenu = () => {
     menu.innerHTML = '';
     nav.innerHTML = '';
 
+    const monthNames = {
+        '01': 'JANUARY', '02': 'FEBRUARY', '03': 'MARCH', '04': 'APRIL',
+        '05': 'MAY', '06': 'JUNE', '07': 'JULY', '08': 'AUGUST',
+        '09': 'SEPTEMBER', '10': 'OCTOBER', '11': 'NOVEMBER', '12': 'DECEMBER'
+    };
+
     const years = {}; 
     tickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET').forEach(t => { 
         const y = cleanDate(t.date).split('-')[0]; 
@@ -1360,34 +1368,61 @@ window.toggleMenu = () => {
         div.className = 'menu-group'; 
         div.innerHTML = `<div class="menu-year" id="menu-year-${y}" data-year="${y}">${y}</div>`;
         
+        // 按月份群組票券
+        const months = {};
         years[y].forEach(t => {
-            const item = document.createElement('div'); 
-            item.className = 'menu-item'; 
-            item.onclick = () => { toggleMenu(); showSingleTicket(t.id); };
-            const info = getDisplayName(t);
-            item.innerHTML = `<div class="menu-artist ${info.isType ? 'is-type' : ''}">${info.name}</div><div class="menu-tour">${t.tour_title}</div>`; 
-            div.appendChild(item);
+            const dateParts = cleanDate(t.date).split('-');
+            const m = dateParts[1] || '00'; // 取得月分
+            if (!months[m]) months[m] = [];
+            months[m].push(t);
         });
+
+        // 排序月份由新到舊
+        const sortedMonths = Object.keys(months).sort((a, b) => b - a);
+
+        sortedMonths.forEach(m => {
+            const monthNum = parseInt(m);
+            // 月份標題
+            const monthTitle = document.createElement('div');
+            monthTitle.className = 'menu-month';
+            const monthNameEn = monthNames[m] || 'UNKNOWN';
+            monthTitle.innerHTML = `${monthNameEn} <span class="jp-month">/ ${monthNum}月</span>`;
+            div.appendChild(monthTitle);
+
+            // 月份內的項目
+            months[m].forEach(t => {
+                const item = document.createElement('div'); 
+                item.className = 'menu-item'; 
+                item.onclick = () => { toggleMenu(); showSingleTicket(t.id); };
+                const info = getDisplayName(t);
+                item.innerHTML = `<div class="menu-artist ${info.isType ? 'is-type' : ''}">${info.name}</div><div class="menu-tour">${t.tour_title}</div>`; 
+                div.appendChild(item);
+            });
+        });
+
         menu.appendChild(div);
     });
 
     // --- 捲動監聽：自動追隨高亮 ---
     menu.onscroll = () => {
         const yearSections = menu.querySelectorAll('.menu-year');
-        let currentActiveYear = "";
+        const menuRect = menu.getBoundingClientRect();
+        let closestYear = "";
+        let minDiff = Infinity;
         
         yearSections.forEach(section => {
             const rect = section.getBoundingClientRect();
-            const menuRect = menu.getBoundingClientRect();
-            // 如果年份標題進入了選單頂部附近
-            if (rect.top <= menuRect.top + 100) {
-                currentActiveYear = section.dataset.year;
+            // 計算年份標題相對於選單視窗目標高度 (menuRect.top + 20) 的距離
+            const diff = Math.abs(rect.top - (menuRect.top + 20));
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestYear = section.dataset.year;
             }
         });
 
-        if (currentActiveYear) {
+        if (closestYear) {
             nav.querySelectorAll('.nav-year-link').forEach(link => {
-                link.classList.toggle('active', link.dataset.year === currentActiveYear);
+                link.classList.toggle('active', link.dataset.year === closestYear);
             });
         }
     };
@@ -1414,6 +1449,9 @@ function showSingleTicket(id) {
     // 3. 執行分頁切換與單張顯示
     switchTab('list'); 
     
+    const strip = document.getElementById('live-status-strip');
+    if (strip) strip.classList.add('hidden-single-ticket');
+    
     // 稍微延遲確保 DOM 渲染完成
     setTimeout(() => {
         const targetId = `ticket-${id}`;
@@ -1426,6 +1464,9 @@ function showSingleTicket(id) {
 }
 
 window.showAllTickets = () => { 
+    const strip = document.getElementById('live-status-strip');
+    if (strip) strip.classList.remove('hidden-single-ticket');
+
     document.querySelectorAll('.ticket').forEach(el => el.style.display = 'flex'); 
     document.getElementById('back-btn-container').style.display = 'none'; 
     // 回到完整列表後捲動回頂部
@@ -2474,3 +2515,131 @@ window.onclick = (e) => {
         closeModal();
     }
 };
+
+function renderStatusStrip(tickets) {
+    const stripEl = document.getElementById('live-status-strip');
+    if (!stripEl) return;
+
+    const now = new Date();
+    const validTickets = tickets.filter(t => 
+        t.status !== 'FAILED_DRAW' && 
+        t.status !== 'FAILED_TICKET' && 
+        t.status !== 'HIDDEN' &&
+        t.date
+    );
+
+    let lastCompleted = null;
+    let lastCompletedDate = null;
+    let nextUpcoming = null;
+    let nextUpcomingDate = null;
+
+    validTickets.forEach(t => {
+        const dateParts = cleanDate(t.date).split('-');
+        if (dateParts.length !== 3) return;
+
+        const year = parseInt(dateParts[0]);
+        const month = parseInt(dateParts[1]) - 1;
+        const day = parseInt(dateParts[2]);
+        const liveDate = new Date(year, month, day);
+
+        if (t.time && cleanTime(t.time)) {
+            const timeParts = cleanTime(t.time).split(':');
+            if (timeParts.length === 2) {
+                liveDate.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]), 0, 0);
+            }
+        } else {
+            liveDate.setHours(23, 59, 59, 999);
+        }
+
+        if (liveDate < now) {
+            if (!lastCompletedDate || liveDate > lastCompletedDate) {
+                lastCompleted = t;
+                lastCompletedDate = liveDate;
+            }
+        } else {
+            if (t.status === 'CONFIRMED') {
+                if (!nextUpcomingDate || liveDate < nextUpcomingDate) {
+                    nextUpcoming = t;
+                    nextUpcomingDate = liveDate;
+                }
+            }
+        }
+    });
+
+    if (!lastCompleted && !nextUpcoming) {
+        stripEl.classList.add('hidden');
+        return;
+    }
+
+    stripEl.innerHTML = '';
+    stripEl.classList.remove('hidden');
+
+    let html = '';
+
+    if (lastCompleted) {
+        const pastName = lastCompleted.tour_title.trim();
+        const pastDate = cleanDate(lastCompleted.date);
+        const pastVenue = lastCompleted.venue_name || '-';
+        html += `
+            <div class="status-item status-past" onclick="openDetail('${lastCompleted.id}')">
+                <span class="status-icon"><i data-lucide="history"></i></span>
+                <div class="status-info-group">
+                    <div class="status-meta-row">
+                        <span class="status-label">LAST LIVE</span>
+                        <span class="status-date">${pastDate}</span>
+                    </div>
+                    <div class="status-main-row" title="${pastName}">${pastName}</div>
+                    <div class="status-venue-row" title="${pastVenue}">
+                        <i data-lucide="map-pin"></i>
+                        <span>${pastVenue}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (lastCompleted && nextUpcoming) {
+        html += `<div class="status-divider"></div>`;
+    }
+
+    if (nextUpcoming) {
+        const nextName = nextUpcoming.tour_title.trim();
+        const nextDate = cleanDate(nextUpcoming.date);
+        const nextVenue = nextUpcoming.venue_name || '-';
+        
+        const diffMs = nextUpcomingDate - now;
+        const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        
+        let countdownText = '';
+        if (diffDays === 0) {
+            countdownText = 'TODAY';
+        } else if (diffDays === 1) {
+            countdownText = 'TOMORROW';
+        } else {
+            countdownText = `IN ${diffDays} DAYS`;
+        }
+
+        html += `
+            <div class="status-item status-future" onclick="openDetail('${nextUpcoming.id}')">
+                <span class="status-icon"><i data-lucide="calendar-heart"></i></span>
+                <div class="status-info-group">
+                    <div class="status-meta-row">
+                        <span class="status-label">NEXT LIVE</span>
+                        <span class="status-date">${nextDate}</span>
+                        <span class="status-countdown">${countdownText}</span>
+                    </div>
+                    <div class="status-main-row" title="${nextName}">${nextName}</div>
+                    <div class="status-venue-row" title="${nextVenue}">
+                        <i data-lucide="map-pin"></i>
+                        <span>${nextVenue}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    stripEl.innerHTML = html;
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
