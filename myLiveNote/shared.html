@@ -14,7 +14,7 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBXZCtuPbX5xe9tyLsyVfPvMNzFistALHo&libraries=places&language=zh-TW" async defer></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=5.8">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -391,7 +391,7 @@
         <div class="pwa-close" onclick="dismissPwaBanner(event)">&times;</div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=5.8"></script>
     <script>
         // --- PWA 終極優化邏輯 ---
         (function() {
@@ -561,6 +561,32 @@
                 const btn = document.querySelector('.quick-switch-btn'); if (btn) btn.classList.remove('active');
             }
         });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => {
+                        console.log('SW Registered successfully:', reg.scope);
+                        
+                        reg.addEventListener('updatefound', () => {
+                            const newWorker = reg.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    if (typeof showAlert === 'function') {
+                                        showAlert('偵測到系統版本更新，已為您載入最新內容！', 'success').then(() => {
+                                            window.location.reload();
+                                        });
+                                    } else {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => console.error('SW Registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>

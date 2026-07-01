@@ -1,4 +1,4 @@
-const CACHE_NAME = 'livenote-v2';
+const CACHE_NAME = 'livenote-v3.1';
 const ASSETS = [
   'shared.html',
   'index.html',
@@ -12,8 +12,9 @@ const ASSETS = [
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
 
-// 安裝 Service Worker 並快取靜態資源
+// 安裝 Service Worker 並快取靜態資源，立即跳過等待
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // 立即跳過等待，啟用新的 Service Worker
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('Caching assets...');
@@ -22,28 +23,44 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 激活 Service Worker 並清理過期快取
+// 激活 Service Worker，清理過期快取並立即奪取控制權
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       );
-    })
+    }).then(() => self.clients.claim()) // 立即取得所有客戶端的控制權
   );
 });
 
-// 攔截請求策略：對 GAS API 使用 Network Only，對靜態資源使用 Network First
+// 攔截請求：GAS API 僅走網路；靜態資源走 Network-First 且動態更新快取
 self.addEventListener('fetch', (event) => {
-  // GAS API 請求不快取，確保資料即時性
-  if (event.request.url.includes('script.google.com')) {
+  const url = event.request.url;
+
+  // 1. GAS API 請求與本地圖片上傳請求不快取，確保資料即時性
+  if (url.includes('script.google.com') || url.includes('action=getPresignedUrl')) {
     return;
   }
 
+  // 2. 靜態資源使用 Network-First，並在成功時動態更新快取，斷網時回退到快取
   event.respondWith(
-    fetch(event.request).catch(() => {
-      // 網路斷線或抓取失敗時，回退到快取中的資源
-      return caches.match(event.request);
-    })
+    fetch(event.request)
+      .then((response) => {
+        // 確保響應有效才寫入快取 (排除非 200 響應與外部 API 錯誤)
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            // 使用去除 query 參數的 URL 作為 key，以保持快取乾淨
+            const cleanUrl = url.split('?')[0];
+            cache.put(cleanUrl, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // 斷網時從快取尋找 (ignoreSearch: true 可匹配帶有 ?v=xxx 的 URL)
+        return caches.match(event.request, { ignoreSearch: true });
+      })
   );
 });
