@@ -38,7 +38,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
 
-  // 1. GAS API 請求與本地圖片上傳請求不快取，確保資料即時性
+  // 1. 僅處理 http 與 https 協議請求，安全屏蔽 chrome-extension://, data:, file: 等不支援快取的協議
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return;
+  }
+
+  // 2. GAS API 請求與本地圖片上傳請求不快取，確保資料即時性
   if (url.includes('script.google.com') || url.includes('action=getPresignedUrl')) {
     return;
   }
