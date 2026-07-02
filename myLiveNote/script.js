@@ -77,9 +77,22 @@ document.addEventListener('DOMContentLoaded', () => {
     setupYearScroll();
     setupStatsSwitcher();
     setupArtistRankingModeSwitcher();
-    setupCategorySwitcher();
+    setupCategorySwitcher(); // 補回分類按鈕監聽初始化
     setupScrollTop();
     setupScrollTimeline(); // 初始化時間軸指示器
+
+    // 綁定 3D 票券滾動事件
+    const tContainer = document.getElementById('ticket-container');
+    if (tContainer) {
+        tContainer.addEventListener('scroll', update3DScrollEffect, { passive: true });
+        window.addEventListener('resize', update3DScrollEffect, { passive: true });
+    }
+
+    // 手機版進去後 LIST 預設不要顯示，按鈕也不要高亮
+    if (window.innerWidth <= 600) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('main section').forEach(sec => sec.classList.remove('active'));
+    }
 });
 
 async function fetchUsers() {
@@ -204,27 +217,40 @@ function setupScrollTimeline() {
     const yearText = document.getElementById('scroll-year-text');
     const prevText = document.getElementById('scroll-year-prev');
     const nextText = document.getElementById('scroll-year-next');
+    const ticketContainer = document.getElementById('ticket-container');
     let scrollTimeout;
 
-    window.addEventListener('scroll', () => {
-        const isPastHeader = window.scrollY > 200; // 捲動超過 200px 才顯示年份泡泡
+    if (!timeline || !ticketContainer) return;
+
+    ticketContainer.addEventListener('scroll', () => {
+        const isScrolling = ticketContainer.scrollTop > 30;
         
-        if (!listView.classList.contains('active') || !isPastHeader) {
+        if (!listView.classList.contains('active') || !isScrolling) {
             timeline.classList.remove('visible');
             return;
         }
         
-        const tickets = document.querySelectorAll('.ticket');
+        const tickets = ticketContainer.querySelectorAll('.ticket');
         let currentYear = "";
-        const detectBuffer = window.innerHeight * 0.3;
+        
+        // 尋找當前最靠近滾動容器中線的票券卡片
+        const listRect = ticketContainer.getBoundingClientRect();
+        const listCenter = listRect.top + listRect.height / 2;
+        let closestTicket = null;
+        let minDistance = Infinity;
 
-        for (let t of tickets) {
+        tickets.forEach(t => {
             const rect = t.getBoundingClientRect();
-            if (rect.top >= -200 && rect.top <= window.innerHeight) {
-                currentYear = t.getAttribute('data-year');
-                if (rect.top < detectBuffer) continue; 
-                break;
+            const ticketCenter = rect.top + rect.height / 2;
+            const distance = Math.abs(ticketCenter - listCenter);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestTicket = t;
             }
+        });
+
+        if (closestTicket) {
+            currentYear = closestTicket.getAttribute('data-year');
         }
 
         if (currentYear) {
@@ -238,7 +264,7 @@ function setupScrollTimeline() {
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(() => {
                 timeline.classList.remove('visible');
-            }, 1000); 
+            }, 1200); 
         } else {
             timeline.classList.remove('visible');
         }
@@ -258,6 +284,28 @@ function setupScrollTop() {
 
     btn.onclick = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // 同步將票券滾動容器歸零回頂端
+        const container = document.getElementById('ticket-container');
+        if (container) {
+            container.scrollTop = 0;
+        }
+
+        if (window.innerWidth <= 600) {
+            // 延遲 400ms 等平滑滾動接近頂部時再隱藏，避免高度驟縮導致滾動失效
+            setTimeout(() => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('main section').forEach(s => s.classList.remove('active'));
+                
+                // 重置單張票券查看狀態，還原完整列表
+                const backBtn = document.getElementById('back-btn-container');
+                if (backBtn) backBtn.style.display = 'none';
+                document.querySelectorAll('.ticket').forEach(el => el.style.display = 'flex');
+                
+                const strip = document.getElementById('live-status-strip');
+                if (strip) strip.classList.remove('hidden-single-ticket');
+            }, 400);
+        }
     };
 }
 function setupCategorySwitcher() {
@@ -772,6 +820,13 @@ function filterTickets() {
             filtered = allTickets.filter(t => (t.is_first_time || '').includes(currentFilterValue));
         }
     }
+    
+    // 每次重新篩選時，強制將票券滾動容器歸零回頂部，確保新資料從第一張開始且 3D 特效計算正確
+    const container = document.getElementById('ticket-container');
+    if (container) {
+        container.scrollTop = 0;
+    }
+
     renderTickets(filtered);
     ticketContainer.classList.add('animate-fade');
 }
@@ -857,6 +912,9 @@ function renderTickets(tickets) {
     ticketContainer.innerHTML = '';
     ticketContainer.appendChild(fragment);
     lucide.createIcons();
+    
+    // 渲染完後立刻計算一次 3D 滾筒效果
+    setTimeout(update3DScrollEffect, 100);
 }
 
 function setupTabs() {
@@ -875,12 +933,33 @@ function switchTab(tab) {
     if (tab === 'list') { 
         listTab.classList.add('active'); 
         listView.classList.add('active');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (window.innerWidth <= 600) {
+            setTimeout(() => {
+                const filterEl = listView.querySelector('.filter-categories');
+                if (filterEl) {
+                    const rect = filterEl.getBoundingClientRect();
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    // 精準滑動至分類過濾按鈕列頂部（留 10px 緩衝）
+                    window.scrollTo({ top: rect.top + scrollTop - 10, behavior: 'smooth' });
+                }
+                update3DScrollEffect();
+            }, 200);
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(update3DScrollEffect, 200);
+        }
     }
     else if (tab === 'map') { 
         mapTab.classList.add('active'); 
         mapView.classList.add('active'); 
-        setTimeout(initMap, 200); 
+        setTimeout(() => {
+            initMap();
+            if (window.innerWidth <= 600) {
+                const rect = mapView.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                window.scrollTo({ top: rect.top + scrollTop - 20, behavior: 'smooth' });
+            }
+        }, 200); 
     }
     else if (tab === 'stats') { 
         statsTab.classList.add('active'); 
@@ -1589,7 +1668,7 @@ window.openDetail = function(id) {
 
         <!-- 翻轉按鈕 (如果是失敗狀態則隱藏) -->
         ${!isFailed ? `
-            <button class="flip-toggle-btn" onclick="document.querySelector('.modal-content').classList.toggle('flipped')">
+            <button class="flip-toggle-btn" onclick="toggleTicketFlip(this)">
                 <i data-lucide="ticket"></i>
             </button>
         ` : ''}
@@ -2656,3 +2735,73 @@ function renderStatusStrip(tickets) {
         lucide.createIcons();
     }
 }
+
+// --- 3D 滾輪票券翻頁特效 (3D Rolodex Scroll Effect) ---
+function update3DScrollEffect() {
+    const container = document.getElementById('ticket-container');
+    if (!container) return;
+
+    const containerHeight = container.clientHeight || 600;
+    const listCenter = containerHeight / 2;
+    const tickets = container.querySelectorAll('.ticket');
+    
+    if (tickets.length === 0) return;
+
+    tickets.forEach(ticket => {
+        // 移除 CSS 動畫類，防止其 keyframe forwards 鎖死 transform 屬性
+        if (ticket.classList.contains('animate-up')) {
+            ticket.classList.remove('animate-up');
+        }
+
+        // 計算票券相對於滾動容器頂部的位移
+        const ticketTop = ticket.offsetTop - container.scrollTop;
+        const ticketHeight = ticket.clientHeight;
+        const ticketCenter = ticketTop + ticketHeight / 2;
+        
+        // 正規化距離 (-2.0 到 2.0 代表相對於容器半高度的偏移)
+        const normalizedDiff = (ticketCenter - listCenter) / listCenter;
+        
+        if (Math.abs(normalizedDiff) > 1.8) {
+            ticket.style.opacity = '0';
+            ticket.style.pointerEvents = 'none';
+            ticket.style.transform = 'scale(0.8) translateZ(-300px) rotateX(0deg)';
+        } else {
+            // 放緩邊緣卡片的衰減速度，讓下一張票券更明顯，且頂部卡片在初始狀態時更清晰
+            let opacityFactor = 0.55; // 從 0.75 調小，使下方預備卡片更可見
+            let scaleFactor = 0.12;
+            let angleFactor = 35;
+            
+            if (normalizedDiff < 0) {
+                opacityFactor = 0.4;  // 向上滾時，淡出速度慢一點
+                scaleFactor = 0.06;   // 縮放速度慢一點
+                angleFactor = 20;     // 傾斜弧度扁平一點
+            }
+
+            const angle = normalizedDiff * angleFactor;
+            const translateZ = -Math.abs(normalizedDiff) * 180;
+            const scale = 1 - Math.abs(normalizedDiff) * scaleFactor;
+            const opacity = 1 - Math.abs(normalizedDiff) * opacityFactor;
+            
+            ticket.style.transform = `translateZ(${translateZ}px) rotateX(${angle}deg) scale(${scale})`;
+            ticket.style.opacity = Math.max(0.05, Math.min(1, opacity));
+            ticket.style.pointerEvents = 'auto';
+            ticket.style.zIndex = Math.round(100 - Math.abs(normalizedDiff) * 50);
+        }
+    });
+}
+
+// --- 票券詳細卡片翻轉控制 (Ticket Modal Flip Controller) ---
+window.toggleTicketFlip = function(btn) {
+    const modalContent = document.querySelector('.modal-content');
+    if (!modalContent) return;
+
+    const isFlipped = modalContent.classList.toggle('flipped');
+
+    // 根據翻轉狀態，切換為「資訊 (info)」或「票券 (ticket)」Icon
+    const iconName = isFlipped ? 'info' : 'ticket';
+    btn.innerHTML = `<i data-lucide="${iconName}"></i>`;
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+};

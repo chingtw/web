@@ -665,10 +665,36 @@ section.active { display: block; }
     border-color: var(--text-accent);
 }
 
-/* TICKET STYLES */
-.ticket-list { display: flex; flex-direction: column; gap: 2rem; }
+.ticket-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    height: 560px; /* 上調容器高度以更完整展現下方預備卡片 */
+    overflow-y: scroll;
+    padding: 180px 0; /* 上下預留對稱 padding 讓最前與最後的票券能完美滾動到容器中央對齊 */
+    perspective: 1200px;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+
+.ticket-list::-webkit-scrollbar {
+    display: none;
+}
 
 .ticket {
+    scroll-snap-align: center;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    transition: opacity 0.2s ease, z-index 0.2s step-end;
+    flex-shrink: 0;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 800px;
+    will-change: transform, opacity;
     display: flex;
     background: #000;
     border-radius: 8px;
