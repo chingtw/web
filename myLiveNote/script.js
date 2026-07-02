@@ -2463,8 +2463,21 @@ window.handleFileUpload = async function(fileInput, targetFieldName) {
         originalBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:14px;"></i> UPLOADING...';
         lucide.createIcons();
 
+        // 確保檔名不含中文、空格與特殊字元，避免 AWS Signature V4 簽名與 URL 解析失敗
+        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        
+        // 處理 Content-Type 缺失的防錯機制（如 iOS HEIC 格式）
+        let contentType = file.type;
+        if (!contentType) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (ext === 'png') contentType = 'image/png';
+            else if (ext === 'webp') contentType = 'image/webp';
+            else if (ext === 'heic') contentType = 'image/heic';
+            else contentType = 'image/jpeg';
+        }
+
         // 1. 向 GAS 請求預簽名網址
-        const gasUrl = `${GAS_API_URL}?action=getPresignedUrl&u=${currentUser}&fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}&path=LiveNote/user_img/${currentUser}`;
+        const gasUrl = `${GAS_API_URL}?action=getPresignedUrl&u=${currentUser}&fileName=${encodeURIComponent(cleanFileName)}&contentType=${encodeURIComponent(contentType)}&path=LiveNote/user_img/${currentUser}`;
         const res = await fetch(gasUrl);
         const result = await res.json();
 
@@ -2475,7 +2488,7 @@ window.handleFileUpload = async function(fileInput, targetFieldName) {
             method: 'PUT',
             body: file,
             headers: {
-                'Content-Type': file.type
+                'Content-Type': contentType
             }
         });
 
