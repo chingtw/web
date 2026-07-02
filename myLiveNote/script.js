@@ -1511,7 +1511,7 @@ window.toggleMenu = () => {
             months[m].forEach(t => {
                 const item = document.createElement('div'); 
                 item.className = 'menu-item'; 
-                item.onclick = () => { toggleMenu(); showSingleTicket(t.id); };
+                item.onclick = () => { toggleMenu(); openDetail(t.id); };
                 const info = getDisplayName(t);
                 item.innerHTML = `<div class="menu-artist ${info.isType ? 'is-type' : ''}">${info.name}</div><div class="menu-tour">${t.tour_title}</div>`; 
                 div.appendChild(item);
