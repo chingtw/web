@@ -2641,3 +2641,10 @@ body.no-scroll .scroll-top-btn {
     visibility: visible !important;
     z-index: auto !important;
 }
+
+/* 置頂時手機版 Section 平滑淡出退場動畫 */
+.section-fade-out {
+    opacity: 0 !important;
+    transform: translateY(20px) !important;
+    transition: opacity 0.35s cubic-bezier(0.165, 0.84, 0.44, 1), transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+}

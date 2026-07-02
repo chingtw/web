@@ -224,19 +224,30 @@ function setupScrollTimeline() {
 
     if (!timeline || !ticketContainer) return;
 
-    ticketContainer.addEventListener('scroll', () => {
-        const isScrolling = ticketContainer.scrollTop > 30;
-        
-        if (!listView.classList.contains('active') || !isScrolling) {
+    function updateScrollTimeline() {
+        if (!listView.classList.contains('active')) {
             timeline.classList.remove('visible');
             return;
         }
-        
+
+        // 判定滾動高度決定是否顯示 (3D 模式看 container 滾動，2D 模式看 window 滾動)
+        const isScrolling = is3DMode
+            ? (ticketContainer.scrollTop > 30)
+            : (window.scrollY > 200);
+
+        if (!isScrolling) {
+            timeline.classList.remove('visible');
+            return;
+        }
+
         const wrappers = ticketContainer.querySelectorAll('.ticket-wrapper');
         let currentYear = "";
-        
-        // 尋找當前最靠近滾動容器中線的 wrapper
-        const listRect = ticketContainer.getBoundingClientRect();
+
+        // 3D 模式以「容器中線」比對，2D 模式以「視窗中線」比對
+        const listRect = is3DMode
+            ? ticketContainer.getBoundingClientRect()
+            : { top: 0, height: window.innerHeight };
+
         const listCenter = listRect.top + listRect.height / 2;
         let closestWrapper = null;
         let minDistance = Infinity;
@@ -258,8 +269,8 @@ function setupScrollTimeline() {
         if (currentYear) {
             const yearNum = parseInt(currentYear);
             yearText.textContent = currentYear;
-            prevText.textContent = yearNum + 1; // 上方顯示較新的年份 (因為最新在頂部)
-            nextText.textContent = yearNum - 1; // 下方顯示較舊的年份 (因為舊的在底部)
+            prevText.textContent = yearNum + 1; // 上方顯示較新的年份 (最新在頂部)
+            nextText.textContent = yearNum - 1; // 下方顯示較舊的年份 (舊的在底部)
             
             timeline.classList.add('visible');
             
@@ -270,7 +281,11 @@ function setupScrollTimeline() {
         } else {
             timeline.classList.remove('visible');
         }
-    }, { passive: true });
+    }
+
+    // 同時監聽 3D 容器與 2D 視窗，確保雙模式下時間軸皆可正常運作
+    ticketContainer.addEventListener('scroll', updateScrollTimeline, { passive: true });
+    window.addEventListener('scroll', updateScrollTimeline, { passive: true });
 }
 function setupScrollTop() {
     const btn = document.getElementById('scroll-top-btn');
@@ -294,10 +309,19 @@ function setupScrollTop() {
         }
 
         if (window.innerWidth <= 600) {
-            // 延遲 400ms 等平滑滾動接近頂部時再隱藏，避免高度驟縮導致滾動失效
+            // 找出當前 active 的 section，先加入淡出類別執行平滑淡出動畫
+            const activeSection = document.querySelector('main section.active');
+            if (activeSection) {
+                activeSection.classList.add('section-fade-out');
+            }
+
+            // 延遲 350ms 等淡出動畫播完且平滑滾動至頂部後，再將其隱藏，徹底避免閃爍
             setTimeout(() => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('main section').forEach(s => s.classList.remove('active'));
+                document.querySelectorAll('main section').forEach(s => {
+                    s.classList.remove('active');
+                    s.classList.remove('section-fade-out'); // 清除類別供下次切換使用
+                });
                 
                 // 重置單張票券查看狀態，還原完整列表
                 const backBtn = document.getElementById('back-btn-container');
@@ -306,7 +330,7 @@ function setupScrollTop() {
                 
                 const strip = document.getElementById('live-status-strip');
                 if (strip) strip.classList.remove('hidden-single-ticket');
-            }, 400);
+            }, 350);
         }
     };
 }
