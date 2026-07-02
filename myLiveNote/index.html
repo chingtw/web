@@ -19,7 +19,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Main CSS -->
-    <link rel="stylesheet" href="style.css?v=5.9">
+    <link rel="stylesheet" href="style.css?v=5.9.21">
 </head>
 <body>
 
@@ -152,7 +152,7 @@
     <!-- Modal: Ticket Detail / Add Form -->
     <div id="modal" class="modal hidden">
         <div class="modal-content ticket-style-modal">
-            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <button class="close-modal" onclick="closeModal()" aria-label="Close modal"></button>
             <div id="modal-admin-tool" style="position: absolute; top: 15px; left: 20px; z-index: 101;"></div>
             <div id="modal-body">
                 <!-- Dynamic Content -->
