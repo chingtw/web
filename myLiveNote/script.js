@@ -35,6 +35,7 @@ let allUsers = []; // 全域使用者快取
 let currentFilterCategory = 'date'; // date, artist, status, milestone
 let currentFilterValue = 'ALL';
 let showAllArtists = false;
+let is3DMode = true; // 預設啟用 3D 模式
 let adminPassword = '';
 let artistRankingMode = 'inPerson';
 let artistRankingSort = 'count';
@@ -93,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('main section').forEach(sec => sec.classList.remove('active'));
     }
+
 });
 
 async function fetchUsers() {
@@ -230,27 +232,27 @@ function setupScrollTimeline() {
             return;
         }
         
-        const tickets = ticketContainer.querySelectorAll('.ticket');
+        const wrappers = ticketContainer.querySelectorAll('.ticket-wrapper');
         let currentYear = "";
         
-        // 尋找當前最靠近滾動容器中線的票券卡片
+        // 尋找當前最靠近滾動容器中線的 wrapper
         const listRect = ticketContainer.getBoundingClientRect();
         const listCenter = listRect.top + listRect.height / 2;
-        let closestTicket = null;
+        let closestWrapper = null;
         let minDistance = Infinity;
 
-        tickets.forEach(t => {
-            const rect = t.getBoundingClientRect();
-            const ticketCenter = rect.top + rect.height / 2;
-            const distance = Math.abs(ticketCenter - listCenter);
+        wrappers.forEach(w => {
+            const rect = w.getBoundingClientRect();
+            const center = rect.top + rect.height / 2;
+            const distance = Math.abs(center - listCenter);
             if (distance < minDistance) {
                 minDistance = distance;
-                closestTicket = t;
+                closestWrapper = w;
             }
         });
 
-        if (closestTicket) {
-            currentYear = closestTicket.getAttribute('data-year');
+        if (closestWrapper) {
+            currentYear = closestWrapper.getAttribute('data-year');
         }
 
         if (currentYear) {
@@ -840,13 +842,14 @@ function applySurgicalUpdates(newData) {
     allTickets.forEach(oldT => {
         const newT = newMap.get(oldT.id);
         const el = document.getElementById(`ticket-${oldT.id}`);
+        const wrapper = document.getElementById(`wrapper-${oldT.id}`);
         
         if (!newT) {
-            // 刪除：移除 DOM
-            if (el) {
-                el.style.opacity = '0';
-                el.style.transform = 'scale(0.9)';
-                setTimeout(() => el.remove(), 400);
+            // 刪除：移除 DOM Wrapper
+            if (wrapper) {
+                wrapper.style.opacity = '0';
+                wrapper.style.transform = 'scale(0.9)';
+                setTimeout(() => wrapper.remove(), 400);
             }
             hasChanges = true;
         } else if (JSON.stringify(oldT) !== JSON.stringify(newT)) {
@@ -887,14 +890,24 @@ function applySurgicalUpdates(newData) {
 }
 
 function renderTickets(tickets) {
+    // 動態更新當前符合篩選條件的票券總數
+    const countEl = document.getElementById('ticket-count');
+    if (countEl) {
+        countEl.textContent = `${tickets.length} ${tickets.length === 1 ? 'TICKET' : 'TICKETS'}`;
+    }
+
     const fragment = document.createDocumentFragment();
     const sorted = [...tickets].sort((a,b) => new Date(cleanDate(b.date)) - new Date(cleanDate(a.date)));
     
     sorted.forEach((t, index) => {
-        const card = document.createElement('div');
+        const wrapper = document.createElement('div');
         const ticketYear = cleanDate(t.date).split('-')[0];
+        wrapper.id = `wrapper-${t.id}`;
+        wrapper.className = 'ticket-wrapper';
+        wrapper.setAttribute('data-year', ticketYear);
+
+        const card = document.createElement('div');
         card.id = `ticket-${t.id}`;
-        card.setAttribute('data-year', ticketYear);
         
         // 修正：補回 status- 前綴並統一失敗狀態類別
         const rawStatus = t.status.toLowerCase().replace('_','-');
@@ -906,7 +919,9 @@ function renderTickets(tickets) {
         card.className = `ticket ${statusClass} animate-up`;
         card.style.animationDelay = `${index * 0.05}s`;
         card.innerHTML = generateTicketHTML(t, index);
-        fragment.appendChild(card);
+        
+        wrapper.appendChild(card);
+        fragment.appendChild(wrapper);
     });
     
     ticketContainer.innerHTML = '';
@@ -2741,40 +2756,59 @@ function update3DScrollEffect() {
     const container = document.getElementById('ticket-container');
     if (!container) return;
 
+    if (!is3DMode) {
+        // 2D 模式下，直接清除所有卡片的 3D inline styles
+        const tickets = container.querySelectorAll('.ticket');
+        tickets.forEach(ticket => {
+            ticket.style.transform = '';
+            ticket.style.opacity = '';
+            ticket.style.visibility = '';
+            ticket.style.zIndex = '';
+        });
+        return;
+    }
+
     const containerHeight = container.clientHeight || 600;
     const listCenter = containerHeight / 2;
-    const tickets = container.querySelectorAll('.ticket');
+    const wrappers = container.querySelectorAll('.ticket-wrapper');
     
-    if (tickets.length === 0) return;
+    if (wrappers.length === 0) return;
 
-    tickets.forEach(ticket => {
+    wrappers.forEach(wrapper => {
+        const ticket = wrapper.querySelector('.ticket');
+        if (!ticket) return;
+
         // 移除 CSS 動畫類，防止其 keyframe forwards 鎖死 transform 屬性
         if (ticket.classList.contains('animate-up')) {
             ticket.classList.remove('animate-up');
         }
 
-        // 計算票券相對於滾動容器頂部的位移
-        const ticketTop = ticket.offsetTop - container.scrollTop;
-        const ticketHeight = ticket.clientHeight;
-        const ticketCenter = ticketTop + ticketHeight / 2;
+        // 計算 wrapper（排版容器）相對於滾動容器頂部的位移
+        const wrapperTop = wrapper.offsetTop - container.scrollTop;
+        const wrapperHeight = wrapper.clientHeight;
+        const wrapperCenter = wrapperTop + wrapperHeight / 2;
         
         // 正規化距離 (-2.0 到 2.0 代表相對於容器半高度的偏移)
-        const normalizedDiff = (ticketCenter - listCenter) / listCenter;
-        
+        const normalizedDiff = (wrapperCenter - listCenter) / listCenter;
+
         if (Math.abs(normalizedDiff) > 1.8) {
             ticket.style.opacity = '0';
+            ticket.style.visibility = 'hidden';
             ticket.style.pointerEvents = 'none';
-            ticket.style.transform = 'scale(0.8) translateZ(-300px) rotateX(0deg)';
+            ticket.style.transform = 'scale(0.8) translateZ(-300px) rotateX(0deg)'; // 退至深處隱藏，因為在子元素上，絕不影響 wrapper 的 layout！
+            wrapper.style.zIndex = '1';
         } else {
-            // 放緩邊緣卡片的衰減速度，讓下一張票券更明顯，且頂部卡片在初始狀態時更清晰
-            let opacityFactor = 0.55; // 從 0.75 調小，使下方預備卡片更可見
+            ticket.style.visibility = 'visible';
+            ticket.style.pointerEvents = 'auto';
+
+            let opacityFactor = 0.55; 
             let scaleFactor = 0.12;
             let angleFactor = 35;
             
             if (normalizedDiff < 0) {
-                opacityFactor = 0.4;  // 向上滾時，淡出速度慢一點
-                scaleFactor = 0.06;   // 縮放速度慢一點
-                angleFactor = 20;     // 傾斜弧度扁平一點
+                opacityFactor = 0.4;
+                scaleFactor = 0.06;
+                angleFactor = 20;
             }
 
             const angle = normalizedDiff * angleFactor;
@@ -2784,8 +2818,10 @@ function update3DScrollEffect() {
             
             ticket.style.transform = `translateZ(${translateZ}px) rotateX(${angle}deg) scale(${scale})`;
             ticket.style.opacity = Math.max(0.05, Math.min(1, opacity));
-            ticket.style.pointerEvents = 'auto';
-            ticket.style.zIndex = Math.round(100 - Math.abs(normalizedDiff) * 50);
+            
+            const zIndex = Math.round(100 - Math.abs(normalizedDiff) * 50);
+            ticket.style.zIndex = zIndex;
+            wrapper.style.zIndex = zIndex; // 同步將 z-index 套用在外層 wrapper 上以強制消除穿透重疊
         }
     });
 }
@@ -2804,4 +2840,40 @@ window.toggleTicketFlip = function(btn) {
     if (window.lucide) {
         lucide.createIcons();
     }
+};
+
+// --- 3D / 2D 模式切換控制 (3D Mode Toggle) ---
+window.toggle3DMode = function() {
+    is3DMode = !is3DMode;
+    
+    const container = document.getElementById('ticket-container');
+    if (container) {
+        if (is3DMode) {
+            container.classList.remove('mode-2d');
+        } else {
+            container.classList.add('mode-2d');
+        }
+    }
+    
+    const btn = document.getElementById('toggle-3d-btn');
+    if (btn) {
+        if (is3DMode) {
+            btn.classList.add('active');
+            btn.innerHTML = `
+                <i data-lucide="layers" style="width:14px; height:14px;"></i>
+                <span>3D VIEW</span>
+            `;
+        } else {
+            btn.classList.remove('active');
+            btn.innerHTML = `
+                <i data-lucide="menu" style="width:14px; height:14px;"></i>
+                <span>2D VIEW</span>
+            `;
+        }
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+    
+    update3DScrollEffect();
 };

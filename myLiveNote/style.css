@@ -519,7 +519,7 @@ section.active { display: block; }
 .year-filter-bar {
     display: flex;
     gap: 0.8rem;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
     overflow-x: auto;
     padding: 0.5rem 0;
     width: 100%;
@@ -672,8 +672,9 @@ section.active { display: block; }
     position: relative;
     height: 560px; /* 上調容器高度以更完整展現下方預備卡片 */
     overflow-y: scroll;
-    padding: 180px 0; /* 上下預留對稱 padding 讓最前與最後的票券能完美滾動到容器中央對齊 */
+    padding: 160px 0; /* 上下預留對稱 padding 讓最前與最後的票券能完美滾動到容器中央對齊 */
     perspective: 1200px;
+    transform-style: preserve-3d; /* 啟用全域 3D 空間繼承，保證所有卡片在同一個空間中共享深度 */
     scroll-snap-type: y mandatory;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -685,24 +686,34 @@ section.active { display: block; }
     display: none;
 }
 
-.ticket {
+.ticket-wrapper {
     scroll-snap-align: center;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    height: 240px; /* 固定外層包裝高度以確保 Snap 置中對齊絕對精確，不受內層卡片長短干擾 */
+    display: flex;
+    align-items: center; /* 讓不同高度的內層票券在包裝中垂直置中 */
+    justify-content: center;
+    transform-style: preserve-3d; /* 傳遞 3D 空間，不加 perspective 以免建立獨立的 3D 透視導致深度斷裂 */
+    flex-shrink: 0;
+    position: relative; /* 確保 z-index 能在 wrapper 上生效 */
+}
+
+.ticket {
     transform-style: preserve-3d;
     backface-visibility: hidden;
     transition: opacity 0.2s ease, z-index 0.2s step-end;
     flex-shrink: 0;
-    margin: 0 auto;
     width: 100%;
-    max-width: 800px;
-    will-change: transform, opacity;
+    min-height: 200px; /* 恢復原本彈性高度，文字內容百分之百完整呈現 */
+    cursor: pointer;
     display: flex;
     background: #000;
     border-radius: 8px;
     overflow: hidden;
     position: relative;
     border: 1px solid #222;
-    min-height: 200px;
-    cursor: pointer;
 }
 
 /* Left Section: Info */
@@ -2523,4 +2534,110 @@ body.no-scroll .scroll-top-btn {
 .pac-matched {
     color: #fff;
     font-weight: bold;
+}
+
+/* 列表控制列樣式 */
+.list-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 800px;
+    margin: 0.4rem auto 0.4rem auto;
+    padding: 0 10px;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+}
+
+.ticket-count {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.toolbar-btn {
+    background: transparent;
+    border: none;
+    color: #666; /* 低調優雅灰 */
+    padding: 2px 4px;
+    font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    font-size: 0.75rem; /* 字體微縮，顯得精緻 */
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+    transition: color 0.25s ease;
+}
+
+.toolbar-btn i {
+    width: 13px;
+    height: 13px;
+    stroke-width: 1.8; /* 更細緻的圖示線條 */
+    opacity: 0.7;
+    transition: transform 0.3s ease, opacity 0.25s ease, color 0.25s ease;
+}
+
+.toolbar-btn.active {
+    color: var(--text-accent);
+}
+
+.toolbar-btn.active i {
+    opacity: 1;
+    color: var(--text-accent);
+}
+
+/* 極簡底線微動畫 */
+.toolbar-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: var(--text-accent);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.toolbar-btn:hover {
+    color: #fff;
+}
+
+.toolbar-btn:hover i {
+    opacity: 1;
+    transform: rotate(15deg); /* 微小的旋轉 micro-animation，增加靈動感 */
+}
+
+.toolbar-btn:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+/* 2D 模式覆蓋樣式 */
+.ticket-list.mode-2d {
+    height: auto !important;
+    overflow-y: visible !important;
+    padding: 0 !important;
+    perspective: none !important;
+    scroll-snap-type: none !important;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+}
+
+.ticket-list.mode-2d .ticket-wrapper {
+    scroll-snap-align: none !important;
+    height: auto !important;
+    margin: 0 auto !important;
+}
+
+.ticket-list.mode-2d .ticket {
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: auto !important;
 }

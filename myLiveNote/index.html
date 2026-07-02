@@ -65,8 +65,18 @@
                 <button class="cat-btn" data-cat="milestone">MILESTONE</button>
                 <div id="filter-addon"></div>
             </div>
+
             <div id="year-filter" class="year-filter-bar">
                 <!-- Chips injected by JS -->
+            </div>
+
+            <!-- 列表控制列 (提供 3D 切換與票券總數顯示) -->
+            <div class="list-toolbar">
+                <div id="ticket-count" class="ticket-count"></div>
+                <button id="toggle-3d-btn" class="toolbar-btn active" onclick="toggle3DMode()">
+                    <i data-lucide="layers" style="width:14px; height:14px;"></i>
+                    <span>3D VIEW</span>
+                </button>
             </div>
             
             <!-- Skeleton Screen Loading -->
