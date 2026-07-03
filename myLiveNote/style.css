@@ -764,7 +764,8 @@ section.active { display: block; }
 
 .ticket-meta-top { display: flex; gap: 1rem; margin: 0.8rem 0; }
 .info-box {
-    border: 1px solid #222;
+    border: 1px solid color-mix(in srgb, var(--text-accent) 20%, transparent);
+    background: color-mix(in srgb, var(--text-accent) 5%, transparent);
     border-radius: 8px;
     padding: 5px 12px;
     text-align: center;
@@ -772,6 +773,7 @@ section.active { display: block; }
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    transition: all 0.3s ease;
 }
 .info-box span:first-child { display: block; font-size: 0.6rem; color: #555; text-transform: uppercase; }
 .info-box span:last-child { font-size: 0.9rem; font-weight: bold; color: var(--text-accent); }
@@ -977,56 +979,231 @@ section.active { display: block; }
 /* MOBILE OPTIMIZATIONS */
 @media (max-width: 600px) {
     .highlight { font-size: 2.2rem; }
+
+    /* 成就標籤與下方的會場（地點）保持水平平行對齊 */
+    .badge-container {
+        position: absolute !important;
+        bottom: calc(95px + 0.8rem) !important; /* 95px 條碼高度 + 主券底部 padding 0.8rem */
+        right: 1.2rem !important;
+        z-index: 15 !important;
+        display: flex !important;
+        flex-direction: row !important; /* 橫向並列，實現水平平行 */
+        gap: 5px !important;
+    }
     
+    .ticket-wrapper {
+        height: 260px !important; /* 稍微拉高外層 wrapper 確保縱向內容舒適 */
+    }
+
     .ticket { 
-        flex-direction: row; 
-        min-height: 180px;
+        flex-direction: column !important; 
+        min-height: 250px !important;
+        height: auto !important; /* 讓內容決定高度，主副券永不分離 */
+        justify-content: flex-start !important; /* 緊貼對齊 */
+        position: relative;
+        overflow: visible !important; /* 確保兩側半圓內凹可以溢出邊緣展示 */
     }
 
     .ticket-info-left {
-        flex: 2;
-        clip-path: none;
-        /* 恢復手機版最穩定的平滑漸層 */
-        background: linear-gradient(90deg, #000 75%, rgba(0,0,0,0.7) 90%, transparent 100%) !important;
-        margin-right: -45%; 
-        position: relative;
-        z-index: 10;
-        padding: 1.2rem 1rem;
+        width: 100% !important;
+        margin-right: 0 !important; 
+        position: relative !important;
+        z-index: 2 !important;
+        transform: translateZ(0) !important; /* 強制所有子元素在同一個 Z 平面上旋轉，消除 3D 位移錯位 */
+        flex: none !important; /* 移除 flex 填充，由內容自適應 */
+        padding: 1.2rem 1.2rem 0.8rem 1.2rem !important;
+        clip-path: none !important;
+        /* 磨砂玻璃背景，顯示下層主視覺背景圖 */
+        background: rgba(0, 0, 0, 0.75) !important;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 0.5rem; /* 子元素緊湊排列 */
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
     }
 
-    /* 手機版關閉剛才新增的實色偽元素 */
+    /* 手機版關閉實色偽元素 */
     .ticket-info-left::before {
-        display: none;
+        display: none !important;
     }
 
     .ticket-visual {
-        flex: 1.5;
-        margin-left: 0;
-        z-index: 1;
-        height: auto;
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: calc(100% - 94px) !important; /* 94px 以向下伸展 1px 與副券產生物理重疊，防 3D 漏光 */
+        margin: 0 !important;
+        z-index: 1 !important;
+        transform: translateZ(0) !important; /* 同意扁平化到同一 3D 合成層 */
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+        overflow: hidden;
     }
 
     /* Extra dim on mobile for bright images */
     .ticket-visual::after {
-        background: rgba(0, 0, 0, 0.5); /* 50% Dim on mobile */
+        background: rgba(0, 0, 0, 0.4); 
     }
 
     .ticket-title { 
-        font-size: 1.5rem; /* 微調手機版標題大小 */
-        word-break: break-word; /* 允許在長單詞內斷行，防止撐破容器 */
+        font-size: 1.4rem; /* 微調手機版標題大小 */
+        word-break: break-word; 
         line-break: auto;
         overflow: hidden;
         display: -webkit-box;
-        -webkit-line-clamp: 3; /* 最多顯示三行，防止過長標題壓扁其他資訊 */
+        -webkit-line-clamp: 2; /* 手機版標題固定裝載 */
         -webkit-box-orient: vertical;
+        padding-right: 0 !important; /* 釋放右側 PC 斜切安全間距 */
     }
     .ticket-subtitle { font-size: 0.85rem; }
 
-    .ticket-stub-right { width: 45px; }
-    .barcode-container { width: 140px; }
-    .barcode { width: 80px; height: 20px; }
-    .ticket-num { font-size: 0.5rem; }
+    /* 下方條碼副券區 - 改為水平通欄且垂直堆疊佈局 */
+    .ticket-stub-right { 
+        position: relative !important;
+        z-index: 3 !important;
+        transform: translateZ(0) !important; /* 同意扁平化到同一 3D 合成層，避免傾斜時 Z 軸分離 */
+        margin-top: -1px !important; /* 向上溢出 1px 物理重疊，徹底消除縫隙 */
+        width: 100% !important; 
+        height: 95px !important; /* 拉高至 95px */
+        background: #0a0a0a !important;
+        display: flex !important;
+        flex-direction: column !important; /* 垂直配置 */
+        align-items: center !important; /* 水平置中 */
+        justify-content: center !important; /* 垂直置中 */
+        gap: 6px !important; /* 條碼與編號的間距 */
+        padding: 0.6rem 1.2rem !important;
+        border-top: 1px dashed rgba(255, 255, 255, 0.15) !important;
+        border-left: none !important; /* 移除 PC 側邊虛線 */
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        box-sizing: border-box;
+    }
+
+    /* 兩側撕票半圓內凹孔 (Ticket Cut-outs) */
+    .ticket-stub-right::before,
+    .ticket-stub-right::after {
+        content: '';
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #000; /* 與網頁最外層背景融為一體，產生內凹視覺 */
+        z-index: 5;
+        top: -7px; /* 跨越 dashed 虛線 */
+        border: 1px solid #222;
+        box-sizing: border-box;
+    }
+
+    /* 左側凹孔 */
+    .ticket-stub-right::before {
+        left: -8px;
+        border-left-color: transparent; /* 隱藏外側多餘邊框 */
+    }
+
+    /* 右側凹孔 */
+    .ticket-stub-right::after {
+        right: -8px;
+        border-right-color: transparent;
+    }
+
+    /* 橫放條碼容器 - 改為垂直 Flex 排版以實現條碼與編號上下對齊且置中 */
+    .barcode-container { 
+        transform: none !important; 
+        width: 100% !important;
+        height: auto !important;
+        display: flex !important;
+        flex-direction: column !important; /* 垂直堆疊 */
+        align-items: center !important; /* 水平置中 */
+        justify-content: center !important; /* 垂直置中 */
+        margin: 0 !important;
+        gap: 6px !important; /* 條碼與編號的間距 */
+    }
+    
+    .barcode { 
+        width: 100% !important; /* 加寬至接近滿版 */
+        max-width: 320px !important; /* 防止在寬屏設備上過寬 */
+        height: 36px !important; 
+        filter: invert(1) opacity(0.85); /* 反轉黑白色調以適應暗底，質感佳 */
+    }
+    
+    .ticket-num { 
+        font-family: 'Bebas Neue', monospace !important;
+        font-size: 0.75rem !important; /* 稍微縮小以顯得精緻 */
+        color: #555 !important;
+        letter-spacing: 2px !important; /* 拉大字距顯得大氣 */
+        writing-mode: horizontal-tb !important; /* 改為水平排列 */
+        margin: 0 !important;
+    }
+
+    /* 手機版狀態細節主題色統一 */
+    /* 1. Confirmed (參戰確定 - 金棕色 var(--text-accent)) */
+    .status-confirmed .ticket-stub-right {
+        border-top-color: color-mix(in srgb, var(--text-accent) 30%, transparent) !important;
+    }
+    .status-confirmed .ticket-stub-right::before,
+    .status-confirmed .ticket-stub-right::after {
+        border-color: color-mix(in srgb, var(--text-accent) 30%, transparent) !important;
+    }
+    .status-confirmed .barcode {
+        filter: invert(80%) sepia(10%) saturate(1000%) hue-rotate(345deg) brightness(90%) contrast(85%) !important;
+    }
+    .status-confirmed .ticket-num {
+        color: var(--text-accent) !important;
+        opacity: 0.8;
+    }
+
+    /* 2. Completed (參戰完畢 - 金色 var(--gold)) */
+    .status-completed .ticket-stub-right {
+        border-top-color: color-mix(in srgb, var(--gold) 30%, transparent) !important;
+    }
+    .status-completed .ticket-stub-right::before,
+    .status-completed .ticket-stub-right::after {
+        border-color: color-mix(in srgb, var(--gold) 30%, transparent) !important;
+    }
+    .status-completed .barcode {
+        filter: invert(85%) sepia(15%) saturate(800%) hue-rotate(345deg) brightness(95%) contrast(85%) !important;
+    }
+    .status-completed .ticket-num {
+        color: var(--gold) !important;
+        opacity: 0.8;
+    }
+
+    /* 3. Applied (抽選中 - 綠色 #9CA38D) */
+    .status-applied .ticket-stub-right {
+        border-top-color: rgba(156, 163, 141, 0.3) !important;
+    }
+    .status-applied .ticket-stub-right::before,
+    .status-applied .ticket-stub-right::after {
+        border-color: rgba(156, 163, 141, 0.3) !important;
+    }
+    .status-applied .barcode {
+        filter: invert(70%) sepia(10%) saturate(500%) hue-rotate(40deg) brightness(90%) contrast(85%) !important;
+    }
+    .status-applied .ticket-num {
+        color: #9CA38D !important;
+        opacity: 0.8;
+    }
+
+    /* 4. Failed (落選/失敗 - 灰色 #666) */
+    .status-failed .ticket-stub-right {
+        border-top-color: rgba(102, 102, 102, 0.2) !important;
+    }
+    .status-failed .ticket-stub-right::before,
+    .status-failed .ticket-stub-right::after {
+        border-color: rgba(102, 102, 102, 0.2) !important;
+    }
+    .status-failed .barcode {
+        filter: invert(40%) grayscale(1) opacity(0.3) !important;
+    }
+    .status-failed .ticket-num {
+        color: #666 !important;
+        opacity: 0.6;
+    }
 }
 
 /* MODAL / LIGHTBOX */
@@ -1148,6 +1325,49 @@ section.active { display: block; }
     box-shadow: 0 0 30px rgba(197, 164, 137, 0.1);
 }
 
+/* 詳情大卡片撕票虛線分隔線與半圓凹孔 */
+.modal-ticket-separator {
+    position: relative;
+    height: 1px;
+    border: none;
+    border-top: 1px dashed color-mix(in srgb, var(--text-accent) 25%, transparent); /* 金色半透明虛線，與大卡片主題色完美統一 */
+    margin: 2rem -1.5rem; /* 向左右負溢出 1.5rem，緊密貼合卡片邊框 */
+    overflow: visible;
+}
+.modal-ticket-separator::before,
+.modal-ticket-separator::after {
+    content: '';
+    position: absolute;
+    width: 8px; /* 寬度減半為 8px，僅保留半圓 */
+    height: 16px;
+    z-index: 15 !important; /* 確保高於大卡片外框 */
+    top: -8px; /* 垂直居中對齊虛線 */
+    background: #000 !important; /* 純黑實體底色 */
+    box-sizing: border-box;
+}
+
+/* 左側撕票孔 - 朝向內部凹陷的右半圓 */
+.modal-ticket-separator::before {
+    left: 0 !important; /* 貼齊左邊緣 */
+    border: 1px solid #222;
+    border-left: none !important; /* 移除外側直邊 */
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    /* 往左邊緣外抹除大卡片灰色邊框，絕不影響右側內凹半圓邊界 */
+    box-shadow: -2px 0 0 #000;
+}
+
+/* 右側撕票孔 - 朝向內部凹陷的左半圓 */
+.modal-ticket-separator::after {
+    right: 0 !important; /* 貼齊右邊緣 */
+    border: 1px solid #222;
+    border-right: none !important; /* 移除外側直邊 */
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    /* 往右邊緣外抹除大卡片灰色邊框，絕不影響左側內凹半圓邊界 */
+    box-shadow: 2px 0 0 #000;
+}
+
 .modal-meta-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1199,7 +1419,17 @@ section.active { display: block; }
     }
 }
 
-.modal-hero-img { width: 100%; height: 250px; background-size: cover; background-position: center; position: relative; transition: height 0.3s; }
+.modal-hero-img { 
+    width: 100%; 
+    height: 250px; 
+    background-size: cover; 
+    background-position: center; 
+    position: relative; 
+    transition: height 0.3s;
+    border-top-left-radius: 12px; /* 單獨對圖片加頂部圓角 */
+    border-top-right-radius: 12px;
+    overflow: hidden; /* 強制裁剪圖片邊角 */
+}
 .modal-hero-img::after { content: ""; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); }
 .modal-hero-img.no-img::after { display: none; }
 

@@ -373,7 +373,13 @@
     <button id="scroll-top-btn" class="scroll-top-btn"><i data-lucide="arrow-up"></i></button>
 
     <!-- Modal & Menu -->
-    <div id="modal" class="modal hidden"><div class="modal-content ticket-style-modal"><button class="close-modal" onclick="closeModal()" aria-label="Close modal"></button><div id="modal-admin-tool" style="position: absolute; top: 15px; left: 20px; z-index: 101;"></div><div id="modal-body"></div></div></div>
+    <div id="modal" class="modal hidden">
+        <div class="modal-content ticket-style-modal">
+            <button class="close-modal" onclick="closeModal()" aria-label="Close modal"></button>
+            <div id="modal-admin-tool" style="position: absolute; top: 15px; left: 20px; z-index: 101;"></div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
     <div id="login-modal" class="modal hidden"><div class="modal-content login-box"><h2>Admin Access</h2><input type="password" id="admin-pass" placeholder="Enter Password"><button onclick="checkLogin()">Unlock</button></div></div>
     <div id="side-menu-overlay" class="menu-overlay hidden" onclick="toggleMenu()"></div>
     <div id="side-menu" class="side-menu">

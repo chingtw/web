@@ -1677,7 +1677,7 @@ window.openDetail = function(id) {
                     ${companionsHtml}
 
                     ${!isFailed ? `
-                        <hr style="border:0; border-top:1px dashed #444; margin: 1.5rem 0;"><h4 style="color:var(--text-accent); font-family:'Bebas Neue'; letter-spacing:1px; margin-bottom:10px;">SETLIST & MEMO / セトリ・參戰紀錄</h4>
+                        <div class="modal-ticket-separator"></div><h4 style="color:var(--text-accent); font-family:'Bebas Neue'; letter-spacing:1px; margin-bottom:10px;">SETLIST & MEMO / セトリ・參戰紀錄</h4>
                         <div class="setlist-container" style="background:#0a0a0a; padding:20px; border:1px solid #222; font-family:monospace; max-height:300px; overflow:auto; color:#bbb; line-height:1.6; white-space: pre;">${setlistDisplay ? setlistDisplay : 'No setlist available.'}</div>
                     ` : ''}
 
@@ -2840,7 +2840,7 @@ function update3DScrollEffect() {
             const scale = 1 - Math.abs(normalizedDiff) * scaleFactor;
             const opacity = 1 - Math.abs(normalizedDiff) * opacityFactor;
             
-            ticket.style.transform = `translateZ(${translateZ}px) rotateX(${angle}deg) scale(${scale})`;
+            ticket.style.transform = `translateZ(${translateZ}px) rotateX(0deg) scale(${scale})`;
             ticket.style.opacity = Math.max(0.05, Math.min(1, opacity));
             
             const zIndex = Math.round(100 - Math.abs(normalizedDiff) * 50);
