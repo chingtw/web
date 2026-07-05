@@ -1,12 +1,12 @@
-# LiveNote - 個人演唱會參戰紀錄系統 (v6.1.1 - Rolodex 3D Edition)
+# LiveNote - 個人演唱會參戰紀錄系統 (v6.1.2 - Rolodex 3D Edition)
 
 LiveNote 是一個專為音樂愛好者設計的個人演唱會（Live）參戰紀錄 Web App。透過 Google Sheets 作為資料庫，結合 Google Apps Script (GAS) 提供後端 API，實現資料的持久化儲存、多使用者管理與智慧化的輸入體驗。
 
-在 **v6.1.1** 中，我們重磅引入了 **3D 滾筒卡片特效**、**雙層物理隔離排版架構** 以及 **極簡主義控制列**，將音樂愛好者的參戰回憶以極具未來感與儀式感的動態體驗珍藏。
+在 **v6.1.2** 中，我們重磅引入了 **3D 滾筒卡片特效**、**雙層物理隔離排版架構** 以及 **極簡主義控制列**，將音樂愛好者的參戰回憶以極具未來感與儀式感的動態體驗珍藏。
 
 ![Ticket Demo](ticket%20demo%201.jpg)
 
-## 🌟 核心特點 (v6.1.1 重磅更新)
+## 🌟 核心特點 (v6.1.2 重磅更新)
 
 ### 1. 🎫 3D 滾筒式擬真票券特效 (3D Rolodex Scroll Effect)
 *   **立體翻滾體驗**：票券列表模擬 3D 滾筒（Rolodex）效果，滾動時卡片會自動進行 Z 軸景深退後 (`translateZ`)、X 軸立體翻轉 (`rotateX`) 與尺寸縮放 (`scale`)，配合邊緣漸層淡出遮罩，翻閱回憶時儀式感十足。
@@ -62,4 +62,4 @@ myLiveNote/
 
 ---
 
-Developed by **CHING** | Updated v6.1.1 2026.07.05
+Developed by **CHING** | Updated v6.1.2 2026.07.05

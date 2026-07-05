@@ -614,7 +614,7 @@ function generateTicketHTML(t, index = 0) {
 
     return `
         ${badgesHtml}
-        <div class="ticket-info-left" onclick="openDetail('${t.id}')">
+        <div class="ticket-info-left">
             <div class="ticket-header">
                 <div class="ticket-logo">${proLabel}</div>
                 <div class="status-badge">${statusText}</div>
@@ -630,8 +630,8 @@ function generateTicketHTML(t, index = 0) {
                 </div>
             </div>
         </div>
-        <div class="ticket-visual" onclick="openDetail('${t.id}')" style="background-image: url('${t.images || ''}')"></div>
-        <div class="ticket-stub-right" onclick="openDetail('${t.id}')"><div class="barcode-container"><div class="barcode"></div><div class="ticket-num">${t.id}</div></div></div>
+        <div class="ticket-visual" style="background-image: url('${t.images || ''}')"></div>
+        <div class="ticket-stub-right"><div class="barcode-container"><div class="barcode"></div><div class="ticket-num">${t.id}</div></div></div>
     `;
 }
 
@@ -943,6 +943,7 @@ function renderTickets(tickets) {
         card.className = `ticket ${statusClass} animate-up`;
         card.style.animationDelay = `${index * 0.05}s`;
         card.innerHTML = generateTicketHTML(t, index);
+        card.onclick = () => openDetail(t.id);
         
         wrapper.appendChild(card);
         fragment.appendChild(wrapper);

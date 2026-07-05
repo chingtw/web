@@ -672,7 +672,8 @@ section.active { display: block; }
     position: relative;
     height: 560px; /* 上調容器高度以更完整展現下方預備卡片 */
     overflow-y: scroll;
-    padding: 160px 0; /* 上下預留對稱 padding 讓最前與最後的票券能完美滾動到容器中央對齊 */
+    overflow-x: hidden; /* 確保窄螢幕手機上 3D 投影與溢出不產生水平滾動 */
+    padding: 160px 12px; /* 加上左右 padding 12px 容納 3D 投影與手機版兩側撕票孔的 8px 溢出 */
     perspective: 1200px;
     transform-style: preserve-3d; /* 啟用全域 3D 空間繼承，保證所有卡片在同一個空間中共享深度 */
     scroll-snap-type: y mandatory;
@@ -851,6 +852,7 @@ section.active { display: block; }
     margin-left: -12%;
     position: relative;
     z-index: 1;
+    pointer-events: none; /* 避免干擾觸控事件傳遞 */
 }
 
 /* Global Dark Dimmer for Images */
@@ -1089,26 +1091,29 @@ section.active { display: block; }
     .ticket-stub-right::after {
         content: '';
         position: absolute;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: #000; /* 與網頁最外層背景融為一體，產生內凹視覺 */
+        width: 8px; /* 寬度減半為 8px，僅保留半圓 */
+        height: 16px;
+        background: #000 !important; /* 與網頁最外層背景融為一體，產生內凹視覺 */
         z-index: 5;
-        top: -7px; /* 跨越 dashed 虛線 */
+        top: -8px; /* 跨越 dashed 虛線並置中 */
         border: 1px solid #222;
         box-sizing: border-box;
     }
 
-    /* 左側凹孔 */
+    /* 左側凹孔 - 朝向內部凹陷的右半圓 */
     .ticket-stub-right::before {
-        left: -8px;
-        border-left-color: transparent; /* 隱藏外側多餘邊框 */
+        left: -1px !important; /* 往外偏移 1px 以覆蓋卡片外框線 */
+        border-left: none !important; /* 移除外側直邊 */
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
     }
 
-    /* 右側凹孔 */
+    /* 右側凹孔 - 朝向內部凹陷的左半圓 */
     .ticket-stub-right::after {
-        right: -8px;
-        border-right-color: transparent;
+        right: -1px !important; /* 往外偏移 1px 以覆蓋卡片外框線 */
+        border-right: none !important; /* 移除外側直邊 */
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
     }
 
     /* 橫放條碼容器 - 改為垂直 Flex 排版以實現條碼與編號上下對齊且置中 */
