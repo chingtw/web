@@ -944,7 +944,7 @@ function renderTickets(tickets) {
         card.className = `ticket ${statusClass} animate-up`;
         card.style.animationDelay = `${index * 0.05}s`;
         card.innerHTML = generateTicketHTML(t, index);
-        card.onclick = () => openDetail(t.id);
+        wrapper.onclick = () => openDetail(t.id);
         
         wrapper.appendChild(card);
         fragment.appendChild(wrapper);
@@ -2783,13 +2783,18 @@ function update3DScrollEffect() {
     if (!container) return;
 
     if (!is3DMode) {
-        // 2D 模式下，直接清除所有卡片的 3D inline styles
+        // 2D 模式下，直接清除所有卡片的 3D inline styles 與 wrapper 樣式
         const tickets = container.querySelectorAll('.ticket');
         tickets.forEach(ticket => {
             ticket.style.transform = '';
             ticket.style.opacity = '';
             ticket.style.visibility = '';
             ticket.style.zIndex = '';
+        });
+        const wrappers = container.querySelectorAll('.ticket-wrapper');
+        wrappers.forEach(wrapper => {
+            wrapper.style.zIndex = '';
+            wrapper.style.pointerEvents = '';
         });
         return;
     }
@@ -2821,11 +2826,13 @@ function update3DScrollEffect() {
             ticket.style.opacity = '0';
             ticket.style.visibility = 'hidden';
             ticket.style.pointerEvents = 'none';
+            wrapper.style.pointerEvents = 'none';
             ticket.style.transform = 'scale(0.8) translateZ(-300px) rotateX(0deg)'; // 退至深處隱藏，因為在子元素上，絕不影響 wrapper 的 layout！
             wrapper.style.zIndex = '1';
         } else {
             ticket.style.visibility = 'visible';
             ticket.style.pointerEvents = 'auto';
+            wrapper.style.pointerEvents = 'auto';
 
             let opacityFactor = 0.55; 
             let scaleFactor = 0.12;
