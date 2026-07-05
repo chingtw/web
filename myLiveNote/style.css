@@ -717,6 +717,19 @@ section.active { display: block; }
     border: 1px solid #222;
 }
 
+/* 確保點擊事件在所有行動端圖層（如 backdrop-filter）之上的透明覆蓋層 */
+.ticket-click-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20; /* 高於所有內部圖層，低於詳細燈箱 */
+    cursor: pointer;
+    background: transparent;
+    pointer-events: auto;
+}
+
 /* Left Section: Info */
 .ticket-info-left {
     flex: 0 0 62%; /* 固定比例，防止內容更新時抖動 */
@@ -2893,7 +2906,7 @@ body.no-scroll .scroll-top-btn {
 /* 2D 模式覆蓋樣式 */
 .ticket-list.mode-2d {
     height: auto !important;
-    overflow-y: visible !important;
+    overflow: visible !important; /* 避免單向 hidden 導致瀏覽器將其視為獨立捲動容器而卡死外層捲動 */
     padding: 0 !important;
     perspective: none !important;
     scroll-snap-type: none !important;

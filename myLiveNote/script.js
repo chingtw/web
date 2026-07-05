@@ -632,6 +632,7 @@ function generateTicketHTML(t, index = 0) {
         </div>
         <div class="ticket-visual" style="background-image: url('${t.images || ''}')"></div>
         <div class="ticket-stub-right"><div class="barcode-container"><div class="barcode"></div><div class="ticket-num">${t.id}</div></div></div>
+        <div class="ticket-click-overlay"></div>
     `;
 }
 
