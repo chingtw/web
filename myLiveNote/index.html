@@ -19,7 +19,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Main CSS -->
-    <link rel="stylesheet" href="style.css?v=6.1.2">
+    <link rel="stylesheet" href="style.css?v=6.2">
 </head>
 <body>
 
@@ -182,7 +182,10 @@
                 <!-- Year links injected by JS -->
             </div>
         </div>
-        <div class="menu-footer" style="padding: 1rem 2rem; border-top: 1px solid #111; text-align: right; display: flex; justify-content: flex-end; align-items: center;">
+        <div class="menu-footer" style="padding: 1rem 2rem; border-top: 1px solid #111; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <button onclick="forceClearCacheAndReload()" style="background:transparent; color:#666; border:1px solid #333; padding:5px 10px; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:0.8rem; letter-spacing:1.5px; display:flex; align-items:center; gap:5px;" title="Update App & Clear Cache">
+                <i data-lucide="refresh-cw" style="width:12px; height:12px;"></i> UPDATE APP
+            </button>
             <button id="admin-add-btn" onclick="showAdminForm()" style="background:var(--text-accent); color:black; border:none; padding:5px 15px; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:1rem; letter-spacing:1px;">+ ADD TICKET</button>
         </div>
     </div>
@@ -211,7 +214,7 @@
     </div>
 
     <!-- Main Script -->
-    <script src="script.js?v=6.1.2"></script>
+    <script src="script.js?v=6.2"></script>
     <script>
         lucide.createIcons();
     </script>
@@ -223,6 +226,9 @@
                 navigator.serviceWorker.register('sw.js')
                     .then(reg => {
                         console.log('SW Registered successfully:', reg.scope);
+                        
+                        // 主動觸發一次 Service Worker 的更新檢查
+                        reg.update();
                         
                         reg.addEventListener('updatefound', () => {
                             const newWorker = reg.installing;
@@ -240,6 +246,15 @@
                         });
                     })
                     .catch(err => console.error('SW Registration failed:', err));
+            });
+
+            // 監聽 controllerchange 事件，當新的 Service Worker 奪取控制權時自動重整頁面
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
             });
         }
     </script>

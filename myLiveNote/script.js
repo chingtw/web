@@ -2902,3 +2902,35 @@ window.toggle3DMode = function() {
     
     update3DScrollEffect();
 };
+
+// 強制清理 Service Worker & Cache Storage 快取並重整
+window.forceClearCacheAndReload = async function() {
+    try {
+        // 1. 註銷所有的 Service Workers
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+                await registration.unregister();
+            }
+        }
+        // 2. 刪除所有的 Cache Storage 快取
+        if (window.caches) {
+            const keys = await caches.keys();
+            for (let key of keys) {
+                await caches.delete(key);
+            }
+        }
+        // 3. 清理 LocalStorage 中的票券資料與場地快取 (保留管理員登入資訊)
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('livenote_cache_') || key.startsWith('livenote_venues_'))) {
+                localStorage.removeItem(key);
+            }
+        }
+        // 4. 強制從伺服器端重載網頁 (不使用快取)
+        window.location.reload(true);
+    } catch (e) {
+        console.error('Failed to clear cache:', e);
+        window.location.reload(true);
+    }
+};
