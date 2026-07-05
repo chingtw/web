@@ -1286,7 +1286,8 @@ section.active { display: block; }
     width: 100%;
     backface-visibility: hidden;
     background-color: #000;
-    border: 1px solid #222;
+    border: none;
+    box-shadow: inset 0 0 0 1px #222;
     border-radius: 12px;
     overflow-y: auto;
     overscroll-behavior-y: contain;
@@ -1353,8 +1354,6 @@ section.active { display: block; }
     border-left: none !important; /* 移除外側直邊 */
     border-top-right-radius: 8px;
     border-bottom-right-radius: 8px;
-    /* 往左邊緣外抹除大卡片灰色邊框，絕不影響右側內凹半圓邊界 */
-    box-shadow: -2px 0 0 #000;
 }
 
 /* 右側撕票孔 - 朝向內部凹陷的左半圓 */
@@ -1364,8 +1363,6 @@ section.active { display: block; }
     border-right: none !important; /* 移除外側直邊 */
     border-top-left-radius: 8px;
     border-bottom-left-radius: 8px;
-    /* 往右邊緣外抹除大卡片灰色邊框，絕不影響左側內凹半圓邊界 */
-    box-shadow: 2px 0 0 #000;
 }
 
 .modal-meta-grid {
@@ -1420,14 +1417,15 @@ section.active { display: block; }
 }
 
 .modal-hero-img { 
-    width: 100%; 
+    width: calc(100% - 2px); 
     height: 250px; 
+    margin: 1px 1px 0 1px;
     background-size: cover; 
     background-position: center; 
     position: relative; 
     transition: height 0.3s;
-    border-top-left-radius: 12px; /* 單獨對圖片加頂部圓角 */
-    border-top-right-radius: 12px;
+    border-top-left-radius: 11px; /* 單獨對圖片加頂部圓角 */
+    border-top-right-radius: 11px;
     overflow: hidden; /* 強制裁剪圖片邊角 */
 }
 .modal-hero-img::after { content: ""; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); }
