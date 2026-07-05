@@ -857,6 +857,10 @@ section.active { display: block; }
     .pill.venue-pill:hover {
         max-width: 280px;
     }
+    .time-row .pill {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
 }
 
 .ticket-visual {
