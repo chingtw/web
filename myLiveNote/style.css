@@ -1247,6 +1247,8 @@ section.active { display: block; }
     box-sizing: border-box;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    /* 修正滾動跳轉：禁止瀏覽器因 focus 子元素而自動滾動到其位置 */
+    overflow-anchor: none;
 }
 
 /* 票券詳細內的會場標籤組 */
@@ -2188,25 +2190,19 @@ section.active { display: block; }
 
 /* MAP VIEW */
 .detail-map-container {
-    height: 250px;
+    height: 300px;
     margin-top: 20px;
     border-radius: 12px;
-    border: 1px solid #222;
+    border: 1px solid #333;
     overflow: hidden;
     position: relative;
-    background: #000;
+    background: #0a0a0a;
 }
 
 #detail-map {
     height: 100%;
     width: 100%;
-    /* 漸層邊界模糊效果 */
-    -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent),
-                        linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-    mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent),
-                linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
+    background: #0a0a0a;
 }
 
 #map-view {
@@ -2238,6 +2234,7 @@ section.active { display: block; }
     height: 75vh;
     height: 75dvh; /* Use viewport height for better view on all devices */
     width: 100%;
+    background: #0d0d0d;
     border-radius: 12px;
     border: 1px solid #222;
     z-index: 1;
@@ -2250,6 +2247,84 @@ section.active { display: block; }
     border: 1px solid var(--text-accent);
 }
 .leaflet-popup-tip { background: var(--text-accent) !important; }
+
+/* MapTiler 極致暗金主題優化 (解決白底、按鈕與尖角突兀問題) */
+.maplibregl-canvas-container {
+    background-color: #0d0d0d !important;
+}
+
+/* 1. 導航控制項 (放大/縮小/指南針) 改為黑金玻璃擬真風格 */
+.maplibregl-ctrl-group {
+    background: rgba(15, 15, 15, 0.85) !important;
+    border: 1px solid var(--text-accent) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+}
+.maplibregl-ctrl-group button {
+    background-color: transparent !important;
+    border-bottom: 1px solid #222 !important;
+}
+.maplibregl-ctrl-group button:last-child {
+    border-bottom: none !important;
+}
+.maplibregl-ctrl-icon {
+    filter: invert(1) sepia(1) saturate(5) hue-rotate(330deg) !important; /* 使圖示變為金色 */
+}
+.maplibregl-ctrl-group button:hover {
+    background-color: rgba(197, 164, 137, 0.15) !important;
+}
+
+/* 2. 版權宣告 (Attribution) 暗色化 */
+.maplibregl-ctrl-attrib {
+    background: rgba(10, 10, 10, 0.85) !important;
+    border: 1px solid #1a1a1a !important;
+    border-radius: 4px !important;
+}
+.maplibregl-ctrl-attrib a, 
+.maplibregl-ctrl-attrib-inner {
+    color: #555 !important;
+    font-size: 0.65rem !important;
+}
+.maplibregl-ctrl-attrib a:hover {
+    color: var(--text-accent) !important;
+}
+
+/* 3. Popup 氣泡框本體優化 */
+.maplibregl-popup-content {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid var(--text-accent) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85) !important;
+    font-family: 'Noto Sans TC', sans-serif !important;
+    padding: 16px 14px 12px 14px !important;
+}
+.maplibregl-popup-close-button {
+    color: #999 !important;
+    background: transparent !important;
+    border: 0 !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    padding: 4px 8px !important;
+    transition: color 0.2s;
+}
+.maplibregl-popup-close-button:hover {
+    color: var(--text-accent) !important;
+}
+
+/* 4. 用邊框色完美修正尖角配色 */
+.maplibregl-popup-tip {
+    z-index: 2;
+}
+.maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: var(--text-accent) !important; }
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: var(--text-accent) !important; }
+.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--text-accent) !important; }
+.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--text-accent) !important; }
+.maplibregl-popup-anchor-top-left .maplibregl-popup-tip { border-bottom-color: var(--text-accent) !important; }
+.maplibregl-popup-anchor-top-right .maplibregl-popup-tip { border-bottom-color: var(--text-accent) !important; }
+.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip { border-top-color: var(--text-accent) !important; }
+.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip { border-top-color: var(--text-accent) !important; }
 
 .badge-container {
     position: absolute;

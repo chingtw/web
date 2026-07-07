@@ -1,5 +1,6 @@
 // CONFIGURATION
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbz4TUnTXZo05sG5drcq3vozOERjgOztciD1fGkUTAGByEzGgFpwEo8jnDnwlCeHj6Uh/exec'
+const MAPTILER_API_KEY = 'JbsYXpwxgNI7OFDQhBHS'; // 請填入您的 MapTiler API Key
 
 
 // MOCK DATA
@@ -1086,10 +1087,24 @@ function sortVenueRanking(entries) {
 }
 
 function initMap() {
-    if (mapInstance) return;
-    // 設定中心點約在沖繩附近，並調整縮放級別為 4，以同時涵蓋台灣與日本
-    mapInstance = L.map('map').setView([30.0, 130.0], 4);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CartoDB', maxZoom: 19 }).addTo(mapInstance);
+    if (mapInstance) {
+        mapInstance.resize(); // 解決隱藏 tab 初始化導致的容器尺寸不正確問題
+        return;
+    }
+    
+    // 設定全域地圖語系為當地語言 (例如日本顯示日文、台灣顯示中文)
+    maptilersdk.config.primaryLanguage = maptilersdk.Language.LOCAL;
+    
+    // 設定預設視野以沖繩為中心，大縮放比例以完整覆蓋台灣與日本全島
+    maptilersdk.config.apiKey = MAPTILER_API_KEY;
+    mapInstance = new maptilersdk.Map({
+        container: 'map',
+        style: maptilersdk.MapStyle.DATAVIZ.DARK, // 更換為兼具 3D 建築與純黑金配色的 Dataviz Dark 底圖，消除任何亮色陸地
+        center: [132.0, 28.0], // 日本與台灣中間的沖繩海域 [Lng, Lat]
+        zoom: 3.5,
+        navigationControl: true, // 顯示縮放控件
+        geolocateControl: false
+    });
     
     // 按經緯度群組活動 (排除失敗狀態)
     const venueGroups = {};
@@ -1108,24 +1123,25 @@ function initMap() {
         }
     });
 
-    const customIcon = L.divIcon({
-        className: 'custom-div-icon',
-        html: "<div class='custom-marker-pin'></div>",
-        iconSize: [30, 42],
-        iconAnchor: [15, 42],
-        popupAnchor: [0, -40]
-    });
+    // 預設加入台灣與日本的代表基準點，確保初始地圖視野必定同時包含台日兩地
+    const latlngs = [
+        [121.55, 25.05], // 台灣台北 [Lng, Lat]
+        [139.69, 35.68]  // 日本東京 [Lng, Lat]
+    ];
 
     Object.keys(venueGroups).forEach(coords => {
         const [la, ln] = coords.split(',').map(Number);
         if (isNaN(la) || isNaN(ln)) return; // 跳過無效座標
+        latlngs.push([ln, la]); // 收集座標點以供視野自適應
 
         // 排序該場館的所有活動 (日期由新到舊)
         const itemsAtVenue = venueGroups[coords].sort((a, b) => new Date(cleanDate(b.ticket.date)) - new Date(cleanDate(a.ticket.date)));
         
-        const marker = L.marker([la, ln], { icon: customIcon }).addTo(mapInstance);
+        // 建立自訂的 Marker 元素
+        const el = document.createElement('div');
+        el.className = 'custom-marker-pin';
         
-        // 建立包含所有活動的清單
+        // 建立包含所有活動的清單 HTML
         let listHtml = itemsAtVenue.map(item => {
             const t = item.ticket;
             return `
@@ -1146,8 +1162,25 @@ function initMap() {
                 ${listHtml}
             </div>
         `;
-        marker.bindPopup(popupContent);
+        
+        // 建立 MapTiler Popup
+        const popup = new maptilersdk.Popup({ offset: [0, -30] })
+            .setHTML(popupContent);
+
+        // 建立 MapTiler Marker，設定 [Lng, Lat]，將 anchor 設為 'bottom' 讓水滴針尖對齊座標點
+        new maptilersdk.Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([ln, la])
+            .setPopup(popup)
+            .addTo(mapInstance);
     });
+
+    // 自動根據所有標籤的位置，調整地圖視野至剛好包容所有參戰地點（例如同時顯示台灣與日本）
+    if (latlngs.length > 0) {
+        mapInstance.fitBounds(latlngs, {
+            padding: { top: 80, bottom: 80, left: 60, right: 60 },
+            maxZoom: 6 // 限制最大縮放比例，防止只有單一城市時放得太大
+        });
+    }
 }
 
 function initStats() {
@@ -1606,6 +1639,9 @@ window.openDetail = function(id) {
     window.currentDetailId = id; // 儲存目前正在觀看的票券 ID
     const rawT = allTickets.find(x => x.id === id); if (!rawT) return;
     
+    // 開啟的瞬間立即將 Modal 滾動條重置為頂部，防止上一次觀看殘留的滾動高度
+    modal.scrollTop = 0;
+    
     const t = {};
     Object.keys(rawT).forEach(k => { t[k.trim().toLowerCase()] = rawT[k]; });
 
@@ -1731,44 +1767,105 @@ window.openDetail = function(id) {
     }
 
     modal.classList.remove('hidden');
+    modal.scrollTop = 0;
     toggleBodyScroll(true);
     lucide.createIcons();
+
     setTimeout(() => {
         if (detailMapInstance) { detailMapInstance.remove(); detailMapInstance = null; }
         if (hasLatLng) { 
             const coordsArray = rawT.lat_lng.split('|').map(s => s.trim()).filter(s => s !== '');
             const venueNames = (rawT.venue_name || '').split('、').map(v => v.trim()).filter(v => v !== '');
             const latlngs = [];
+            const markers = [];
             
-            detailMapInstance = L.map('detail-map', { zoomControl: false }); 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(detailMapInstance); 
-            
-            const customIcon = L.divIcon({
-                className: 'custom-div-icon',
-                html: "<div class='custom-marker-pin'></div>",
-                iconSize: [30, 42],
-                iconAnchor: [15, 42],
-                popupAnchor: [0, -40]
+            // 根治 scroll 跳轉：暫時攔截 Modal 內所有元素的 focus()，強制加上 preventScroll
+            const origFocus = HTMLElement.prototype.focus;
+            HTMLElement.prototype.focus = function(opts) {
+                origFocus.call(this, Object.assign({ preventScroll: true }, opts));
+            };
+
+            maptilersdk.config.apiKey = MAPTILER_API_KEY;
+            detailMapInstance = new maptilersdk.Map({
+                container: 'detail-map',
+                style: maptilersdk.MapStyle.STREETS.DARK, // 暗色街道地圖，支援 3D 建築物渲染
+                keyboard: false,
+                pitch: 55,
+                bearing: -10,
+                navigationControl: false,
+                geolocateControl: false,
+                doubleClickZoom: false,
+                scrollZoom: false,
+                dragPan: true
             });
+
+            // 地圖載入完成後，全面改裝配色為暗金主題
+            detailMapInstance.on('load', () => {
+                // 先將底圖背景色強制設為純黑
+                try { detailMapInstance.setPaintProperty('background', 'background-color', '#080808'); } catch(e) {}
+
+                const layers = detailMapInstance.getStyle().layers;
+                layers.forEach(layer => {
+                    try {
+                        // 1. 所有 fill 圖層（陸地、水域、公園、商業區等）一律壓成極深黑
+                        //    不再依賴圖層名稱匹配，確保不會有任何藍色/綠色/灰色殘留
+                        if (layer.type === 'fill') {
+                            detailMapInstance.setPaintProperty(layer.id, 'fill-color', '#0a0a08');
+                        }
+
+                        // 2. 3D 建築物 → 深棕黑，帶微弱金色調
+                        if (layer.type === 'fill-extrusion') {
+                            detailMapInstance.setPaintProperty(layer.id, 'fill-extrusion-color', '#1a1510');
+                            detailMapInstance.setPaintProperty(layer.id, 'fill-extrusion-opacity', 0.85);
+                        }
+
+                        // 3. 所有線條圖層（道路、街道、邊界、鐵路等）→ 暗金棕色
+                        if (layer.type === 'line') {
+                            detailMapInstance.setPaintProperty(layer.id, 'line-color', '#2a2018');
+                        }
+
+                        // 4. 地名標籤文字 → 暗金色 + 純黑光暈
+                        if (layer.type === 'symbol') {
+                            detailMapInstance.setPaintProperty(layer.id, 'text-color', '#6b5d4d');
+                            detailMapInstance.setPaintProperty(layer.id, 'text-halo-color', '#000000');
+                        }
+                    } catch(e) {} // 部分圖層可能使用 data-driven 表達式，跳過即可
+                });
+            });
+
+            // 1 秒後還原原生 focus，不影響後續操作
+            setTimeout(() => { HTMLElement.prototype.focus = origFocus; }, 1000);
 
             coordsArray.forEach((coords, idx) => {
                 const [la, ln] = coords.split(',').map(Number);
                 if (!isNaN(la) && !isNaN(ln)) {
-                    latlngs.push([la, ln]);
-                    const marker = L.marker([la, ln], { icon: customIcon }).addTo(detailMapInstance);
-                    // 關鍵：依索引匹配對應的會場名稱
+                    latlngs.push([ln, la]); // MapTiler 是 [Lng, Lat]
+                    
+                    const el = document.createElement('div');
+                    el.className = 'custom-marker-pin';
+                    
                     const specificName = venueNames[idx] || venueNames[venueNames.length - 1] || rawT.venue_name;
-                    marker.bindPopup(`<strong style="color:white;">${specificName}</strong>`);
+                    
+                    const popup = new maptilersdk.Popup({ offset: [0, -30] })
+                        .setHTML(`<strong style="color:white; font-family:'Noto Sans TC';">${specificName}</strong>`);
+
+                    const marker = new maptilersdk.Marker({ element: el, anchor: 'bottom' })
+                        .setLngLat([ln, la])
+                        .setPopup(popup)
+                        .addTo(detailMapInstance);
+
+                    markers.push({ marker, popup });
                 }
             });
 
             if (latlngs.length > 1) {
-                detailMapInstance.fitBounds(latlngs, { padding: [30, 30] });
+                detailMapInstance.fitBounds(latlngs, { padding: 30, maxZoom: 17 });
             } else if (latlngs.length === 1) {
-                detailMapInstance.setView(latlngs[0], 16);
-                detailMapInstance.eachLayer(layer => {
-                    if (layer instanceof L.Marker) layer.openPopup();
-                });
+                detailMapInstance.setCenter(latlngs[0]);
+                detailMapInstance.setZoom(17);
+                setTimeout(() => {
+                    if (markers.length > 0) markers[0].marker.togglePopup();
+                }, 400);
             }
         }
     }, 300);
@@ -1781,6 +1878,9 @@ window.closeModal = () => {
     const adminTool = document.getElementById('modal-admin-tool-inner');
     if (adminTool) adminTool.innerHTML = ''; // 清除 Admin 工具
     toggleBodyScroll(false);
+    
+    // 關閉的同時將滾動條重置歸零，確保下一次打開任何票券時，燈箱都是從最頂部開始呈現
+    modal.scrollTop = 0;
 };
 
 window.openLogin = (callback = null) => { 
