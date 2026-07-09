@@ -48,9 +48,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. 靜態資源使用 Network-First，並在成功時動態更新快取，斷網時回退到快取
+  // 3. 針對同源的 HTML、CSS、JS、JSON 等靜態資源，強制不使用瀏覽器 HTTP 快取，確保向伺服器拿最新版
+  const isSameOriginStatic = url.startsWith(self.location.origin) && 
+    (url.includes('.html') || url.includes('.css') || url.includes('.js') || url.includes('.json'));
+  
+  const fetchOptions = isSameOriginStatic ? { cache: 'no-cache' } : {};
+
+  // 4. 靜態資源使用 Network-First，並在成功時動態更新快取，斷網時回退到快取
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, fetchOptions)
       .then((response) => {
         // 確保響應有效才寫入快取 (排除非 200 響應與外部 API 錯誤)
         if (response && response.status === 200 && response.type === 'basic') {
