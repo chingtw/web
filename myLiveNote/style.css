@@ -2209,12 +2209,20 @@ section.active { display: block; }
     width: 100%;
 }
 
+.custom-marker-wrapper {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+}
+
 .custom-marker-pin {
     width: 24px;
     height: 24px;
     border-radius: 50% 50% 50% 0;
     background: var(--text-accent);
     position: absolute;
+    top: 0;
+    left: 0;
     transform: rotate(-45deg);
     border: 1px solid #000;
     box-shadow: 0 0 10px rgba(197, 164, 137, 0.5);
@@ -2228,6 +2236,40 @@ section.active { display: block; }
     background: #000;
     position: absolute;
     border-radius: 50%;
+}
+
+.marker-label-text {
+    position: absolute;
+    bottom: 32px; /* 位於大頭針上方 */
+    left: 50%;
+    transform: translate(-50%, 10px) scale(0.9);
+    background: rgba(10, 10, 10, 0.95);
+    border: 1px solid var(--text-accent);
+    color: #eee;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: nowrap;
+    pointer-events: none; /* 預設縮小時不可點擊 */
+    opacity: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 5;
+}
+
+#map.show-marker-labels .marker-label-text {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+    pointer-events: auto; /* 放大顯示名稱時，允許點擊 */
+}
+
+/* 當大頭針開啟 Popup 氣泡框時，暫時將場地名稱標籤隱藏並停用點擊 */
+.custom-marker-wrapper.popup-open .marker-label-text {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translate(-50%, -5px) scale(0.9) !important; /* 稍微向上收起 */
 }
 
 #map {

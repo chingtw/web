@@ -1106,6 +1106,20 @@ function initMap() {
         geolocateControl: false
     });
     
+    // 監聽縮放層級以決定是否顯示場地名稱標籤
+    mapInstance.on('zoom', () => {
+        const zoom = mapInstance.getZoom();
+        const mapContainer = document.getElementById('map');
+        if (mapContainer) {
+            // 當縮放層級 >= 10.5 時顯示標籤（可自訂調整，10.5 大致是縣市級別的比例尺）
+            if (zoom >= 13) {
+                mapContainer.classList.add('show-marker-labels');
+            } else {
+                mapContainer.classList.remove('show-marker-labels');
+            }
+        }
+    });
+    
     // 按經緯度群組活動 (排除失敗狀態)
     const venueGroups = {};
     allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET').forEach(t => {
@@ -1137,9 +1151,18 @@ function initMap() {
         // 排序該場館的所有活動 (日期由新到舊)
         const itemsAtVenue = venueGroups[coords].sort((a, b) => new Date(cleanDate(b.ticket.date)) - new Date(cleanDate(a.ticket.date)));
         
-        // 建立自訂的 Marker 元素
+        // 建立自訂的 Marker 元素（包裝容器，避免內部旋轉干擾標籤）
         const el = document.createElement('div');
-        el.className = 'custom-marker-pin';
+        el.className = 'custom-marker-wrapper';
+        
+        const pin = document.createElement('div');
+        pin.className = 'custom-marker-pin';
+        el.appendChild(pin);
+
+        const label = document.createElement('div');
+        label.className = 'marker-label-text';
+        label.textContent = itemsAtVenue[0].displayName; // 顯示該座標最常參戰的場地名稱
+        el.appendChild(label);
         
         // 建立包含所有活動的清單 HTML
         let listHtml = itemsAtVenue.map(item => {
@@ -1166,6 +1189,14 @@ function initMap() {
         // 建立 MapTiler Popup
         const popup = new maptilersdk.Popup({ offset: [0, -30] })
             .setHTML(popupContent);
+
+        // 監聽 Popup 開啟與關閉，以控制場地名稱標籤的顯示與隱藏
+        popup.on('open', () => {
+            el.classList.add('popup-open');
+        });
+        popup.on('close', () => {
+            el.classList.remove('popup-open');
+        });
 
         // 建立 MapTiler Marker，設定 [Lng, Lat]，將 anchor 設為 'bottom' 讓水滴針尖對齊座標點
         new maptilersdk.Marker({ element: el, anchor: 'bottom' })
@@ -1799,6 +1830,32 @@ window.openDetail = function(id) {
                 dragPan: true
             });
 
+            let isUserInteracting = false;
+            
+            // 監聽拖曳開始與結束，暫停/恢復自動旋轉
+            detailMapInstance.on('dragstart', () => {
+                isUserInteracting = true;
+            });
+            detailMapInstance.on('dragend', () => {
+                clearTimeout(window.detailMapRotationTimeout);
+                // 停止拖曳 3 秒後重啟自動旋轉
+                window.detailMapRotationTimeout = setTimeout(() => {
+                    isUserInteracting = false;
+                }, 3000);
+            });
+
+            function rotateCamera() {
+                // 若地圖實例已銷毀，或彈窗被關閉，則終止動畫迴圈，釋放 CPU 資源
+                if (!detailMapInstance || modal.classList.contains('hidden')) {
+                    return;
+                }
+                if (!isUserInteracting) {
+                    const currentBearing = detailMapInstance.getBearing();
+                    detailMapInstance.setBearing((currentBearing + 0.15) % 360);
+                }
+                requestAnimationFrame(rotateCamera);
+            }
+
             // 地圖載入完成後，全面改裝配色為暗金主題
             detailMapInstance.on('load', () => {
                 // 先將底圖背景色強制設為純黑
@@ -1831,6 +1888,9 @@ window.openDetail = function(id) {
                         }
                     } catch(e) {} // 部分圖層可能使用 data-driven 表達式，跳過即可
                 });
+                
+                // 開始自動旋轉
+                requestAnimationFrame(rotateCamera);
             });
 
             // 1 秒後還原原生 focus，不影響後續操作
@@ -1842,7 +1902,11 @@ window.openDetail = function(id) {
                     latlngs.push([ln, la]); // MapTiler 是 [Lng, Lat]
                     
                     const el = document.createElement('div');
-                    el.className = 'custom-marker-pin';
+                    el.className = 'custom-marker-wrapper';
+                    
+                    const pin = document.createElement('div');
+                    pin.className = 'custom-marker-pin';
+                    el.appendChild(pin);
                     
                     const specificName = venueNames[idx] || venueNames[venueNames.length - 1] || rawT.venue_name;
                     
@@ -1878,6 +1942,13 @@ window.closeModal = () => {
     const adminTool = document.getElementById('modal-admin-tool-inner');
     if (adminTool) adminTool.innerHTML = ''; // 清除 Admin 工具
     toggleBodyScroll(false);
+    
+    // 立即銷毀詳情地圖實例，釋放 WebGL 與 CPU 資源，防止背景持續旋轉耗能
+    if (detailMapInstance) {
+        detailMapInstance.remove();
+        detailMapInstance = null;
+    }
+    clearTimeout(window.detailMapRotationTimeout);
     
     // 關閉的同時將滾動條重置歸零，確保下一次打開任何票券時，燈箱都是從最頂部開始呈現
     modal.scrollTop = 0;

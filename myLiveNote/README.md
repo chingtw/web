@@ -1,12 +1,12 @@
-# LiveNote - 個人演唱會參戰紀錄系統 (v6.3.0.0 - MapTiler 3D Gold Edition)
+# LiveNote - 個人演唱會參戰紀錄系統 (v6.3.1.0 - MapTiler 3D Gold Edition)
 
 LiveNote 是一個專為音樂愛好者設計的個人演唱會（Live）參戰紀錄 Web App。透過 Google Sheets 作為資料庫，結合 Google Apps Script (GAS) 提供後端 API，實現資料的持久化儲存、多使用者管理與智慧化的輸入體驗。
 
-在 **v6.3.0.0** 中，我們重磅引入了 **MapTiler 向量 3D 豪華暗金地圖**、**3D 滾筒卡片特效**、**雙層物理隔離排版架構** 以及 **極簡主義控制列**，將音樂愛好者的參戰回憶以極具未來感與儀式感的動態體驗珍藏。
+在 **v6.3.1.0** 中，我們在 **v6.3.0.0** 的 MapTiler 暗金地圖與 3D 滾筒基礎上，重磅加入了 **3D 小地圖自動旋轉**、**智慧互動暫停**、**地圖縮放動態場地標籤** 與 **WebGL 記憶體釋放優化**，讓演唱會回憶更添未來感與流暢質感。
 
 ![Ticket Demo](ticket%20demo%201.jpg)
 
-## 🌟 核心特點 (v6.3.0.0 重磅更新)
+## 🌟 核心特點 (v6.3.1.0 重磅更新)
 
 ### 1. 🎫 3D 滾筒式擬真票券特效 (3D Rolodex Scroll Effect)
 *   **立體翻滾體驗**：票券列表模擬 3D 滾筒（Rolodex）效果，滾動時卡片會自動進行 Z 軸景深退後 (`translateZ`)、X 軸立體翻轉 (`rotateX`) 與尺寸縮放 (`scale`)，配合邊緣漸層淡出遮罩，翻閱回憶時儀式感十足。
@@ -67,4 +67,4 @@ myLiveNote/
 
 ---
 
-Developed by **CHING** | Updated v6.3.0.0 2026.07.07
+Developed by **CHING** | Updated v6.3.1.0 2026.07.09
