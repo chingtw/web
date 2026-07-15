@@ -8,12 +8,12 @@ const MOCK_DATA = [
     { id: '1', date: '2025-01-12', time: '18:30', type: 'ONE_MAN', status: 'CONFIRMED', artist: 'YOASOBI', tour_title: 'ASIA TOUR 2024-2025 “超現實”', venue_name: '台北小巨蛋', lat_lng: '25.051, 121.550', seat_info: '特區 B2排', ticket_price: '4800', currency: 'TWD', is_first_time: true, setlist: '1. 祝福\n2. 夜に駆ける\n3. 勇者\n4. アイドル', images: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=500' }
 ];
 
-const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'ONLINE': 'ONLINE', 'SIGNING': 'EVENT', 'FAN_MEETING': 'EVENT', 'GREETING': 'EVENT', 'EVENT': 'EVENT', 'EXHIBITION': 'EXHIBIT', 'STAGE': 'STAGE', 'SPORTS': 'SPORTS', 'SCREENING': 'SCREENING' };
-const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン會', 'FAN_MEETING': 'ファンミーティング', 'GREETING': '挨拶 / 舞台挨拶', 'EVENT': 'イベント', 'EXHIBITION': '展示會', 'STAGE': '舞台劇 / 演劇', 'SPORTS': 'スポーツ / 試合', 'SCREENING': '映像上映' };
+const TYPE_MAP_PRO = { 'ONE_MAN': 'LIVE', 'FES': 'FES', 'VIEWING': 'VIEWING', 'ONLINE': 'ONLINE', 'SIGNING': 'EVENT', 'FAN_MEETING': 'EVENT', 'GREETING': 'EVENT', 'EVENT': 'EVENT', 'EXHIBITION': 'EXHIBIT', 'STAGE': 'STAGE', 'SPORTS': 'SPORTS', 'SCREENING': 'SCREENING', 'SOUND_LEAK': 'OUTSIDE', 'HYBRID_LEAK': 'HYBRID' };
+const TYPE_MAP_JP = { 'ONE_MAN': 'ワンマンライブ', 'FES': 'FES / 対バン', 'VIEWING': 'ライブビューイング', 'ONLINE': 'オンライン配信', 'SIGNING': 'サイン會', 'FAN_MEETING': 'ファンミーティング', 'GREETING': '挨拶 / 舞台挨拶', 'EVENT': 'イベント', 'EXHIBITION': '展示會', 'STAGE': '舞台劇 / 演劇', 'SPORTS': 'スポーツ / 試合', 'SCREENING': '映像上映', 'SOUND_LEAK': '音漏れ参戦 (場外)', 'HYBRID_LEAK': '音漏れ参戦 (配信同時視聴)' };
 
 const ARTIST_RANKING_EXCLUDED_TYPES = {
     full: ['EXHIBITION', 'SCREENING'],
-    inPerson: ['EXHIBITION', 'SCREENING', 'VIEWING', 'ONLINE']
+    inPerson: ['EXHIBITION', 'SCREENING', 'VIEWING', 'ONLINE', 'SOUND_LEAK', 'HYBRID_LEAK']
 };
 const ARTIST_NAME_COLLATOR = new Intl.Collator('ja-JP', { numeric: true, sensitivity: 'base' });
 const TAIWAN_VENUE_REGIONS = new Set([
@@ -142,12 +142,17 @@ window.showAlert = function(message, type = 'info') {
         overlay.className = 'custom-dialog-overlay';
         
         let icon = 'info';
+        let extraIconClass = '';
         if (type === 'success') icon = 'check-circle-2';
         if (type === 'error') icon = 'alert-triangle';
+        if (type === 'stats') {
+            icon = 'trophy';
+            extraIconClass = 'stats-trophy-icon';
+        }
 
         overlay.innerHTML = `
             <div class="custom-dialog-box">
-                <div class="custom-dialog-icon"><i data-lucide="${icon}"></i></div>
+                <div class="custom-dialog-icon ${extraIconClass}"><i data-lucide="${icon}"></i></div>
                 <div class="custom-dialog-message">${message}</div>
                 <div class="custom-dialog-btns">
                     <button class="custom-dialog-btn primary">OK</button>
@@ -925,6 +930,142 @@ function renderTickets(tickets) {
     }
 
     const fragment = document.createDocumentFragment();
+    
+    // 如果是單一年度篩選且該年非目前進行中的年份，在此計算並插入年度統計卡片
+    const currentYearStr = new Date().getFullYear().toString();
+    const isSingleYearFiltered = (currentFilterCategory === 'date' && currentFilterValue !== 'ALL' && currentFilterValue !== currentYearStr);
+    let indexOffset = 0;
+    
+    if (isSingleYearFiltered) {
+        indexOffset = 1;
+        const yearStr = currentFilterValue;
+        
+        // 1. 該年場數
+        const totalShows = tickets.length;
+        
+        // 2. 首次藝人幾位
+        const firstTimeArtists = tickets.filter(t => {
+            if (!t.is_first_time) return false;
+            const raw = t.is_first_time.toString().split(/[、,]+/).map(s => s.trim());
+            return raw.some(m => m === 'true' || m === '1' || m === 'ARTIST');
+        }).length;
+
+        // 3. 首次會場幾個
+        const firstTimeVenues = tickets.filter(t => {
+            if (!t.is_first_time) return false;
+            const raw = t.is_first_time.toString().split(/[、,]+/).map(s => s.trim());
+            return raw.some(m => m === 'VENUE');
+        }).length;
+
+        // 4. 海外場數
+        const overseasShows = tickets.filter(t => {
+            if (!t.venue_name) return false;
+            if (t.lat_lng) {
+                const firstCoord = t.lat_lng.split('|')[0].trim();
+                const parts = firstCoord.split(',');
+                if (parts.length === 2) {
+                    const lat = parseFloat(parts[0]);
+                    const lng = parseFloat(parts[1]);
+                    if (!isNaN(lng) && lng !== 0) {
+                        if (lng > 118 && lng < 125 && lat > 21 && lat < 26) {
+                            return false; 
+                        }
+                        return true; 
+                    }
+                }
+            }
+            const list = t.venue_name.split(/[、,]+/).map(s => s.trim()).filter(s => s !== '');
+            return list.some(v => {
+                const compact = v.replace(/\s/g, '').toUpperCase();
+                if (NON_OVERSEAS_VENUE_LABELS.has(compact) || compact.includes('VRLIVE') || compact.includes('LIVE配信') || compact.includes('ONLINE') || compact.includes('線上')) {
+                    return false;
+                }
+                return !isTaiwanVenue(v);
+            });
+        }).length;
+
+        // 創建統計卡片
+        const statsWrapper = document.createElement('div');
+        statsWrapper.id = `wrapper-stats-${yearStr}`;
+        statsWrapper.className = 'ticket-wrapper stats-card-wrapper';
+        statsWrapper.setAttribute('data-year', yearStr);
+        statsWrapper.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showAlert(`
+                <div class="stats-alert-container">
+                    <div class="stats-alert-title">${yearStr} ANNUAL REVIEW</div>
+                    <div class="stats-alert-row">
+                        <span class="meta-icon-gold"><i data-lucide="music"></i></span>
+                        <strong class="stats-alert-label">總場次</strong>
+                        <span class="stats-alert-value">${totalShows} <span class="stats-alert-unit">場</span></span>
+                    </div>
+                    <div class="stats-alert-row">
+                        <span class="meta-icon-gold"><i data-lucide="plane"></i></span>
+                        <strong class="stats-alert-label">海外遠征</strong>
+                        <span class="stats-alert-value">${overseasShows} <span class="stats-alert-unit">場</span></span>
+                    </div>
+                    <div class="stats-alert-row">
+                        <span class="meta-icon-gold"><i data-lucide="mic-2"></i></span>
+                        <strong class="stats-alert-label">新開拓藝人</strong>
+                        <span class="stats-alert-value">${firstTimeArtists} <span class="stats-alert-unit">位</span></span>
+                    </div>
+                    <div class="stats-alert-row">
+                        <span class="meta-icon-gold"><i data-lucide="map-pin"></i></span>
+                        <strong class="stats-alert-label">新解鎖會場</strong>
+                        <span class="stats-alert-value">${firstTimeVenues} <span class="stats-alert-unit">個</span></span>
+                    </div>
+                </div>
+            `, 'stats');
+        };
+
+        const statsCard = document.createElement('div');
+        statsCard.id = `ticket-stats-${yearStr}`;
+        statsCard.className = 'ticket status-confirmed stats-ticket animate-up';
+        statsCard.style.animationDelay = '0s';
+        statsCard.innerHTML = `
+            <div class="ticket-info-left">
+                <div class="ticket-header">
+                    <div class="ticket-logo">${yearStr}</div>
+                    <div class="status-badge"><i data-lucide="bar-chart-3" style="width: 12px; height: 12px; vertical-align: middle;"></i>ANNUAL SUMMARY</div>
+                </div>
+                <div class="ticket-title">ANNUAL REPORT<br>年度總結</div>
+                <div class="stats-ticket-grid">
+                    <div class="stats-ticket-item">
+                        <span class="stats-item-label">TOTAL SHOWS / 參戰場數</span>
+                        <span class="stats-item-val">${totalShows} <span class="stats-item-unit">場</span></span>
+                    </div>
+                    <div class="stats-ticket-item">
+                        <span class="stats-item-label">OVERSEAS SHOWS / 海外遠征</span>
+                        <span class="stats-item-val">${overseasShows} <span class="stats-item-unit">場</span></span>
+                    </div>
+                    <div class="stats-ticket-item">
+                        <span class="stats-item-label">NEW ARTISTS / 首次藝人</span>
+                        <span class="stats-item-val">${firstTimeArtists} <span class="stats-item-unit">位</span></span>
+                    </div>
+                    <div class="stats-ticket-item">
+                        <span class="stats-item-label">NEW VENUES / 首次會場</span>
+                        <span class="stats-item-val">${firstTimeVenues} <span class="stats-item-unit">個</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="ticket-visual stats-ticket-visual">
+                <div class="stats-visual-circle">
+                     <i data-lucide="trophy" class="stats-visual-icon"></i>
+                </div>
+            </div>
+            <div class="ticket-stub-right">
+                <div class="barcode-container">
+                    <div class="barcode"></div>
+                    <div class="ticket-num">REPORT-${yearStr}</div>
+                </div>
+            </div>
+            <div class="ticket-click-overlay"></div>
+        `;
+        statsWrapper.appendChild(statsCard);
+        fragment.appendChild(statsWrapper);
+    }
+
     const sorted = [...tickets].sort((a,b) => new Date(cleanDate(b.date)) - new Date(cleanDate(a.date)));
     
     sorted.forEach((t, index) => {
@@ -945,7 +1086,7 @@ function renderTickets(tickets) {
         }
 
         card.className = `ticket ${statusClass} animate-up`;
-        card.style.animationDelay = `${index * 0.05}s`;
+        card.style.animationDelay = `${(index + indexOffset) * 0.05}s`;
         card.innerHTML = generateTicketHTML(t, index);
         wrapper.onclick = () => openDetail(t.id);
         
@@ -2311,6 +2452,8 @@ function showAdminForm(editData = null) {
                         <option value="FES" ${editData?.type==='FES'?'selected':''}>音樂祭 / 拼盤</option>
                         <option value="VIEWING" ${editData?.type==='VIEWING'?'selected':''}>院線直播 (LV)</option>
                         <option value="ONLINE" ${editData?.type==='ONLINE'?'selected':''}>線上直播</option>
+                        <option value="SOUND_LEAK" ${editData?.type==='SOUND_LEAK'?'selected':''}>場外音漏</option>
+                        <option value="HYBRID_LEAK" ${editData?.type==='HYBRID_LEAK'?'selected':''}>場外音漏 (直播同步)</option>
                         <option value="SCREENING" ${editData?.type==='SCREENING'?'selected':''}>映像上映</option>
                         <option value="STAGE" ${editData?.type==='STAGE'?'selected':''}>舞台劇 / 演劇</option>
                         <option value="SIGNING" ${editData?.type==='SIGNING'?'selected':''}>簽名會</option>
@@ -2360,9 +2503,9 @@ function showAdminForm(editData = null) {
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
+                    <div id="venue-quick-tags" class="quick-add-tags">${quickVenues}</div>
                     <label>經緯度 (Map Coords)</label>
                     <input type="text" name="lat_lng" id="form-lat-lng" placeholder="例如: 25.051, 121.550" value="${editData ? (editData.lat_lng || '') : ''}">
-                    <div id="venue-quick-tags" class="quick-add-tags">${quickVenues}</div>
                 </div>
                 
                 <div style="display:flex; gap:10px;">
