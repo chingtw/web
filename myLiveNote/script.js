@@ -940,25 +940,75 @@ function renderTickets(tickets) {
         indexOffset = 1;
         const yearStr = currentFilterValue;
         
-        // 1. 該年場數
-        const totalShows = tickets.length;
-        
-        // 2. 首次藝人幾位
-        const firstTimeArtists = tickets.filter(t => {
-            if (!t.is_first_time) return false;
-            const raw = t.is_first_time.toString().split(/[、,]+/).map(s => s.trim());
-            return raw.some(m => m === 'true' || m === '1' || m === 'ARTIST');
-        }).length;
+        // 該年份有效的票券列表 (排除 APPLIED, FAILED_DRAW, FAILED_TICKET, CANCELLED)
+        const validYearTickets = tickets.filter(t => !['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'CANCELLED'].includes(t.status));
 
-        // 3. 首次會場幾個
-        const firstTimeVenues = tickets.filter(t => {
-            if (!t.is_first_time) return false;
-            const raw = t.is_first_time.toString().split(/[、,]+/).map(s => s.trim());
-            return raw.some(m => m === 'VENUE');
-        }).length;
+        // 1. 該年場數
+        const totalShows = validYearTickets.length;
+        
+        // 2. 首次藝人幾位 (掃描所有有效票券，必須在該年看過且往年沒看過，包含拼盤場與共演名單)
+        const artistsPriorToY = new Set();
+        const artistsInY = new Set();
+
+        allTickets.forEach(t => {
+            if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'CANCELLED'].includes(t.status)) return;
+            const tYear = cleanDate(t.date).split('-')[0];
+            if (!tYear) return;
+
+            const tArtists = new Set();
+            if (t.artist && t.artist.trim() !== '') {
+                tArtists.add(t.artist.trim().toUpperCase()); // 統一轉大寫比較，防止大小寫不一致
+            }
+            if (t.artist_list && t.artist_list.trim() !== '') {
+                const list = t.artist_list.split(/[、,]+/).map(s => s.trim().toUpperCase()).filter(s => s !== '');
+                list.forEach(a => tArtists.add(a));
+            }
+
+            if (tYear < yearStr) {
+                tArtists.forEach(a => artistsPriorToY.add(a));
+            } else if (tYear === yearStr) {
+                tArtists.forEach(a => artistsInY.add(a));
+            }
+        });
+
+        let firstTimeArtists = 0;
+        artistsInY.forEach(a => {
+            if (!artistsPriorToY.has(a)) {
+                firstTimeArtists++;
+            }
+        });
+
+        // 3. 首次會場幾個 (掃描所有有效票券，必須在該年去過且往年沒去過)
+        const venuesPriorToY = new Set();
+        const venuesInY = new Set();
+
+        allTickets.forEach(t => {
+            if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'CANCELLED'].includes(t.status)) return;
+            const tYear = cleanDate(t.date).split('-')[0];
+            if (!tYear) return;
+
+            const tVenues = new Set();
+            if (t.venue_name && t.venue_name.trim() !== '') {
+                const list = t.venue_name.split(/[、,]+/).map(s => s.trim().toUpperCase()).filter(s => s !== '');
+                list.forEach(v => tVenues.add(v));
+            }
+
+            if (tYear < yearStr) {
+                tVenues.forEach(v => venuesPriorToY.add(v));
+            } else if (tYear === yearStr) {
+                tVenues.forEach(v => venuesInY.add(v));
+            }
+        });
+
+        let firstTimeVenues = 0;
+        venuesInY.forEach(v => {
+            if (!venuesPriorToY.has(v)) {
+                firstTimeVenues++;
+            }
+        });
 
         // 4. 海外場數
-        const overseasShows = tickets.filter(t => {
+        const overseasShows = validYearTickets.filter(t => {
             if (!t.venue_name) return false;
             if (t.lat_lng) {
                 const firstCoord = t.lat_lng.split('|')[0].trim();
