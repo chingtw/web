@@ -584,6 +584,7 @@ function generateTicketHTML(t, index = 0) {
         case 'COMPLETED': statusClass = 'status-completed'; statusText = '<i data-lucide="check-circle-2" style="width:12px; vertical-align:middle;"></i> 參戰完畢'; break;
         case 'FAILED_DRAW': statusClass = 'status-failed'; statusText = '落選'; break;
         case 'FAILED_TICKET': statusClass = 'status-failed'; statusText = '搶票失敗'; break;
+        case 'CANCELLED': statusClass = 'status-cancelled'; statusText = '公演取消'; break;
         default: statusClass = 'status-confirmed'; statusText = '參戰確定'; break;
     }
     const proLabel = TYPE_MAP_PRO[t.type] || 'LIVE';
@@ -779,7 +780,7 @@ function renderFilterBar() {
         const finalArtists = showAllArtists ? sortedArtists : sortedArtists.filter(a => a[1] > 1 || a[0] === currentFilterValue);
         values = ['ALL', ...finalArtists.map(a => showAllArtists ? `${a[0]} (${a[1]})` : a[0])];
     } else if (currentFilterCategory === 'status') {
-        values = ['ALL', 'CONFIRMED', 'COMPLETED', 'APPLIED', 'FAILED'];
+        values = ['ALL', 'CONFIRMED', 'COMPLETED', 'APPLIED', 'FAILED', 'CANCELLED'];
     } else if (currentFilterCategory === 'milestone') {
         values = ['ALL', 'ARTIST', 'EXPEDITION', 'VENUE', 'EVENT'];
     }
@@ -800,7 +801,8 @@ function renderFilterBar() {
                 'CONFIRMED': '參戰確定', 
                 'COMPLETED': '參戰完畢', 
                 'APPLIED': '待參戰',
-                'FAILED': '未成行'
+                'FAILED': '未成行',
+                'CANCELLED': '公演取消'
             };
             displayVal = map[val] || val;
         } else if (currentFilterCategory === 'milestone') {
@@ -827,7 +829,7 @@ function filterTickets() {
     let filtered = allTickets;
 
     if (currentFilterCategory === 'date' || currentFilterCategory === 'artist' || currentFilterCategory === 'milestone') {
-        filtered = allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET');
+        filtered = allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET' && t.status !== 'CANCELLED');
     }
 
     if (currentFilterValue !== 'ALL') {
@@ -1122,7 +1124,7 @@ function initMap() {
     
     // 按經緯度群組活動 (排除失敗狀態)
     const venueGroups = {};
-    allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET').forEach(t => {
+    allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET' && t.status !== 'CANCELLED').forEach(t => {
         if (t.lat_lng) {
             // 支援多座標解析：以 | 分隔
             const coordsArray = t.lat_lng.split('|').map(s => s.trim()).filter(s => s !== '');
@@ -1220,7 +1222,7 @@ function initStats() {
     let totalCount = 0;
 
     allTickets.forEach(t => { 
-        if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET'].includes(t.status)) return; 
+        if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'CANCELLED'].includes(t.status)) return; 
         totalCount++;
 
         const year = cleanDate(t.date).split('-')[0];
@@ -1511,7 +1513,7 @@ window.toggleMenu = () => {
     };
 
     const years = {}; 
-    tickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET').forEach(t => { 
+    tickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET' && t.status !== 'CANCELLED').forEach(t => { 
         const y = cleanDate(t.date).split('-')[0]; 
         if (!years[y]) years[y] = []; 
         years[y].push(t); 
@@ -1686,7 +1688,8 @@ window.openDetail = function(id) {
         'CONFIRMED': '參戰確定', 
         'COMPLETED': '參戰完畢',
         'FAILED_DRAW': '落選',
-        'FAILED_TICKET': '搶票失敗'
+        'FAILED_TICKET': '搶票失敗',
+        'CANCELLED': '公演取消'
     };
     const statusText = statusMap[rawT.status] || '參戰確定';
     const isFailed = rawT.status === 'FAILED_DRAW' || rawT.status === 'FAILED_TICKET';
@@ -2323,6 +2326,7 @@ function showAdminForm(editData = null) {
                         <option value="APPLIED" ${editData?.status==='APPLIED'?'selected':''}>抽選中 / 待搶票</option>
                         <option value="FAILED_DRAW" ${editData?.status==='FAILED_DRAW'?'selected':''}>落選</option>
                         <option value="FAILED_TICKET" ${editData?.status==='FAILED_TICKET'?'selected':''}>搶票失敗</option>
+                        <option value="CANCELLED" ${editData?.status==='CANCELLED'?'selected':''}>公演取消</option>
                     </select></div>
                 </div>
                 
@@ -2828,6 +2832,7 @@ function renderStatusStrip(tickets) {
     const validTickets = tickets.filter(t => 
         t.status !== 'FAILED_DRAW' && 
         t.status !== 'FAILED_TICKET' && 
+        t.status !== 'CANCELLED' && 
         t.status !== 'HIDDEN' &&
         t.date
     );

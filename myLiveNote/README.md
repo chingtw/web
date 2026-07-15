@@ -1,8 +1,8 @@
-# LiveNote - 個人演唱會參戰紀錄系統 (v6.3.1.0 - MapTiler 3D Gold Edition)
+# LiveNote - 個人演唱會參戰紀錄系統 (v6.3.2.1 - MapTiler 3D Gold Edition)
 
 LiveNote 是一個專為音樂愛好者設計的個人演唱會（Live）參戰紀錄 Web App。透過 Google Sheets 作為資料庫，結合 Google Apps Script (GAS) 提供後端 API，實現資料的持久化儲存、多使用者管理與智慧化的輸入體驗。
 
-在 **v6.3.1.0** 中，我們在 **v6.3.0.0** 的 MapTiler 暗金地圖與 3D 滾筒基礎上，重磅加入了 **3D 小地圖自動旋轉**、**智慧互動暫停**、**地圖縮放動態場地標籤** 與 **WebGL 記憶體釋放優化**，讓演唱會回憶更添未來感與流暢質感。
+在 **v6.3.2.1** 中，我們新增了對 **「公演取消」參戰狀態 (CANCELLED)** 的完整支援，包含獨立設計的紅框虛線票卡視覺、狀態篩選器項目、並調整地圖標記、統計圖表與歷史選單以自動排除取消公演，使實際參戰數據更精準。
 
 ![Ticket Demo](ticket%20demo%201.jpg)
 
@@ -67,4 +67,4 @@ myLiveNote/
 
 ---
 
-Developed by **CHING** | Updated v6.3.1.0 2026.07.09
+Developed by **CHING** | Updated v6.3.2.1 2026.07.15

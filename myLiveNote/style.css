@@ -982,6 +982,7 @@ section.active { display: block; }
 .status-confirmed .status-badge { color: var(--text-accent); }
 .status-completed .status-badge { color: var(--gold); }
 .status-failed .status-badge { color: #666; }
+.status-cancelled .status-badge { color: #d9534f; }
 
 /* FAILED STATES: 落選或失敗 */
 .ticket.status-failed { 
@@ -995,6 +996,19 @@ section.active { display: block; }
 .ticket.status-failed .ticket-stub-right { background: #333; }
 .ticket.status-failed .ticket-logo { color: #666; border-color: #666; }
 .ticket.status-failed .status-badge { color: #666; }
+
+/* CANCELLED STATES: 公演取消 */
+.ticket.status-cancelled { 
+    border: 1px dashed #d9534f; 
+    opacity: 0.7;
+}
+.ticket.status-cancelled .ticket-visual { filter: grayscale(0.8) sepia(0.2); }
+.ticket.status-cancelled .ticket-visual::after { background: rgba(139, 38, 53, 0.4); }
+.ticket.status-cancelled .ticket-title { color: #d9534f !important; }
+.ticket.status-cancelled .ticket-subtitle { color: #888; }
+.ticket.status-cancelled .ticket-stub-right { background: #5a2b2b; }
+.ticket.status-cancelled .ticket-logo { color: #d9534f; border-color: #d9534f; }
+.ticket.status-cancelled .status-badge { color: #d9534f; }
 /* MOBILE OPTIMIZATIONS */
 @media (max-width: 600px) {
     .highlight { font-size: 2.2rem; }
@@ -1225,6 +1239,22 @@ section.active { display: block; }
     .status-failed .ticket-num {
         color: #666 !important;
         opacity: 0.6;
+    }
+
+    /* 5. Cancelled (公演取消 - 紅色 #d9534f) */
+    .status-cancelled .ticket-stub-right {
+        border-top-color: rgba(217, 83, 79, 0.3) !important;
+    }
+    .status-cancelled .ticket-stub-right::before,
+    .status-cancelled .ticket-stub-right::after {
+        border-color: rgba(217, 83, 79, 0.3) !important;
+    }
+    .status-cancelled .barcode {
+        filter: invert(50%) sepia(20%) saturate(1000%) hue-rotate(340deg) brightness(85%) contrast(85%) !important;
+    }
+    .status-cancelled .ticket-num {
+        color: #d9534f !important;
+        opacity: 0.8;
     }
 }
 
