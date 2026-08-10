@@ -3109,8 +3109,9 @@ function renderStatusStrip(tickets) {
         const nextDate = cleanDate(nextUpcoming.date);
         const nextVenue = nextUpcoming.venue_name || '-';
         
-        const diffMs = nextUpcomingDate - now;
-        const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const liveDateStart = new Date(nextUpcomingDate.getFullYear(), nextUpcomingDate.getMonth(), nextUpcomingDate.getDate());
+        const diffDays = Math.max(0, Math.round((liveDateStart - todayStart) / (1000 * 60 * 60 * 24)));
         
         let countdownText = '';
         if (diffDays === 0) {

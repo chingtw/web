@@ -1,4 +1,4 @@
-const CACHE_NAME = 'livenote-v6.3.3.1';
+const CACHE_NAME = 'livenote-v6.3.3.2';
 const ASSETS = [
   'shared.html',
   'index.html',
@@ -6,8 +6,6 @@ const ASSETS = [
   'script.js',
   'manifest.json',
   'https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   'https://unpkg.com/lucide@latest',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
