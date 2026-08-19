@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服務條款 - CHINGX.com</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            padding: 0;
+        }
+
+        header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        header nav a {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-left: 20px;
+            transition: color 0.2s;
+        }
+
+        header nav a:hover {
+            color: var(--accent-hover);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        main {
+            padding: 48px 0 80px;
+        }
+
+        h1.page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .last-updated {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            color: var(--text);
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+
+        ul, ol {
+            margin: 12px 0 16px 24px;
+            color: var(--text-secondary);
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .highlight-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin: 20px 0;
+        }
+
+        .highlight-box p {
+            margin-bottom: 0;
+            color: var(--text);
+        }
+
+        .warning-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-left: 4px solid #d29922;
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin: 20px 0;
+        }
+
+        .warning-box p {
+            margin-bottom: 0;
+            color: var(--text);
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 24px 0;
+            text-align: center;
+        }
+
+        footer p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 600px) {
+            h1.page-title { font-size: 1.5rem; }
+            h2 { font-size: 1.2rem; }
+            main { padding: 32px 0 60px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>LIVE NOTE API</h1>
+            <nav>
+                <a href="privacy.html">隱私權政策</a>
+                <a href="terms.html">服務條款</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <h1 class="page-title">服務條款</h1>
+            <p class="last-updated">最後更新日期：2026 年 8 月 19 日</p>
+
+            <div class="highlight-box">
+                <p>歡迎使用 CHINGX.com（以下簡稱「本服務」）。使用本服務即表示您同意以下條款。請在使用前詳閱。</p>
+            </div>
+
+            <h2>1. 服務說明</h2>
+            <p>CHINGX.com 是一個基於 Google Apps Script 的個人工具服務，提供以下功能：</p>
+            <ul>
+                <li>透過 API 存取與管理 Google 試算表資料</li>
+                <li>筆記同步與資料整理功能</li>
+                <li>其他相關的輔助工具功能</li>
+            </ul>
+            <p>本服務為個人開發的非營利專案，主要提供給開發者本人及其授權的朋友使用。</p>
+
+            <h2>2. 使用資格</h2>
+            <p>使用本服務，您需要：</p>
+            <ul>
+                <li>擁有有效的 Google 帳戶</li>
+                <li>年滿 13 歲（或您所在地區的法定最低年齡）</li>
+                <li>同意本服務條款及<a href="privacy.html">隱私權政策</a></li>
+            </ul>
+
+            <h2>3. 使用者帳戶與授權</h2>
+            <p>本服務透過 Google OAuth 2.0 進行身份驗證。當您授權本服務時：</p>
+            <ul>
+                <li>您授予本服務存取您指定 Google 試算表的權限</li>
+                <li>您可以隨時前往 <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google 帳戶權限設定</a> 撤銷此授權</li>
+                <li>撤銷授權後，本服務將無法再存取您的資料</li>
+            </ul>
+
+            <h2>4. 可接受的使用方式</h2>
+            <p>使用本服務時，您同意<strong>不會</strong>：</p>
+            <ul>
+                <li>嘗試未經授權存取本服務或其相關系統</li>
+                <li>使用自動化工具對本服務進行過量的 API 呼叫</li>
+                <li>利用本服務進行任何違法活動</li>
+                <li>干擾或破壞本服務的正常運作</li>
+                <li>將透過本服務取得的他人資料用於未經授權的目的</li>
+            </ul>
+
+            <h2>5. 智慧財產權</h2>
+            <p>本服務的程式碼、設計及相關內容的智慧財產權歸開發者所有。您透過本服務建立或管理的資料，其所有權仍歸您所有。</p>
+
+            <h2>6. 免責聲明</h2>
+            <div class="warning-box">
+                <p>⚠️ 本服務以「現況」（AS IS）提供，不提供任何明示或暗示的保證。</p>
+            </div>
+            <p>具體而言：</p>
+            <ul>
+                <li>我們不保證服務的持續性、即時性或無錯誤運作</li>
+                <li>我們不保證服務能滿足您的所有需求</li>
+                <li>因 Google 平台政策變更或 API 限制而導致的服務中斷，我們不承擔責任</li>
+                <li>使用本服務所產生的任何直接或間接損失，開發者不承擔賠償責任</li>
+            </ul>
+
+            <h2>7. 資料備份</h2>
+            <p>雖然本服務會盡力確保資料的完整性，但我們強烈建議您：</p>
+            <ul>
+                <li>定期備份重要的 Google 試算表資料</li>
+                <li>不要將本服務作為唯一的資料儲存方式</li>
+            </ul>
+
+            <h2>8. 服務變更與終止</h2>
+            <p>開發者保留以下權利：</p>
+            <ul>
+                <li>隨時修改、暫停或終止本服務（全部或部分）</li>
+                <li>更新本服務的功能和介面</li>
+                <li>因違反條款而限制或終止特定使用者的存取權</li>
+            </ul>
+            <p>若有重大變更，我們將盡力透過適當管道通知使用者。</p>
+
+            <h2>9. 責任限制</h2>
+            <p>在法律允許的最大範圍內，開發者對以下情形不承擔責任：</p>
+            <ul>
+                <li>使用或無法使用本服務所造成的任何損害</li>
+                <li>資料遺失或損壞</li>
+                <li>服務中斷或延遲</li>
+                <li>第三方服務（包括 Google 服務）的變更或故障</li>
+            </ul>
+
+            <h2>10. 條款變更</h2>
+            <p>我們可能會不定期更新本服務條款。變更時，我們將更新本頁頂部的「最後更新日期」。繼續使用本服務即表示您接受更新後的條款。</p>
+
+            <h2>11. 準據法</h2>
+            <p>本服務條款受中華民國（台灣）法律管轄並依其解釋。</p>
+
+            <h2>12. 聯絡我們</h2>
+            <p>如果您對本服務條款有任何疑問，請透過以下方式聯絡我們：</p>
+            <ul>
+                <li>Email：<a href="mailto:chingxcore@gmail.com">chingxcore@gmail.com</a></li>
+            </ul>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 CHINGX.com. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
