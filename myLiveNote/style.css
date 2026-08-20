@@ -2235,6 +2235,12 @@ section.active { display: block; }
     background: #0a0a0a;
 }
 
+#detail-map-flat {
+    height: 100%;
+    width: 100%;
+    background: #0a0a0a;
+}
+
 #map-view {
     width: 100%;
 }
@@ -2289,7 +2295,8 @@ section.active { display: block; }
     z-index: 5;
 }
 
-#map.show-marker-labels .marker-label-text {
+#map.show-marker-labels .marker-label-text,
+#detail-map-flat.show-marker-labels .marker-label-text {
     opacity: 1;
     transform: translate(-50%, 0) scale(1);
     pointer-events: auto; /* 放大顯示名稱時，允許點擊 */

@@ -1873,6 +1873,7 @@ window.openDetail = function(id) {
     const seatDisplay = t.seat_info || rawT.seat_info || '-';
     const setlistDisplay = t.setlist || rawT.setlist || '';
     const hasLatLng = rawT.lat_lng && rawT.lat_lng.trim() !== '';
+    const isMultiVenue = hasLatLng && rawT.lat_lng.split('|').map(s => s.trim()).filter(s => s !== '').length > 1;
     const ticketImg = t.ticket_image || rawT.ticket_image || '';
     const statusMap = { 
         'APPLIED': '抽選中 / 待搶票', 
@@ -1944,7 +1945,7 @@ window.openDetail = function(id) {
                         <div class="setlist-container" style="background:#0a0a0a; padding:20px; border:1px solid #222; font-family:monospace; max-height:300px; overflow:auto; color:#bbb; line-height:1.6; white-space: pre;">${setlistDisplay ? setlistDisplay : 'No setlist available.'}</div>
                     ` : ''}
 
-                    ${hasLatLng ? '<div class="detail-map-container"><div id="detail-map"></div></div>' : ''}
+                    ${hasLatLng ? `<div class="detail-map-container"><div id="${isMultiVenue ? 'detail-map-flat' : 'detail-map'}"></div></div>` : ''}
                 </div>
             </div>
 
@@ -2011,120 +2012,213 @@ window.openDetail = function(id) {
             };
 
             maptilersdk.config.apiKey = MAPTILER_API_KEY;
-            detailMapInstance = new maptilersdk.Map({
-                container: 'detail-map',
-                style: maptilersdk.MapStyle.STREETS.DARK, // 暗色街道地圖，支援 3D 建築物渲染
-                keyboard: false,
-                pitch: 55,
-                bearing: -10,
-                navigationControl: false,
-                geolocateControl: false,
-                doubleClickZoom: false,
-                scrollZoom: false,
-                dragPan: true
-            });
 
-            let isUserInteracting = false;
-            
-            // 監聽拖曳開始與結束，暫停/恢復自動旋轉
-            detailMapInstance.on('dragstart', () => {
-                isUserInteracting = true;
-            });
-            detailMapInstance.on('dragend', () => {
-                clearTimeout(window.detailMapRotationTimeout);
-                // 停止拖曳 3 秒後重啟自動旋轉
-                window.detailMapRotationTimeout = setTimeout(() => {
-                    isUserInteracting = false;
-                }, 3000);
-            });
-
-            function rotateCamera() {
-                // 若地圖實例已銷毀，或彈窗被關閉，則終止動畫迴圈，釋放 CPU 資源
-                if (!detailMapInstance || modal.classList.contains('hidden')) {
-                    return;
-                }
-                if (!isUserInteracting) {
-                    const currentBearing = detailMapInstance.getBearing();
-                    detailMapInstance.setBearing((currentBearing + 0.15) % 360);
-                }
-                requestAnimationFrame(rotateCamera);
-            }
-
-            // 地圖載入完成後，全面改裝配色為暗金主題
-            detailMapInstance.on('load', () => {
-                // 先將底圖背景色強制設為純黑
-                try { detailMapInstance.setPaintProperty('background', 'background-color', '#080808'); } catch(e) {}
-
-                const layers = detailMapInstance.getStyle().layers;
-                layers.forEach(layer => {
-                    try {
-                        // 1. 所有 fill 圖層（陸地、水域、公園、商業區等）一律壓成極深黑
-                        //    不再依賴圖層名稱匹配，確保不會有任何藍色/綠色/灰色殘留
-                        if (layer.type === 'fill') {
-                            detailMapInstance.setPaintProperty(layer.id, 'fill-color', '#0a0a08');
-                        }
-
-                        // 2. 3D 建築物 → 深棕黑，帶微弱金色調
-                        if (layer.type === 'fill-extrusion') {
-                            detailMapInstance.setPaintProperty(layer.id, 'fill-extrusion-color', '#1a1510');
-                            detailMapInstance.setPaintProperty(layer.id, 'fill-extrusion-opacity', 0.85);
-                        }
-
-                        // 3. 所有線條圖層（道路、街道、邊界、鐵路等）→ 暗金棕色
-                        if (layer.type === 'line') {
-                            detailMapInstance.setPaintProperty(layer.id, 'line-color', '#2a2018');
-                        }
-
-                        // 4. 地名標籤文字 → 暗金色 + 純黑光暈
-                        if (layer.type === 'symbol') {
-                            detailMapInstance.setPaintProperty(layer.id, 'text-color', '#6b5d4d');
-                            detailMapInstance.setPaintProperty(layer.id, 'text-halo-color', '#000000');
-                        }
-                    } catch(e) {} // 部分圖層可能使用 data-driven 表達式，跳過即可
+            if (isMultiVenue) {
+                // ── 多地標：使用平面地圖（MAP 模式），避免 fitBounds 縮到世界地圖 ──
+                detailMapInstance = new maptilersdk.Map({
+                    container: 'detail-map-flat',
+                    style: maptilersdk.MapStyle.DATAVIZ.DARK,
+                    keyboard: false,
+                    pitch: 0,
+                    bearing: 0,
+                    navigationControl: false,
+                    geolocateControl: false,
+                    doubleClickZoom: false,
+                    scrollZoom: false,
+                    dragPan: true
                 });
-                
-                // 開始自動旋轉
-                requestAnimationFrame(rotateCamera);
-            });
 
+                // ① Marker 可在 load 之前就加入（MapLibre 支援），立即執行不需等待
+                coordsArray.forEach((coords, idx) => {
+                    const [la, ln] = coords.split(',').map(Number);
+                    if (!isNaN(la) && !isNaN(ln)) {
+                        latlngs.push([ln, la]);
+
+                        const el = document.createElement('div');
+                        el.className = 'custom-marker-wrapper';
+                        const pin = document.createElement('div');
+                        pin.className = 'custom-marker-pin';
+                        el.appendChild(pin);
+
+                        // 場地名稱標籤（縮放到一定比例後顯示）
+                        const label = document.createElement('div');
+                        label.className = 'marker-label-text';
+                        const specificName = venueNames[idx] || venueNames[venueNames.length - 1] || rawT.venue_name;
+                        label.textContent = specificName;
+                        el.appendChild(label);
+
+                        const popup = new maptilersdk.Popup({ offset: [0, -30] })
+                            .setHTML(`<strong style="color:white; font-family:'Noto Sans TC';">${specificName}</strong>`);
+
+                        popup.on('open', () => { el.classList.add('popup-open'); });
+                        popup.on('close', () => { el.classList.remove('popup-open'); });
+
+                        new maptilersdk.Marker({ element: el, anchor: 'bottom' })
+                            .setLngLat([ln, la])
+                            .setPopup(popup)
+                            .addTo(detailMapInstance);
+                    }
+                });
+
+                // ② styling + fitBounds 需等 style 載入完畢
+                //    三重保險：once('load') + loaded() 即時 + setTimeout fallback
+                //    guard flag 防止重複執行
+                let flatReady = false;
+                const applyFlatMap = () => {
+                    if (flatReady || !detailMapInstance) return;
+                    flatReady = true;
+
+                    // 套用暗金配色
+                    try { detailMapInstance.setPaintProperty('background', 'background-color', '#080808'); } catch(e) {}
+                    try {
+                        detailMapInstance.getStyle().layers.forEach(layer => {
+                            try {
+                                if (layer.type === 'fill')   detailMapInstance.setPaintProperty(layer.id, 'fill-color', '#0a0a08');
+                                if (layer.type === 'line')   detailMapInstance.setPaintProperty(layer.id, 'line-color', '#2a2018');
+                                if (layer.type === 'symbol') {
+                                    detailMapInstance.setPaintProperty(layer.id, 'text-color', '#6b5d4d');
+                                    detailMapInstance.setPaintProperty(layer.id, 'text-halo-color', '#000000');
+                                }
+                            } catch(e) {}
+                        });
+                    } catch(e) {}
+
+                    // 監聽縮放層級自動顯示標籤
+                    const flatMapContainer = document.getElementById('detail-map-flat');
+                    const updateFlatLabels = () => {
+                        if (!flatMapContainer || !detailMapInstance) return;
+                        flatMapContainer.classList.toggle('show-marker-labels', detailMapInstance.getZoom() >= 13);
+                    };
+                    detailMapInstance.on('zoom', updateFlatLabels);
+
+                    // animate:false 確保視野立即套用，不被初始化動畫覆蓋
+                    // fitBounds 只接受 [SW, NE] 兩個角落點，需手動計算所有地標的最小/最大值
+                    if (latlngs.length > 0) {
+                        const minLng = Math.min(...latlngs.map(p => p[0]));
+                        const minLat = Math.min(...latlngs.map(p => p[1]));
+                        const maxLng = Math.max(...latlngs.map(p => p[0]));
+                        const maxLat = Math.max(...latlngs.map(p => p[1]));
+                        detailMapInstance.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 60, maxZoom: 14, animate: false });
+                    }
+                    updateFlatLabels();
+                };
+
+                detailMapInstance.once('load', applyFlatMap);                       // 正常非同步載入
+                if (detailMapInstance.loaded && detailMapInstance.loaded()) applyFlatMap(); // style 已快取立即執行
+                setTimeout(applyFlatMap, 500);                                      // 終極保險：500ms 後若仍未執行則強制觸發
+            } else {
+                // ── 單一地標：使用 3D 建築物街道地圖 ──
+                detailMapInstance = new maptilersdk.Map({
+                    container: 'detail-map',
+                    style: maptilersdk.MapStyle.STREETS.DARK, // 暗色街道地圖，支援 3D 建築物渲染
+                    keyboard: false,
+                    pitch: 55,
+                    bearing: -10,
+                    navigationControl: false,
+                    geolocateControl: false,
+                    doubleClickZoom: false,
+                    scrollZoom: false,
+                    dragPan: true
+                });
+
+                let isUserInteracting = false;
+                
+                // 監聽拖曳開始與結束，暫停/恢復自動旋轉
+                detailMapInstance.on('dragstart', () => {
+                    isUserInteracting = true;
+                });
+                detailMapInstance.on('dragend', () => {
+                    clearTimeout(window.detailMapRotationTimeout);
+                    // 停止拖曳 3 秒後重啟自動旋轉
+                    window.detailMapRotationTimeout = setTimeout(() => {
+                        isUserInteracting = false;
+                    }, 3000);
+                });
+
+                function rotateCamera() {
+                    // 若地圖實例已銷毀，或彈窗被關閉，則終止動畫迴圈，釋放 CPU 資源
+                    if (!detailMapInstance || modal.classList.contains('hidden')) {
+                        return;
+                    }
+                    if (!isUserInteracting) {
+                        const currentBearing = detailMapInstance.getBearing();
+                        detailMapInstance.setBearing((currentBearing + 0.15) % 360);
+                    }
+                    requestAnimationFrame(rotateCamera);
+                }
+
+                // 地圖載入完成後，全面改裝配色為暗金主題
+                detailMapInstance.on('load', () => {
+                    // 先將底圖背景色強制設為純黑
+                    try { detailMapInstance.setPaintProperty('background', 'background-color', '#080808'); } catch(e) {}
+
+                    const layers = detailMapInstance.getStyle().layers;
+                    layers.forEach(layer => {
+                        try {
+                            // 1. 所有 fill 圖層（陸地、水域、公園、商業區等）一律壓成極深黑
+                            //    不再依賴圖層名稱匹配，確保不會有任何藍色/綠色/灰色殘留
+                            if (layer.type === 'fill') {
+                                detailMapInstance.setPaintProperty(layer.id, 'fill-color', '#0a0a08');
+                            }
+
+                            // 2. 3D 建築物 → 深棕黑，帶微弱金色調
+                            if (layer.type === 'fill-extrusion') {
+                                detailMapInstance.setPaintProperty(layer.id, 'fill-extrusion-color', '#1a1510');
+                                detailMapInstance.setPaintProperty(layer.id, 'fill-extrusion-opacity', 0.85);
+                            }
+
+                            // 3. 所有線條圖層（道路、街道、邊界、鐵路等）→ 暗金棕色
+                            if (layer.type === 'line') {
+                                detailMapInstance.setPaintProperty(layer.id, 'line-color', '#2a2018');
+                            }
+
+                            // 4. 地名標籤文字 → 暗金色 + 純黑光暈
+                            if (layer.type === 'symbol') {
+                                detailMapInstance.setPaintProperty(layer.id, 'text-color', '#6b5d4d');
+                                detailMapInstance.setPaintProperty(layer.id, 'text-halo-color', '#000000');
+                            }
+                        } catch(e) {} // 部分圖層可能使用 data-driven 表達式，跳過即可
+                    });
+                    
+                    // 開始自動旋轉
+                    requestAnimationFrame(rotateCamera);
+                });
+
+                // 單一地標：在 load 外加 Marker（Marker 不依賴 style，可提前加入）
+                coordsArray.forEach((coords, idx) => {
+                    const [la, ln] = coords.split(',').map(Number);
+                    if (!isNaN(la) && !isNaN(ln)) {
+                        latlngs.push([ln, la]);
+
+                        const el = document.createElement('div');
+                        el.className = 'custom-marker-wrapper';
+                        const pin = document.createElement('div');
+                        pin.className = 'custom-marker-pin';
+                        el.appendChild(pin);
+
+                        const specificName = venueNames[idx] || venueNames[venueNames.length - 1] || rawT.venue_name;
+                        const popup = new maptilersdk.Popup({ offset: [0, -30] })
+                            .setHTML(`<strong style="color:white; font-family:'Noto Sans TC';">${specificName}</strong>`);
+
+                        const marker = new maptilersdk.Marker({ element: el, anchor: 'bottom' })
+                            .setLngLat([ln, la])
+                            .setPopup(popup)
+                            .addTo(detailMapInstance);
+
+                        markers.push({ marker, popup });
+                    }
+                });
+
+                if (latlngs.length === 1) {
+                    detailMapInstance.setCenter(latlngs[0]);
+                    detailMapInstance.setZoom(17);
+                    setTimeout(() => {
+                        if (markers.length > 0) markers[0].marker.togglePopup();
+                    }, 400);
+                }
+            }
             // 1 秒後還原原生 focus，不影響後續操作
             setTimeout(() => { HTMLElement.prototype.focus = origFocus; }, 1000);
-
-            coordsArray.forEach((coords, idx) => {
-                const [la, ln] = coords.split(',').map(Number);
-                if (!isNaN(la) && !isNaN(ln)) {
-                    latlngs.push([ln, la]); // MapTiler 是 [Lng, Lat]
-                    
-                    const el = document.createElement('div');
-                    el.className = 'custom-marker-wrapper';
-                    
-                    const pin = document.createElement('div');
-                    pin.className = 'custom-marker-pin';
-                    el.appendChild(pin);
-                    
-                    const specificName = venueNames[idx] || venueNames[venueNames.length - 1] || rawT.venue_name;
-                    
-                    const popup = new maptilersdk.Popup({ offset: [0, -30] })
-                        .setHTML(`<strong style="color:white; font-family:'Noto Sans TC';">${specificName}</strong>`);
-
-                    const marker = new maptilersdk.Marker({ element: el, anchor: 'bottom' })
-                        .setLngLat([ln, la])
-                        .setPopup(popup)
-                        .addTo(detailMapInstance);
-
-                    markers.push({ marker, popup });
-                }
-            });
-
-            if (latlngs.length > 1) {
-                detailMapInstance.fitBounds(latlngs, { padding: 30, maxZoom: 17 });
-            } else if (latlngs.length === 1) {
-                detailMapInstance.setCenter(latlngs[0]);
-                detailMapInstance.setZoom(17);
-                setTimeout(() => {
-                    if (markers.length > 0) markers[0].marker.togglePopup();
-                }, 400);
-            }
         }
     }, 300);
 }
