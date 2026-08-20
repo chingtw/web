@@ -1,0 +1,8 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Dark background fills entire canvas (required for maskable) -->
+  <rect width="512" height="512" fill="#0d0d0d"/>
+  <!-- Ticket centered within safe zone (center 80%: x52~460, y52~460) -->
+  <path fill="#C5A489" d="M76 186a28 28 0 0 1 28-28h304a28 28 0 0 1 28 28v42a42 42 0 0 0 0 84v42a28 28 0 0 1-28 28H104a28 28 0 0 1-28-28v-42a42 42 0 0 0 0-84v-42z"/>
+  <!-- Dashed tear line -->
+  <line x1="340" y1="158" x2="340" y2="354" stroke="#0d0d0d" stroke-width="11" stroke-dasharray="18,14" opacity="0.6"/>
+</svg>

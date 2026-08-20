@@ -1,0 +1,4 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <path fill="#C5A489" d="M48 160a32 32 0 0 1 32-32h352a32 32 0 0 1 32 32v48a48 48 0 0 0 0 96v48a32 32 0 0 1-32 32H80a32 32 0 0 1-32-32v-48a48 48 0 0 0 0-96v-48z"/>
+  <line x1="352" y1="128" x2="352" y2="384" stroke="#1a1a1a" stroke-width="12" stroke-dasharray="20,16" opacity="0.55"/>
+</svg>
