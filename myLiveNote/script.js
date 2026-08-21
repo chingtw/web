@@ -1,5 +1,5 @@
 // CONFIGURATION
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwzoQZigBBoFE-CLi406rD4H9XFg1oT6PZFERAVIcaWuMaCA64H26o7Digb7OMhKsBp/exec'
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx-aokME06aAmqHQCez8PPUNPnZMMeBiGHWE_elXgE-XV1vFroqBd2V_BXQWhCfax7O/exec'
 const MAPTILER_API_KEY = 'JbsYXpwxgNI7OFDQhBHS'; // 請填入您的 MapTiler API Key
 
 
