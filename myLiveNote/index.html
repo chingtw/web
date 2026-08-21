@@ -19,7 +19,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Main CSS -->
-    <link rel="stylesheet" href="style.css?v=6.3.3.3">
+    <link rel="stylesheet" href="style.css?v=7.0">
 </head>
 <body>
 
@@ -186,7 +186,12 @@
             <button onclick="forceClearCacheAndReload()" style="background:transparent; color:#666; border:1px solid #333; padding:5px 10px; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:0.8rem; letter-spacing:1.5px; display:flex; align-items:center; gap:5px;" title="Update App & Clear Cache">
                 <i data-lucide="refresh-cw" style="width:12px; height:12px;"></i> UPDATE APP
             </button>
-            <button id="admin-add-btn" onclick="showAdminForm()" style="background:var(--text-accent); color:black; border:none; padding:5px 15px; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:1rem; letter-spacing:1px;">+ ADD TICKET</button>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button id="cal-subscribe-btn" onclick="handleSubscribeCalendar()" class="hidden" style="background:transparent; color:#aaa; border:1px solid #444; padding:5px 12px; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:0.85rem; letter-spacing:1px; display:flex; align-items:center; gap:5px;">
+                    <i data-lucide="calendar" style="width:12px; height:12px;"></i> 訂閱日曆
+                </button>
+                <button id="admin-add-btn" onclick="showAdminForm()" style="background:var(--text-accent); color:black; border:none; padding:5px 15px; font-family:'Bebas Neue'; border-radius:4px; cursor:pointer; font-size:1rem; letter-spacing:1px;">+ ADD TICKET</button>
+            </div>
         </div>
     </div>
 
@@ -214,7 +219,7 @@
     </div>
 
     <!-- Main Script -->
-    <script src="script.js?v=6.3.3.3"></script>
+    <script src="script.js?v=7.0"></script>
     <script>
         lucide.createIcons();
     </script>

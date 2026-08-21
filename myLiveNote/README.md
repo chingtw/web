@@ -1,8 +1,8 @@
-# LiveNote - 個人演唱會參戰紀錄系統 (v6.3.3.2 - MapTiler 3D Gold Edition)
+# LiveNote - 個人演唱會參戰紀錄系統 (v7.0 - Google Calendar Sync Edition)
 
-LiveNote 是一個專為音樂愛好者設計的個人演唱會（Live）參戰紀錄 Web App。透過 Google Sheets 作為資料庫，結合 Google Apps Script (GAS) 提供後端 API，實現資料的持久化儲存、多使用者管理與智慧化的輸入體驗。
+LiveNote 是一個專為音樂愛好者設計的個人演唱會（Live）參戰紀錄 Web App。透過 Google Sheets 作為資料庫，結合 Google Apps Script (GAS) 提供後端 API，實現資料的持久化儲存、多使用者管理、Google Calendar 行事曆雙向同步與智慧化的輸入體驗。
 
-在 **v6.3.3.1** 中，我們迎來了重大功能更新：引入了極具儀式感的暗金主題「年度統計匯總卡片」，自動動態匯總歷史年份參戰指標，並優化了年度總結彈窗頂部的旋轉「金色獎盃虛線徽章」，內建抵消旋轉效果，使獎盃保持端正。同時，公演取消狀態、場外音漏等活動類型亦已完整支援。
+在 **v7.0** 中，我們迎來了全新里程碑更新：**「Google Calendar 行事曆一鍵訂閱與行程同步功能」**！支援直接於個人選單一鍵訂閱專屬個人參戰日曆，並可於票券詳情中將演唱會場次（精準日期、開演時間、場地、座位、共演夥伴與 LiveNote 識別碼）直接同步寫入 Google Calendar 行事曆，並於日程更新時自動同步維護。同時，引入暗金主題「年度統計匯總卡片」與 3D 滾筒擬真票券特效。
 
 ![Ticket Demo](ticket%20demo%201.jpg)
 
@@ -67,4 +67,4 @@ myLiveNote/
 
 ---
 
-Developed by **CHING** | Updated v6.3.3.2 2026.08.10
+Developed by **CHING** | Updated v7.0 2026.08.21

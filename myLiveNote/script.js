@@ -1,5 +1,5 @@
 // CONFIGURATION
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbz4TUnTXZo05sG5drcq3vozOERjgOztciD1fGkUTAGByEzGgFpwEo8jnDnwlCeHj6Uh/exec'
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwzoQZigBBoFE-CLi406rD4H9XFg1oT6PZFERAVIcaWuMaCA64H26o7Digb7OMhKsBp/exec'
 const MAPTILER_API_KEY = 'JbsYXpwxgNI7OFDQhBHS'; // 請填入您的 MapTiler API Key
 
 
@@ -102,9 +102,53 @@ async function fetchUsers() {
     try {
         const res = await fetch(`${GAS_API_URL}?action=getUsers`);
         allUsers = await res.json();
+        updateCalendarButtonsVisibility();
+        if (window.currentDetailId && !document.getElementById('modal').classList.contains('hidden')) {
+            const targetTicket = allTickets.find(t => String(t.id) === String(window.currentDetailId));
+            if (targetTicket) updateModalAdminTool(targetTicket);
+        }
     } catch (e) {
         console.error('Failed to fetch users:', e);
         allUsers = [];
+    }
+}
+
+function checkUserHasCalendar(username) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const u = username || urlParams.get('u') || 'ching';
+    const found = allUsers.find(user => user.username === u);
+    return !!(found && (found.has_calendar || (found.calendar_id && String(found.calendar_id).trim() !== '')));
+}
+
+function checkUserIsSubscribed(username) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const u = username || urlParams.get('u') || 'ching';
+    return localStorage.getItem(`livenote_cal_subscribed_${u}`) === 'true';
+}
+
+function updateCalendarButtonsVisibility() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching';
+    const calBtn = document.getElementById('cal-subscribe-btn');
+    
+    if (!calBtn) return;
+    
+    const hasCal = checkUserHasCalendar(currentUser);
+    const isSubscribed = checkUserIsSubscribed(currentUser);
+    
+    // 訂閱日曆按鈕：要有登入且有 calendar_id 才顯示
+    if (adminPassword && hasCal) {
+        calBtn.classList.remove('hidden');
+        if (isSubscribed) {
+            calBtn.innerHTML = `<i data-lucide="calendar-check-2" style="width:12px; height:12px; color:#4caf50;"></i> 已訂閱日曆`;
+            calBtn.style.borderColor = '#2e5a2e';
+        } else {
+            calBtn.innerHTML = `<i data-lucide="calendar" style="width:12px; height:12px;"></i> 訂閱日曆`;
+            calBtn.style.borderColor = '#444';
+        }
+        if (window.lucide) lucide.createIcons({ nodes: [calBtn] });
+    } else {
+        calBtn.classList.add('hidden');
     }
 }
 
@@ -125,6 +169,7 @@ function checkPersistentLogin() {
                 setTimeout(() => {
                     const addBtn = document.getElementById('admin-add-btn');
                     if (addBtn) addBtn.classList.remove('hidden');
+                    updateCalendarButtonsVisibility();
                 }, 500);
             } else {
                 localStorage.removeItem(`livenote_auth_${currentUser}`);
@@ -1859,6 +1904,41 @@ function toggleBodyScroll(lock) {
     }
 }
 
+window.updateModalAdminTool = function(rawT) {
+    const adminTool = document.getElementById('modal-admin-tool-inner');
+    if (!adminTool || !rawT) return;
+    
+    if (adminPassword) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUser = urlParams.get('u') || 'ching';
+        const hasCal = checkUserHasCalendar(currentUser);
+        const isSubscribed = checkUserIsSubscribed(currentUser);
+
+        // 同步按鈕：要有 calendar_id 和有訂閱才顯示
+        const showSyncBtn = hasCal && isSubscribed;
+        const syncBtnHtml = showSyncBtn ? `
+            <button id="cal-sync-btn-${rawT.id}" onclick="handleSyncCalendar('${rawT.id}', this)" style="background:${rawT.calendar_event_id ? '#1a2e1a' : '#111'}; color:${rawT.calendar_event_id ? '#4caf50' : '#aaa'}; border:1px solid ${rawT.calendar_event_id ? '#4caf50' : '#444'}; padding:4px 10px; border-radius:4px; font-family:'Bebas Neue'; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(0,0,0,0.5);">
+                <i data-lucide="${rawT.calendar_event_id ? 'calendar-check-2' : 'calendar-plus'}" style="width:13px;"></i>
+                ${rawT.calendar_event_id ? '' : ''}
+            </button>
+        ` : '';
+
+        adminTool.innerHTML = `
+            <div style="display:flex; gap:8px; align-items:center;">
+                <div onclick="showAdminForm(${JSON.stringify(rawT).replace(/"/g, '&quot;')})" style="background:var(--text-accent); color:black; padding:4px 12px; border-radius:4px; font-family:'Bebas Neue'; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(0,0,0,0.5);">
+                    <i data-lucide="edit-3" style="width:14px;"></i> EDIT
+                </div>
+                ${syncBtnHtml}
+            </div>`;
+    } else {
+        adminTool.innerHTML = `
+            <div onclick="openLogin()" class="admin-lock-btn">
+                <i data-lucide="lock"></i>
+            </div>`;
+    }
+    if (window.lucide) lucide.createIcons({ nodes: [adminTool] });
+};
+
 window.openDetail = function(id) {
     window.currentDetailId = id; // 儲存目前正在觀看的票券 ID
     const rawT = allTickets.find(x => x.id === id); if (!rawT) return;
@@ -1977,20 +2057,7 @@ window.openDetail = function(id) {
         ` : ''}
     `;
     // 更新左上角 Admin 工具 (鎖頭或編輯按鈕)
-    const adminTool = document.getElementById('modal-admin-tool-inner');
-    if (adminTool) {
-        if (adminPassword) {
-            adminTool.innerHTML = `
-                <div onclick="showAdminForm(${JSON.stringify(rawT).replace(/"/g, '&quot;')})" style="background:var(--text-accent); color:black; padding:4px 12px; border-radius:4px; font-family:'Bebas Neue'; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(0,0,0,0.5);">
-                    <i data-lucide="edit-3" style="width:14px;"></i> EDIT
-                </div>`;
-        } else {
-            adminTool.innerHTML = `
-                <div onclick="openLogin()" class="admin-lock-btn">
-                    <i data-lucide="lock"></i>
-                </div>`;
-        }
-    }
+    updateModalAdminTool(rawT);
 
     modal.classList.remove('hidden');
     modal.scrollTop = 0;
@@ -2284,6 +2351,7 @@ window.checkLogin = async () => {
             
             const addBtn = document.getElementById('admin-add-btn');
             if (addBtn) addBtn.classList.remove('hidden');
+            updateCalendarButtonsVisibility();
 
             // 執行登入後的回調 (例如開啟表單)
             if (window.loginCallback) {
@@ -3406,3 +3474,107 @@ window.forceClearCacheAndReload = async function() {
         window.location.reload(true);
     }
 };
+
+// ── GOOGLE CALENDAR 同步功能 ──────────────────────────────────────
+
+/**
+ * 同步單筆 Live 記錄到 Google Calendar
+ * 由卡片上的「📅 同步日曆」按鈕觸發
+ * @param {string} recordId - 要同步的記錄 ID
+ * @param {HTMLElement} btn - 按鈕元素（用於更新 UI 狀態）
+ */
+window.handleSyncCalendar = async function(recordId, btn) {
+    if (!adminPassword) {
+        await showAlert('請先登入才能使用日曆同步功能', 'error');
+        return;
+    }
+    if (!recordId) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching';
+
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" style="width:12px;height:12px;animation:spin 1s linear infinite;"></i> 同步中...`;
+        lucide.createIcons({ nodes: [btn] });
+    }
+
+    try {
+        const res = await fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'syncCalendar',
+                username: currentUser,
+                password: adminPassword,
+                recordId: recordId
+            })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+            if (btn) {
+                btn.innerHTML = `<i data-lucide="check-circle-2" style="width:12px;height:12px;"></i> 已同步`;
+                btn.style.color = '#4caf50';
+                btn.style.borderColor = '#4caf50';
+                lucide.createIcons({ nodes: [btn] });
+            }
+            await showAlert('已成功同步到 Google 行事曆！', 'success');
+        } else {
+            throw new Error(data.message || '同步失敗');
+        }
+    } catch (e) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            lucide.createIcons({ nodes: [btn] });
+        }
+        await showAlert('同步失敗：' + e.toString(), 'error');
+    }
+};
+
+/**
+ * 取得並開啟 Google Calendar 訂閱連結（情境 B）
+ * 由 Side Menu 的「訂閱日曆」按鈕觸發
+ */
+window.handleSubscribeCalendar = async function() {
+    if (!adminPassword) {
+        await showAlert('請先登入才能取得日曆訂閱連結', 'error');
+        return;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching';
+
+    const subscribeBtn = document.getElementById('cal-subscribe-btn');
+    if (subscribeBtn) {
+        subscribeBtn.disabled = true;
+        subscribeBtn.innerHTML = `<i data-lucide="loader-2" style="width:12px;height:12px;"></i> 載入中...`;
+        lucide.createIcons({ nodes: [subscribeBtn] });
+    }
+
+    try {
+        const res = await fetch(`${GAS_API_URL}?action=getCalendarLink&u=${currentUser}&p=${encodeURIComponent(adminPassword)}`);
+        const data = await res.json();
+
+        if (data.status === 'success' && data.subscribeUrl) {
+            window.open(data.subscribeUrl, '_blank');
+            if (subscribeBtn) {
+                subscribeBtn.disabled = false;
+                subscribeBtn.innerHTML = `<i data-lucide="calendar-check-2" style="width:12px;height:12px;"></i> 訂閱日曆`;
+                lucide.createIcons({ nodes: [subscribeBtn] });
+            }
+        } else {
+            throw new Error(data.message || '無法取得訂閱連結');
+        }
+    } catch (e) {
+        if (subscribeBtn) {
+            subscribeBtn.disabled = false;
+            subscribeBtn.innerHTML = `<i data-lucide="calendar" style="width:12px;height:12px;"></i> 訂閱日曆`;
+            lucide.createIcons({ nodes: [subscribeBtn] });
+        }
+        await showAlert('取得連結失敗：' + e.toString(), 'error');
+    }
+};
+
+// ─────────────────────────────────────────────────────────────────
