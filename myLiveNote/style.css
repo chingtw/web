@@ -1,4 +1,5 @@
 :root {
+    color-scheme: dark;
     --bg-dark: #000000;
     --bg-card: #0a0a0a;
     --text-primary: #ffffff;
@@ -1125,6 +1126,9 @@ section.active { display: block; }
         width: 8px; /* 寬度減半為 8px，僅保留半圓 */
         height: 16px;
         background: #000 !important; /* 與網頁最外層背景融為一體，產生內凹視覺 */
+        background-image: linear-gradient(#000, #000) !important; /* 避免瀏覽器強制深色模式反色為白色 */
+        color-scheme: dark !important;
+        forced-color-adjust: none !important;
         z-index: 5;
         top: -8px; /* 跨越 dashed 虛線並置中 */
         border: 1px solid #222;
@@ -1398,6 +1402,9 @@ section.active { display: block; }
     z-index: 15 !important; /* 確保高於大卡片外框 */
     top: -8px; /* 垂直居中對齊虛線 */
     background: #000 !important; /* 純黑實體底色 */
+    background-image: linear-gradient(#000, #000) !important; /* 避免瀏覽器深色模式強制反色為白色 */
+    color-scheme: dark !important;
+    forced-color-adjust: none !important;
     box-sizing: border-box;
 }
 
