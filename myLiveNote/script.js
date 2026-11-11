@@ -634,6 +634,7 @@ function generateTicketHTML(t, index = 0) {
         case 'COMPLETED': statusClass = 'status-completed'; statusText = '<i data-lucide="check-circle-2" style="width:12px; vertical-align:middle;"></i> 參戰完畢'; break;
         case 'FAILED_DRAW': statusClass = 'status-failed'; statusText = '落選'; break;
         case 'FAILED_TICKET': statusClass = 'status-failed'; statusText = '搶票失敗'; break;
+        case 'GIVEN_UP': statusClass = 'status-failed'; statusText = '參戰放棄'; break;
         case 'CANCELLED': statusClass = 'status-cancelled'; statusText = '公演取消'; break;
         default: statusClass = 'status-confirmed'; statusText = '參戰確定'; break;
     }
@@ -802,7 +803,7 @@ function renderFilterBar() {
     } else if (currentFilterCategory === 'artist') {
         const counts = {};
         allTickets.forEach(t => {
-            if (!['EXHIBITION', 'SCREENING'].includes(t.type)) {
+            if (!['EXHIBITION', 'SCREENING'].includes(t.type) && !['FAILED_DRAW', 'FAILED_TICKET', 'GIVEN_UP', 'CANCELLED'].includes(t.status)) {
                 const eventArtists = new Set();
                 if (t.artist) eventArtists.add(t.artist.trim());
                 if (t.artist_list) {
@@ -879,7 +880,7 @@ function filterTickets() {
     let filtered = allTickets;
 
     if (currentFilterCategory === 'date' || currentFilterCategory === 'artist' || currentFilterCategory === 'milestone') {
-        filtered = allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET' && t.status !== 'CANCELLED');
+        filtered = allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET' && t.status !== 'GIVEN_UP' && t.status !== 'CANCELLED');
     }
 
     if (currentFilterValue !== 'ALL') {
@@ -892,7 +893,7 @@ function filterTickets() {
             });
         } else if (currentFilterCategory === 'status') {
             if (currentFilterValue === 'FAILED') {
-                filtered = allTickets.filter(t => t.status === 'FAILED_DRAW' || t.status === 'FAILED_TICKET');
+                filtered = allTickets.filter(t => t.status === 'FAILED_DRAW' || t.status === 'FAILED_TICKET' || t.status === 'GIVEN_UP');
             } else {
                 filtered = allTickets.filter(t => t.status === currentFilterValue);
             }
@@ -938,6 +939,7 @@ function applySurgicalUpdates(newData) {
                 // 移除舊的所有 status- 開頭的 class
                 el.className = el.className.split(' ').filter(c => !c.startsWith('status-')).join(' ');
                 el.classList.add(`status-${newStatusClass}`);
+                if (newT.status === 'FAILED_DRAW' || newT.status === 'FAILED_TICKET' || newT.status === 'GIVEN_UP') el.classList.add('status-failed');
 
                 // 2. 更新內容
                 el.innerHTML = generateTicketHTML(newT);
@@ -977,8 +979,9 @@ function renderTickets(tickets) {
     const fragment = document.createDocumentFragment();
     
     // 如果是單一年度篩選且該年非目前進行中的年份，在此計算並插入年度統計卡片
-    const currentYearStr = new Date().getFullYear().toString();
-    const isSingleYearFiltered = (currentFilterCategory === 'date' && currentFilterValue !== 'ALL' && currentFilterValue !== currentYearStr);
+    const currentYear = new Date().getFullYear();
+    const filterYearNum = parseInt(currentFilterValue, 10);
+    const isSingleYearFiltered = (currentFilterCategory === 'date' && currentFilterValue !== 'ALL' && !isNaN(filterYearNum) && filterYearNum < currentYear);
     let indexOffset = 0;
     
     if (isSingleYearFiltered) {
@@ -986,7 +989,7 @@ function renderTickets(tickets) {
         const yearStr = currentFilterValue;
         
         // 該年份有效的票券列表 (排除 APPLIED, FAILED_DRAW, FAILED_TICKET, CANCELLED)
-        const validYearTickets = tickets.filter(t => !['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'CANCELLED'].includes(t.status));
+        const validYearTickets = tickets.filter(t => !['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'GIVEN_UP', 'CANCELLED'].includes(t.status));
 
         // 1. 該年場數
         const totalShows = validYearTickets.length;
@@ -996,7 +999,7 @@ function renderTickets(tickets) {
         const artistsInY = new Set();
 
         allTickets.forEach(t => {
-            if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'CANCELLED'].includes(t.status)) return;
+            if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'GIVEN_UP', 'CANCELLED'].includes(t.status)) return;
             const tYear = cleanDate(t.date).split('-')[0];
             if (!tYear) return;
 
@@ -1028,7 +1031,7 @@ function renderTickets(tickets) {
         const venuesInY = new Set();
 
         allTickets.forEach(t => {
-            if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'CANCELLED'].includes(t.status)) return;
+            if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'GIVEN_UP', 'CANCELLED'].includes(t.status)) return;
             const tYear = cleanDate(t.date).split('-')[0];
             if (!tYear) return;
 
@@ -1176,7 +1179,7 @@ function renderTickets(tickets) {
         // 修正：補回 status- 前綴並統一失敗狀態類別
         const rawStatus = t.status.toLowerCase().replace('_','-');
         let statusClass = `status-${rawStatus}`;
-        if (t.status === 'FAILED_DRAW' || t.status === 'FAILED_TICKET') {
+        if (t.status === 'FAILED_DRAW' || t.status === 'FAILED_TICKET' || t.status === 'GIVEN_UP') {
             statusClass += ' status-failed';
         }
 
@@ -1360,7 +1363,7 @@ function initMap() {
     
     // 按經緯度群組活動 (排除失敗狀態)
     const venueGroups = {};
-    allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET' && t.status !== 'CANCELLED').forEach(t => {
+    allTickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET' && t.status !== 'GIVEN_UP' && t.status !== 'CANCELLED').forEach(t => {
         if (t.lat_lng) {
             // 支援多座標解析：以 | 分隔
             const coordsArray = t.lat_lng.split('|').map(s => s.trim()).filter(s => s !== '');
@@ -1458,7 +1461,7 @@ function initStats() {
     let totalCount = 0;
 
     allTickets.forEach(t => { 
-        if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'CANCELLED'].includes(t.status)) return; 
+        if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'GIVEN_UP', 'CANCELLED'].includes(t.status)) return; 
         totalCount++;
 
         const year = cleanDate(t.date).split('-')[0];
@@ -1654,7 +1657,7 @@ function renderStatsList(id, data, type = 'artist') {
         
         // 篩選與該藝人/場地/種類相關的所有場次
         const relatedEvents = allTickets.filter(t => {
-            if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET'].includes(t.status)) return false;
+            if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'GIVEN_UP', 'CANCELLED'].includes(t.status)) return false;
             if (type === 'artist') {
                 if (!isArtistRankingEligible(t)) return false;
                 const list = (t.artist_list || '').split(/[、,]+/).map(s => s.trim());
@@ -1749,7 +1752,7 @@ window.toggleMenu = () => {
     };
 
     const years = {}; 
-    tickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET' && t.status !== 'CANCELLED').forEach(t => { 
+    tickets.filter(t => t.status !== 'FAILED_DRAW' && t.status !== 'FAILED_TICKET' && t.status !== 'GIVEN_UP' && t.status !== 'CANCELLED').forEach(t => { 
         const y = cleanDate(t.date).split('-')[0]; 
         if (!years[y]) years[y] = []; 
         years[y].push(t); 
@@ -1961,6 +1964,7 @@ window.openDetail = function(id) {
         'COMPLETED': '參戰完畢',
         'FAILED_DRAW': '落選',
         'FAILED_TICKET': '搶票失敗',
+        'GIVEN_UP': '參戰放棄',
         'CANCELLED': '公演取消'
     };
     const statusText = statusMap[rawT.status] || '參戰確定';
@@ -1994,17 +1998,18 @@ window.openDetail = function(id) {
     // 重置翻轉狀態
     modal.querySelector('.modal-content').classList.remove('flipped');
 
-    const hasHeroImg = !!(rawT.images && rawT.images.trim() !== '');
+    const heroImg = String(t.images || rawT.images || '').trim();
+    const hasHeroImg = heroImg !== '';
     
     modalBody.innerHTML = `
         <div class="modal-flipper">
             <!-- 正面：詳細資訊 -->
             <div class="modal-front">
-                <div class="modal-hero-img ${!hasHeroImg ? 'no-img' : ''}" style="${hasHeroImg ? `background-image: url('${rawT.images}')` : 'height: 60px;'}">
+                <div class="modal-hero-img ${!hasHeroImg ? 'no-img' : ''}" ${hasHeroImg ? `style="background-image: url('${heroImg}')"` : ''}>
                     <div id="modal-admin-tool-inner" style="position: absolute; top: 15px; left: 20px; z-index: 101;"></div>
                 </div>
                 <div class="modal-text-content">
-                    <h2 style="color:var(--text-accent); font-family:'Anton'; font-size:2.2rem;">${rawT.tour_title}</h2><h3 style="color:#aaa; font-size:1.2rem; margin-top:0;">${rawT.artist}</h3>
+                    <h2 style="color:var(--text-accent); font-family:'Anton'; font-size:2.2rem; margin-top:0; margin-bottom:0.4rem;">${rawT.tour_title}</h2><h3 style="color:#aaa; font-size:1.2rem; margin-top:0;">${rawT.artist}</h3>
                     ${rawT.artist_list ? `<div style="margin:1rem 0; background:#1a1a1a; padding:15px; border-left:3px solid var(--text-accent);"><strong style="color:var(--text-accent);">共演陣容/嘉賓</strong><br>${rawT.artist_list}</div>` : ''}
                     <div class="modal-meta-grid">
                         <div class="modal-meta-item"><strong>狀態</strong><span>${statusText}</span></div>
@@ -2681,10 +2686,16 @@ function showAdminForm(editData = null) {
                         <option value="APPLIED" ${editData?.status==='APPLIED'?'selected':''}>抽選中 / 待搶票</option>
                         <option value="FAILED_DRAW" ${editData?.status==='FAILED_DRAW'?'selected':''}>落選</option>
                         <option value="FAILED_TICKET" ${editData?.status==='FAILED_TICKET'?'selected':''}>搶票失敗</option>
+                        <option value="GIVEN_UP" ${editData?.status==='GIVEN_UP'?'selected':''}>參戰放棄</option>
                         <option value="CANCELLED" ${editData?.status==='CANCELLED'?'selected':''}>公演取消</option>
                     </select></div>
                 </div>
                 
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                    <label>巡迴/活動標題</label>
+                    <input type="text" name="tour_title" placeholder="例如: ASIA TOUR 2024" required value="${editData ? editData.tour_title : ''}">
+                </div>
+
                 <div style="display:flex; flex-direction:column; gap:5px;">
                     <label>主角/出演・出賽 (Main Focus)</label>
                     <input type="text" name="artist" list="artist-list" placeholder="單一藝人專場請填此 (FES可留空)" value="${editData ? editData.artist : ''}" autocomplete="off" spellcheck="false">
@@ -2692,30 +2703,39 @@ function showAdminForm(editData = null) {
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>共演陣容/嘉賓 (多位使用、隔開)</label>
+                    <label>共演陣容/嘉賓 (複數演出使用、隔開)</label>
                     <input type="text" name="artist_list" id="form-artist-list" placeholder="FES、拼盤請填此;ex: LiSA、May'n" value="${editData ? (editData.artist_list || '') : ''}" oninput="onArtistListInputChange(this.value)" autocomplete="off" spellcheck="false">
                     <div id="artist-quick-tags" class="quick-add-tags">${quickTags}</div>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:5px;"><label>巡迴/活動標題</label><input type="text" name="tour_title" placeholder="例如: ASIA TOUR 2024" required value="${editData ? editData.tour_title : ''}"></div>
+
                 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>會場名稱 (多會場用、隔開)</label>
-                    <div class="venue-cat-container">
-                        <div class="venue-cat-btn active" data-region="ALL" onclick="updateVenueList('ALL')">ALL</div>
-                        <div class="venue-cat-btn" data-region="TW" onclick="updateVenueList('TW')">TAIWAN</div>
-                        <div class="venue-cat-btn" data-region="JP" onclick="updateVenueList('JP')">JAPAN</div>
-                        <div class="venue-cat-btn" data-region="OTHER" onclick="updateVenueList('OTHER')">OTHER</div>
-                    </div>
-                    <div class="venue-cat-container" style="margin-top: 5px;">
-                        <div class="venue-cat-btn" data-region="G_TW" onclick="updateVenueList('G_TW')" style="color:#4285F4; border-color:#4285F4;">GOOGLE-TAIWAN</div>
-                        <div class="venue-cat-btn" data-region="G_JP" onclick="updateVenueList('G_JP')" style="color:#4285F4; border-color:#4285F4;">GOOGLE-JAPAN</div>
-                        <div class="venue-cat-btn" data-region="G_OTHER" onclick="updateVenueList('G_OTHER')" style="color:#4285F4; border-color:#4285F4;">GOOGLE-OTHER</div>
+                    <label>會場名稱 (複數會場用、隔開)</label>
+                    <div class="venue-cat-group">
+                        <div class="venue-cat-container">
+                            <span class="venue-cat-label">現有資料</span>
+                            <div class="venue-cat-btns">
+                                <div class="venue-cat-btn active" data-region="ALL" onclick="updateVenueList('ALL')">ALL</div>
+                                <div class="venue-cat-btn" data-region="TW" onclick="updateVenueList('TW')">TAIWAN</div>
+                                <div class="venue-cat-btn" data-region="JP" onclick="updateVenueList('JP')">JAPAN</div>
+                                <div class="venue-cat-btn" data-region="OTHER" onclick="updateVenueList('OTHER')">OTHER</div>
+                            </div>
+                        </div>
+                        <div class="venue-cat-container">
+                            <span class="venue-cat-label online">線上查詢</span>
+                            <div class="venue-cat-btns">
+                                <div class="venue-cat-btn google-btn" data-region="G_TW" onclick="updateVenueList('G_TW')">GOOGLE-TAIWAN</div>
+                                <div class="venue-cat-btn google-btn" data-region="G_JP" onclick="updateVenueList('G_JP')">GOOGLE-JAPAN</div>
+                                <div class="venue-cat-btn google-btn" data-region="G_OTHER" onclick="updateVenueList('G_OTHER')">GOOGLE-OTHER</div>
+                            </div>
+                        </div>
                     </div>
                     <input type="text" name="venue_name" id="form-venue-name" placeholder="例如: 台北巨蛋 (台北)" required value="${editData ? editData.venue_name : ''}" oninput="onVenueInputChange(this.value)" autocomplete="off" spellcheck="false">
+                    <div id="venue-quick-tags" class="quick-add-tags" style="margin-top: 4px; margin-bottom: 6px;">${quickVenues}</div>
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <div id="venue-quick-tags" class="quick-add-tags">${quickVenues}</div>
+
                     <label>經緯度 (Map Coords)</label>
                     <input type="text" name="lat_lng" id="form-lat-lng" placeholder="例如: 25.051, 121.550" value="${editData ? (editData.lat_lng || '') : ''}">
                 </div>
@@ -3187,6 +3207,7 @@ function renderStatusStrip(tickets) {
     const validTickets = tickets.filter(t => 
         t.status !== 'FAILED_DRAW' && 
         t.status !== 'FAILED_TICKET' && 
+        t.status !== 'GIVEN_UP' && 
         t.status !== 'CANCELLED' && 
         t.status !== 'HIDDEN' &&
         t.date
