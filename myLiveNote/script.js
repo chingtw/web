@@ -1949,7 +1949,7 @@ window.openArtistDetail = function(artistName, shouldScroll = true) {
                 ${adminPassword ? `
                     <button type="button" class="artist-action-btn" onclick="openArtistPhotoModal('${safeNameJs}')">
                         <i data-lucide="camera"></i>
-                        <span>PHOTO</span>
+                        <span></span>
                     </button>
                 ` : ''}
             </div>
