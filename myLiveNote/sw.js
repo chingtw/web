@@ -1,4 +1,4 @@
-const CACHE_NAME = 'livenote-v7.1.5';
+const CACHE_NAME = 'livenote-v7.1.6';
 const ASSETS = [
   'shared.html',
   'index.html',

@@ -1892,7 +1892,9 @@ window.openArtistDetail = function(artistName, shouldScroll = true) {
 
     const inPersonCount = relatedTickets.filter(t => !ARTIST_RANKING_EXCLUDED_TYPES.inPerson.includes(t.type)).length;
     const fullCount = relatedTickets.length;
-    const oneManCount = relatedTickets.filter(t => t.artist && t.artist.trim().toUpperCase() === cleanTarget && t.type === 'ONE_MAN').length;
+    const oneManCount = relatedTickets.filter(t => (!t.artist || t.artist.trim().toUpperCase() === cleanTarget) && (t.type || 'ONE_MAN') === 'ONE_MAN').length;
+    const fesCount = relatedTickets.filter(t => t.type === 'FES' || ((t.type || 'ONE_MAN') === 'ONE_MAN' && t.artist && t.artist.trim().toUpperCase() !== cleanTarget)).length;
+    const otherEventCount = relatedTickets.filter(t => (t.type || 'ONE_MAN') !== 'ONE_MAN' && t.type !== 'FES').length;
     const firstLiveDate = relatedTickets.length > 0 ? cleanDate(relatedTickets[relatedTickets.length - 1].date) : '-';
 
     const favs = getCurrentUserFavorites();
@@ -1957,9 +1959,7 @@ window.openArtistDetail = function(artistName, shouldScroll = true) {
             <div class="artist-hero-backdrop" data-artist-avatar="${safeNameAttr}" ${imgInfo.url ? `style="background-image: url('${imgInfo.url.replace(/'/g, "\\'")}')"` : ''}></div>
             <div class="artist-hero-overlay"></div>
             <div class="artist-hero-content">
-                <div class="artist-hero-portrait ${imgInfo.url ? '' : 'no-avatar'}" data-artist-avatar="${safeNameAttr}" ${imgInfo.url ? `style="background-image: url('${imgInfo.url.replace(/'/g, "\\'")}')"` : ''}>
-                    ${imgInfo.url ? '' : '<i data-lucide="mic-2"></i>'}
-                </div>
+                <div class="artist-hero-spacer" aria-hidden="true"></div>
                 <div class="artist-hero-info">
                     ${isFav ? `<div class="artist-hero-pin-tag"><i data-lucide="crown"></i> FAVORITE ARTIST #${favIdx + 1}</div>` : ''}
                     <h2 class="artist-hero-name">${artistName}</h2>
@@ -1977,6 +1977,14 @@ window.openArtistDetail = function(artistName, shouldScroll = true) {
                             <span class="stat-val">${oneManCount} <small>場</small></span>
                         </div>
                         <div class="artist-hero-stat">
+                            <span class="stat-lbl">FES</span>
+                            <span class="stat-val">${fesCount} <small>場</small></span>
+                        </div>
+                        <div class="artist-hero-stat">
+                            <span class="stat-lbl">OTHER EVENTS</span>
+                            <span class="stat-val">${otherEventCount} <small>場</small></span>
+                        </div>
+                        <div class="artist-hero-stat">
                             <span class="stat-lbl">FIRST LIVE</span>
                             <span class="stat-val date-val">${firstLiveDate}</span>
                         </div>
@@ -1988,7 +1996,7 @@ window.openArtistDetail = function(artistName, shouldScroll = true) {
         <div class="artist-records-section">
             <div class="artist-records-header">
                 <h3>PARTICIPATED LIVE RECORDS</h3>
-                <span class="artist-records-hint">點擊開啟票券</span>
+                <span class="artist-records-hint">Click to open</span>
             </div>
             <div class="artist-records-list">
                 ${recordsHtml || '<div class="artist-empty-state">尚無參戰紀錄</div>'}
