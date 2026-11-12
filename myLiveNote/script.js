@@ -299,7 +299,7 @@ async function fetchArtists() {
             artistConfig = data;
             localStorage.setItem(cacheKey, JSON.stringify(artistConfig));
             if (artistsView && artistsView.classList.contains('active')) {
-                if (currentSelectedArtist) openArtistDetail(currentSelectedArtist);
+                if (currentSelectedArtist) openArtistDetail(currentSelectedArtist, false);
                 else renderArtistsTab();
             }
         }
@@ -1282,6 +1282,15 @@ function setupTabs() {
 
 let isStatsInitialized = false;
 
+function scrollToTabsBar() {
+    const tabsEl = document.querySelector('.tabs');
+    if (tabsEl) {
+        const rect = tabsEl.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        window.scrollTo({ top: Math.max(0, rect.top + scrollTop - 10), behavior: 'smooth' });
+    }
+}
+
 function switchTab(tab) {
     [listTab, artistsTab, mapTab, statsTab].filter(Boolean).forEach(t => t.classList.remove('active'));
     [listView, artistsView, mapView, statsView].filter(Boolean).forEach(v => v.classList.remove('active'));
@@ -1311,15 +1320,11 @@ function switchTab(tab) {
         artistsView.classList.add('active');
         setTimeout(() => {
             if (currentSelectedArtist) {
-                openArtistDetail(currentSelectedArtist);
+                openArtistDetail(currentSelectedArtist, false);
             } else {
                 renderArtistsTab();
             }
-            if (window.innerWidth <= 600) {
-                const rect = artistsView.getBoundingClientRect();
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                window.scrollTo({ top: rect.top + scrollTop - 20, behavior: 'smooth' });
-            }
+            scrollToTabsBar();
         }, 150);
     }
     else if (tab === 'map') { 
@@ -1412,7 +1417,7 @@ window.toggleFavoriteArtist = async function(artistName, event = null) {
     localStorage.setItem(`livenote_fav_artists_${currentUser}`, JSON.stringify(favs));
 
     if (currentSelectedArtist && currentSelectedArtist.toUpperCase() === artistName.toUpperCase()) {
-        openArtistDetail(currentSelectedArtist);
+        openArtistDetail(currentSelectedArtist, false);
     } else {
         renderArtistsTab();
     }
@@ -1867,7 +1872,7 @@ function renderArtistsTab() {
     }
 }
 
-window.openArtistDetail = function(artistName) {
+window.openArtistDetail = function(artistName, shouldScroll = true) {
     currentSelectedArtist = artistName;
     const gridSubview = document.getElementById('artists-grid-subview');
     const detailSubview = document.getElementById('artist-detail-subview');
@@ -1982,8 +1987,8 @@ window.openArtistDetail = function(artistName) {
 
         <div class="artist-records-section">
             <div class="artist-records-header">
-                <h3>PARTICIPATED LIVE RECORDS <span>/ 參戰履歷 (${relatedTickets.length})</span></h3>
-                <span class="artist-records-hint">點擊項目開啟票券</span>
+                <h3>PARTICIPATED LIVE RECORDS</h3>
+                <span class="artist-records-hint">點擊開啟票券</span>
             </div>
             <div class="artist-records-list">
                 ${recordsHtml || '<div class="artist-empty-state">尚無參戰紀錄</div>'}
@@ -1992,7 +1997,9 @@ window.openArtistDetail = function(artistName) {
     `;
 
     if (window.lucide) lucide.createIcons({ nodes: [detailSubview] });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (shouldScroll) {
+        scrollToTabsBar();
+    }
 };
 
 window.closeArtistDetail = function(shouldRender = true) {
@@ -2006,6 +2013,7 @@ window.closeArtistDetail = function(shouldRender = true) {
     }
     if (shouldRender) {
         renderArtistsTab();
+        scrollToTabsBar();
     }
 };
 
