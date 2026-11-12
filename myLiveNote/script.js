@@ -1,5 +1,5 @@
 // CONFIGURATION
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx-aokME06aAmqHQCez8PPUNPnZMMeBiGHWE_elXgE-XV1vFroqBd2V_BXQWhCfax7O/exec'
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyt-wx6FA5pZLCL8t_dYTebMf1mvInXidN0fKJ1tMKSYV4-cz15lLPD5LWtshfTB2lv/exec'
 const MAPTILER_API_KEY = 'JbsYXpwxgNI7OFDQhBHS'; // 請填入您的 MapTiler API Key
 
 
@@ -32,14 +32,18 @@ const MILESTONE_MAP = {
 
 let allTickets = [];
 let venueConfig = [];
+let artistConfig = []; // 全域藝人頭像設定快取
 let allUsers = []; // 全域使用者快取
-let currentFilterCategory = 'date'; // date, artist, status, milestone
+let currentFilterCategory = 'date'; // date, status, milestone
 let currentFilterValue = 'ALL';
 let showAllArtists = false;
 let is3DMode = true; // 預設啟用 3D 模式
 let adminPassword = '';
 let artistRankingMode = 'inPerson';
 let artistRankingSort = 'count';
+let artistTabMode = 'inPerson'; // ARTISTS 分頁預設實體到場 (Real Attendance)
+let artistWallSearchTerm = '';
+let currentSelectedArtist = null; // 目前在 ARTISTS 分頁點開的藝人名稱
 let venueRankingSort = 'count';
 const LOGIN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 小時
 
@@ -50,9 +54,11 @@ let venueChartInstance = null;
 let typeChartInstance = null;
 
 const listTab = document.querySelector('[data-tab="list"]');
+const artistsTab = document.querySelector('[data-tab="artists"]');
 const mapTab = document.querySelector('[data-tab="map"]');
 const statsTab = document.querySelector('[data-tab="stats"]');
 const listView = document.getElementById('list-view');
+const artistsView = document.getElementById('artists-view');
 const mapView = document.getElementById('map-view');
 const statsView = document.getElementById('stats-view');
 const ticketContainer = document.getElementById('ticket-container');
@@ -72,13 +78,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isSharedPortal) {
         fetchData(); 
         fetchVenues(); 
-        fetchUsers(); // 撈取夥伴名單
+        fetchArtists(); // 撈取藝人頭像設定
+        fetchUsers(); // 撈取夥伴名單與最愛藝人排序
     }
     
     setupTabs(); 
     setupYearScroll();
     setupStatsSwitcher();
     setupArtistRankingModeSwitcher();
+    setupArtistTabModeSwitcher();
     setupCategorySwitcher(); // 補回分類按鈕監聽初始化
     setupScrollTop();
     setupScrollTimeline(); // 初始化時間軸指示器
@@ -102,7 +110,17 @@ async function fetchUsers() {
     try {
         const res = await fetch(`${GAS_API_URL}?action=getUsers`);
         allUsers = await res.json();
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUser = urlParams.get('u') || 'ching';
+        const foundUser = allUsers.find(u => u.username === currentUser);
+        if (foundUser && Array.isArray(foundUser.favorite_artists)) {
+            localStorage.setItem(`livenote_fav_artists_${currentUser}`, JSON.stringify(foundUser.favorite_artists));
+        }
         updateCalendarButtonsVisibility();
+        if (artistsView && artistsView.classList.contains('active')) {
+            if (currentSelectedArtist) openArtistDetail(currentSelectedArtist);
+            else renderArtistsTab();
+        }
         if (window.currentDetailId && !document.getElementById('modal').classList.contains('hidden')) {
             const targetTicket = allTickets.find(t => String(t.id) === String(window.currentDetailId));
             if (targetTicket) updateModalAdminTool(targetTicket);
@@ -263,6 +281,30 @@ async function fetchVenues() {
     } catch (e) {
         console.error('Failed to fetch venues:', e);
         venueConfig = [];
+    }
+}
+
+async function fetchArtists() {
+    const cacheKey = 'livenote_artists_cache';
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+        try {
+            artistConfig = JSON.parse(cached) || [];
+        } catch (e) {}
+    }
+    try {
+        const res = await fetch(`${GAS_API_URL}?action=getArtists`);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+            artistConfig = data;
+            localStorage.setItem(cacheKey, JSON.stringify(artistConfig));
+            if (artistsView && artistsView.classList.contains('active')) {
+                if (currentSelectedArtist) openArtistDetail(currentSelectedArtist);
+                else renderArtistsTab();
+            }
+        }
+    } catch (e) {
+        console.error('Failed to fetch artists config:', e);
     }
 }
 function setupScrollTimeline() {
@@ -461,6 +503,28 @@ function setupArtistRankingModeSwitcher() {
             venueRankingSort = nextSort;
             venueSortBtns.forEach(b => b.classList.toggle('active', b.dataset.venueSort === venueRankingSort));
             if (statsView.classList.contains('active')) initStats();
+        };
+    });
+}
+function setupArtistTabModeSwitcher() {
+    const btns = document.querySelectorAll('.artist-tab-mode-btn');
+    if (!btns.length) return;
+
+    if (!ARTIST_RANKING_EXCLUDED_TYPES[artistTabMode]) {
+        artistTabMode = 'inPerson';
+    }
+
+    btns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.artistMode === artistTabMode);
+        btn.onclick = () => {
+            const nextMode = btn.dataset.artistMode;
+            if (!ARTIST_RANKING_EXCLUDED_TYPES[nextMode] || nextMode === artistTabMode) return;
+
+            artistTabMode = nextMode;
+            btns.forEach(b => b.classList.toggle('active', b.dataset.artistMode === artistTabMode));
+            if (artistsView && artistsView.classList.contains('active')) {
+                renderArtistsTab();
+            }
         };
     });
 }
@@ -966,6 +1030,10 @@ function applySurgicalUpdates(newData) {
         renderMenu(newData);
         renderStatusStrip(newData);
         if (statsView.classList.contains('active')) initStats();
+        if (artistsView && artistsView.classList.contains('active')) {
+            if (currentSelectedArtist) openArtistDetail(currentSelectedArtist);
+            else renderArtistsTab();
+        }
     }
 }
 
@@ -1202,6 +1270,12 @@ function renderTickets(tickets) {
 
 function setupTabs() {
     listTab.addEventListener('click', () => switchTab('list'));
+    if (artistsTab) {
+        artistsTab.addEventListener('click', () => {
+            closeArtistDetail(false);
+            switchTab('artists');
+        });
+    }
     mapTab.addEventListener('click', () => switchTab('map'));
     statsTab.addEventListener('click', () => switchTab('stats'));
 }
@@ -1209,8 +1283,8 @@ function setupTabs() {
 let isStatsInitialized = false;
 
 function switchTab(tab) {
-    [listTab, mapTab, statsTab].forEach(t => t.classList.remove('active'));
-    [listView, mapView, statsView].forEach(v => v.classList.remove('active'));
+    [listTab, artistsTab, mapTab, statsTab].filter(Boolean).forEach(t => t.classList.remove('active'));
+    [listView, artistsView, mapView, statsView].filter(Boolean).forEach(v => v.classList.remove('active'));
     document.getElementById('back-btn-container').style.display = 'none';
     
     if (tab === 'list') { 
@@ -1231,6 +1305,22 @@ function switchTab(tab) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             setTimeout(update3DScrollEffect, 200);
         }
+    }
+    else if (tab === 'artists' && artistsTab && artistsView) {
+        artistsTab.classList.add('active');
+        artistsView.classList.add('active');
+        setTimeout(() => {
+            if (currentSelectedArtist) {
+                openArtistDetail(currentSelectedArtist);
+            } else {
+                renderArtistsTab();
+            }
+            if (window.innerWidth <= 600) {
+                const rect = artistsView.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                window.scrollTo({ top: rect.top + scrollTop - 20, behavior: 'smooth' });
+            }
+        }, 150);
     }
     else if (tab === 'map') { 
         mapTab.classList.add('active'); 
@@ -1271,6 +1361,785 @@ function switchTab(tab) {
         }, 200); 
     }
 }
+
+// ── ARTISTS 分頁：最愛置頂排序、頭像牆與藝人專屬內頁 ─────────────────────
+
+function getCurrentUserFavorites() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching';
+    const foundUser = allUsers.find(u => u.username === currentUser);
+    if (foundUser && Array.isArray(foundUser.favorite_artists)) {
+        return foundUser.favorite_artists.map(s => String(s).trim()).filter(s => s !== '');
+    }
+    const cached = localStorage.getItem(`livenote_fav_artists_${currentUser}`);
+    if (cached) {
+        try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed)) return parsed.map(s => String(s).trim()).filter(s => s !== '');
+        } catch (e) {}
+    }
+    return [];
+}
+
+window.toggleFavoriteArtist = async function(artistName, event = null) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    if (!adminPassword) {
+        openLogin(() => toggleFavoriteArtist(artistName));
+        return;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching';
+    const favs = [...getCurrentUserFavorites()];
+    const existingIdx = favs.findIndex(f => f.toUpperCase() === artistName.toUpperCase());
+
+    if (existingIdx !== -1) {
+        favs.splice(existingIdx, 1);
+    } else {
+        favs.push(artistName); // 依加入最愛的先後順序排列
+    }
+
+    // 即時更新記憶體與 LocalStorage，達成 0 延遲 UI 反應
+    const foundUser = allUsers.find(u => u.username === currentUser);
+    if (foundUser) {
+        foundUser.favorite_artists = favs;
+    } else {
+        allUsers.push({ username: currentUser, favorite_artists: favs });
+    }
+    localStorage.setItem(`livenote_fav_artists_${currentUser}`, JSON.stringify(favs));
+
+    if (currentSelectedArtist && currentSelectedArtist.toUpperCase() === artistName.toUpperCase()) {
+        openArtistDetail(currentSelectedArtist);
+    } else {
+        renderArtistsTab();
+    }
+
+    try {
+        await fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'updateFavoriteArtists',
+                username: currentUser,
+                password: adminPassword,
+                favorite_artists: favs
+            })
+        });
+    } catch (e) {
+        console.error('Failed to sync favorite artists:', e);
+    }
+};
+
+function getArtistImageInfo(artistName) {
+    const cleanTarget = String(artistName || '').trim().toUpperCase();
+    if (!cleanTarget) return { url: '', isOfficial: false };
+
+    // 1. 優先尋找 artist_config 中的專屬頭像
+    const configItem = artistConfig.find(a => String(a.artist_name || '').trim().toUpperCase() === cleanTarget);
+    if (configItem && configItem.image_url && String(configItem.image_url).trim() !== '') {
+        return { url: String(configItem.image_url).trim(), isOfficial: true };
+    }
+
+    // 2. 備援：尋找該藝人最新一場專場票券的封面圖
+    const sortedTickets = [...allTickets].sort((a, b) => new Date(cleanDate(b.date)) - new Date(cleanDate(a.date)));
+    for (const t of sortedTickets) {
+        if (t.artist && t.artist.trim().toUpperCase() === cleanTarget && t.images && String(t.images).trim() !== '') {
+            return { url: String(t.images).trim(), isOfficial: false };
+        }
+    }
+
+    // 3. 次要備援：尋找共演名單中含有該藝人的票券封面圖
+    for (const t of sortedTickets) {
+        if (t.artist_list && t.images && String(t.images).trim() !== '') {
+            const list = t.artist_list.split(/[、,]+/).map(s => s.trim().toUpperCase());
+            if (list.includes(cleanTarget)) {
+                return { url: String(t.images).trim(), isOfficial: false };
+            }
+        }
+    }
+
+    return { url: '', isOfficial: false };
+}
+
+function upsertLocalArtistConfig(artistName, imageUrl, spotifyId = '') {
+    if (!artistName || !imageUrl) return;
+    const cleanTarget = artistName.trim().toUpperCase();
+    const existing = artistConfig.find(a => String(a.artist_name || '').trim().toUpperCase() === cleanTarget);
+    if (existing) {
+        existing.image_url = imageUrl;
+        if (spotifyId) existing.spotify_id = spotifyId;
+    } else {
+        artistConfig.push({
+            artist_name: artistName.trim(),
+            image_url: imageUrl,
+            spotify_id: spotifyId
+        });
+    }
+    localStorage.setItem('livenote_artists_cache', JSON.stringify(artistConfig));
+}
+
+// ── 羅馬拼音自動轉日文／漢字／繁中藝人原名輔助函式 (單一請求批次查詢 + 快取) ──
+window.nativeArtistNameCache = (() => {
+    try {
+        return JSON.parse(localStorage.getItem('livenote_native_artist_names') || '{}');
+    } catch (e) {
+        return {};
+    }
+})();
+
+async function resolveNativeArtistNames(artists) {
+    if (!Array.isArray(artists) || artists.length === 0) return [];
+
+    // 找出為純英文/羅馬拼音且尚未快取的藝人名稱
+    const asciiRegex = /^[\x00-\x7F]+$/;
+    const toLookup = [];
+    artists.forEach(a => {
+        const raw = String(a.name || '').trim();
+        if (!raw || !asciiRegex.test(raw)) return;
+        // 跳過明顯是 feat / + 組合的長字串
+        if (raw.includes(' + ') || raw.includes(', ')) return;
+        const upper = raw.toUpperCase();
+        if (window.nativeArtistNameCache[upper] === undefined && !toLookup.includes(raw)) {
+            toLookup.push(raw);
+        }
+    });
+
+    if (toLookup.length > 0) {
+        try {
+            const variantToBase = {};
+            const allTitles = [];
+            const addVariant = (variant, baseUpper) => {
+                if (!variantToBase[variant.toUpperCase()]) {
+                    variantToBase[variant.toUpperCase()] = baseUpper;
+                    allTitles.push(variant);
+                }
+            };
+
+            toLookup.slice(0, 6).forEach(baseName => {
+                const baseUpper = baseName.toUpperCase();
+                addVariant(baseName, baseUpper);
+                if (/^[A-Z0-9\s]+$/.test(baseName) && baseName.length > 4) {
+                    const titleCased = baseName.charAt(0).toUpperCase() + baseName.slice(1).toLowerCase();
+                    addVariant(titleCased, baseUpper);
+                }
+                addVariant(`${baseName} (Japanese musician)`, baseUpper);
+                addVariant(`${baseName} (Taiwanese band)`, baseUpper);
+                addVariant(`${baseName} (singer)`, baseUpper);
+            });
+
+            const wikiUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(allTitles.join('|'))}&redirects=1&prop=langlinks|categories&lllimit=500&cllimit=500&format=json&origin=*`;
+            const res = await fetch(wikiUrl);
+            const data = await res.json();
+            const q = data && data.query;
+
+            if (q && q.pages) {
+                // 追蹤 Wikipedia 標題正規化與重新導向 (from -> to)
+                const forwardMap = {};
+                if (Array.isArray(q.normalized)) {
+                    q.normalized.forEach(n => { forwardMap[n.from.toUpperCase()] = n.to.toUpperCase(); });
+                }
+                if (Array.isArray(q.redirects)) {
+                    q.redirects.forEach(r => { forwardMap[r.from.toUpperCase()] = r.to.toUpperCase(); });
+                }
+
+                const resolveFinalTitle = (startUpper) => {
+                    let cur = startUpper;
+                    const visited = new Set();
+                    while (forwardMap[cur] && !visited.has(cur)) {
+                        visited.add(cur);
+                        cur = forwardMap[cur];
+                    }
+                    return cur;
+                };
+
+                const finalTitleToBaseSet = {};
+                Object.keys(variantToBase).forEach(vUpper => {
+                    const finalUpper = resolveFinalTitle(vUpper);
+                    if (!finalTitleToBaseSet[finalUpper]) finalTitleToBaseSet[finalUpper] = new Set();
+                    finalTitleToBaseSet[finalUpper].add(variantToBase[vUpper]);
+                });
+
+                Object.values(q.pages).forEach(p => {
+                    if (!p || p.missing !== undefined || !p.title) return;
+                    const cats = (p.categories || []).map(c => c.title).join(' | ');
+                    if (/Disambiguation/i.test(cats)) return;
+
+                    const isJP = /Category:(Japanese |21st-century Japanese|20th-century Japanese|Musical groups from .*Japan|Musicians from .*Japan|Japanese-language)/i.test(cats);
+                    const isTWZH = !isJP && /Category:(Taiwanese |Hong Kong |Chinese |Mandopop)/i.test(cats);
+
+                    const langlinks = p.langlinks || [];
+                    const jaObj = langlinks.find(l => l.lang === 'ja');
+                    const zhObj = langlinks.find(l => l.lang === 'zh');
+                    const jaTitle = jaObj ? String(jaObj['*'] || '').replace(/\s*[（(].*?[)）]\s*$/, '').trim() : '';
+                    const zhTitle = zhObj ? String(zhObj['*'] || '').replace(/\s*[（(].*?[)）]\s*$/, '').trim() : '';
+
+                    let nativeName = '';
+                    if (isJP && jaTitle) nativeName = jaTitle;
+                    else if (isTWZH && zhTitle) nativeName = zhTitle;
+
+                    if (nativeName) {
+                        const matchedBases = finalTitleToBaseSet[p.title.toUpperCase()];
+                        if (matchedBases) {
+                            matchedBases.forEach(baseUpper => {
+                                window.nativeArtistNameCache[baseUpper] = nativeName;
+                            });
+                        }
+                    }
+                });
+
+                // 未匹配到日/中分類的歐美藝人標記為原名，避免重複查詢
+                toLookup.slice(0, 6).forEach(baseName => {
+                    const baseUpper = baseName.toUpperCase();
+                    if (window.nativeArtistNameCache[baseUpper] === undefined) {
+                        window.nativeArtistNameCache[baseUpper] = baseName;
+                    }
+                });
+
+                try {
+                    localStorage.setItem('livenote_native_artist_names', JSON.stringify(window.nativeArtistNameCache));
+                } catch (e) {}
+            }
+        } catch (err) {
+            console.warn('Native artist name lookup skipped:', err);
+        }
+    }
+
+    // 套用日文／漢字／繁中名稱並去重（優先保留有高畫質頭像的項目）
+    const dedupMap = new Map();
+    artists.forEach(item => {
+        const origName = String(item.name || '').trim();
+        const mappedName = window.nativeArtistNameCache[origName.toUpperCase()] || origName;
+        const finalItem = {
+            ...item,
+            name: mappedName,
+            romaji_name: mappedName.toUpperCase() !== origName.toUpperCase() ? origName : ''
+        };
+        const key = mappedName.toUpperCase();
+        if (!dedupMap.has(key)) {
+            dedupMap.set(key, finalItem);
+        } else {
+            const existing = dedupMap.get(key);
+            if (!existing.image_url && finalItem.image_url) {
+                dedupMap.set(key, finalItem);
+            }
+        }
+    });
+
+    return Array.from(dedupMap.values());
+}
+
+// ── DEEZER 線上免金鑰查詢輔助函式 (前端 JSONP 直連 + 原名轉換 + GAS 備援) ──
+window.queryDeezerArtistsOnline = function(query) {
+    return new Promise((resolve) => {
+        const cleanQ = String(query || '').trim();
+        if (!cleanQ) return resolve([]);
+
+        const cbName = '__deezer_cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+        const script = document.createElement('script');
+        let settled = false;
+
+        const cleanup = () => {
+            try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+            if (script.parentNode) script.parentNode.removeChild(script);
+        };
+
+        const timer = setTimeout(async () => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            // 備援：透過 GAS 代理查詢 Deezer
+            try {
+                const res = await fetch(`${GAS_API_URL}?action=searchArtist&q=${encodeURIComponent(cleanQ)}`);
+                const data = await res.json();
+                const rawArtists = (data && Array.isArray(data.artists)) ? data.artists : [];
+                resolve(await resolveNativeArtistNames(rawArtists));
+            } catch (e) {
+                resolve([]);
+            }
+        }, 3500);
+
+        window[cbName] = async (json) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            cleanup();
+            const items = (json && Array.isArray(json.data)) ? json.data : [];
+            const artists = items.map(item => {
+                const rawHighRes = item.picture_xl || item.picture_big || item.picture_medium || '';
+                const rawThumb = item.picture_medium || item.picture_small || rawHighRes;
+                const isPlaceholder = rawHighRes.indexOf('/artist//') !== -1;
+                return {
+                    name: item.name,
+                    spotify_id: String(item.id || ''),
+                    image_url: isPlaceholder ? '' : rawHighRes,
+                    thumb_url: isPlaceholder ? '' : rawThumb
+                };
+            });
+            resolve(await resolveNativeArtistNames(artists));
+        };
+
+        script.onerror = async () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            cleanup();
+            try {
+                const res = await fetch(`${GAS_API_URL}?action=searchArtist&q=${encodeURIComponent(cleanQ)}`);
+                const data = await res.json();
+                const rawArtists = (data && Array.isArray(data.artists)) ? data.artists : [];
+                resolve(await resolveNativeArtistNames(rawArtists));
+            } catch (e) {
+                resolve([]);
+            }
+        };
+
+        script.src = `https://api.deezer.com/search/artist?q=${encodeURIComponent(cleanQ)}&limit=8&output=jsonp&callback=${cbName}`;
+        document.head.appendChild(script);
+    });
+};
+
+window.attemptedSpotifyFetchSet = window.attemptedSpotifyFetchSet || new Set();
+let isAutoFetchingSpotify = false;
+
+async function autoFetchMissingArtistImages(missingNames) {
+    if (isAutoFetchingSpotify || !missingNames || missingNames.length === 0) return;
+    const queue = missingNames.filter(name => !window.attemptedSpotifyFetchSet.has(name.toUpperCase())).slice(0, 6);
+    if (queue.length === 0) return;
+
+    isAutoFetchingSpotify = true;
+    const newlyFound = [];
+
+    try {
+        for (const artistName of queue) {
+            window.attemptedSpotifyFetchSet.add(artistName.toUpperCase());
+            try {
+                const artists = await window.queryDeezerArtistsOnline(artistName);
+                if (Array.isArray(artists) && artists.length > 0) {
+                    const exact = artists.find(a => a.name.trim().toUpperCase() === artistName.trim().toUpperCase() && a.image_url);
+                    const chosen = exact || artists.find(a => a.image_url);
+                    if (chosen && chosen.image_url) {
+                        upsertLocalArtistConfig(artistName, chosen.image_url, chosen.spotify_id || '');
+                        newlyFound.push({
+                            artist_name: artistName,
+                            image_url: chosen.image_url,
+                            spotify_id: chosen.spotify_id || ''
+                        });
+
+                        // 即時更新畫面上已經渲染的該藝人頭像 DOM
+                        document.querySelectorAll(`[data-artist-avatar="${CSS.escape(artistName)}"]`).forEach(el => {
+                            el.style.backgroundImage = `url('${chosen.image_url}')`;
+                            el.classList.remove('no-avatar');
+                            el.innerHTML = '';
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('Auto Deezer fetch failed for:', artistName, err);
+            }
+        }
+
+        if (newlyFound.length > 0) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentUser = urlParams.get('u') || 'ching';
+            fetch(GAS_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'saveArtistConfig',
+                    username: currentUser,
+                    password: adminPassword,
+                    artists: newlyFound
+                })
+            }).catch(() => {});
+        }
+    } finally {
+        isAutoFetchingSpotify = false;
+    }
+}
+
+window.onArtistWallSearch = function(val) {
+    artistWallSearchTerm = (val || '').trim();
+    renderArtistsTab();
+};
+
+function renderArtistsTab() {
+    const gridContainer = document.getElementById('artists-wall-grid');
+    if (!gridContainer) return;
+
+    const excludedTypes = ARTIST_RANKING_EXCLUDED_TYPES[artistTabMode] || ARTIST_RANKING_EXCLUDED_TYPES.inPerson;
+    const counts = {};
+
+    allTickets.forEach(t => {
+        if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'GIVEN_UP', 'CANCELLED', 'HIDDEN'].includes(t.status)) return;
+        if (excludedTypes.includes(t.type)) return;
+
+        const currentEventArtists = new Set();
+        if (t.artist && t.artist.trim() !== '') currentEventArtists.add(t.artist.trim());
+        if (t.artist_list && t.artist_list.trim() !== '') {
+            t.artist_list.split(/[、,]+/).forEach(a => {
+                const name = a.trim();
+                if (name) currentEventArtists.add(name);
+            });
+        }
+        currentEventArtists.forEach(a => {
+            counts[a] = (counts[a] || 0) + 1;
+        });
+    });
+
+    const favs = getCurrentUserFavorites();
+    const favUpperMap = new Map();
+    favs.forEach((f, idx) => favUpperMap.set(f.toUpperCase(), idx));
+
+    const entries = Object.entries(counts);
+    const totalArtistsCount = entries.length;
+
+    const titleEl = document.getElementById('artists-main-title');
+    if (titleEl) {
+        titleEl.innerHTML = `ARTISTS <span class="stats-total-hint">TOTAL: ${totalArtistsCount} ARTISTS</span>`;
+    }
+
+    // 排序：1. 最愛藝人（依加入最愛的先後順序排列） -> 2. 參戰場次數量由高到低 -> 3. 名稱排序
+    entries.sort((a, b) => {
+        const aFavIdx = favUpperMap.has(a[0].toUpperCase()) ? favUpperMap.get(a[0].toUpperCase()) : -1;
+        const bFavIdx = favUpperMap.has(b[0].toUpperCase()) ? favUpperMap.get(b[0].toUpperCase()) : -1;
+
+        if (aFavIdx !== -1 && bFavIdx !== -1) {
+            return aFavIdx - bFavIdx;
+        }
+        if (aFavIdx !== -1) return -1;
+        if (bFavIdx !== -1) return 1;
+
+        return (b[1] - a[1]) || ARTIST_NAME_COLLATOR.compare(a[0], b[0]);
+    });
+
+    const filteredEntries = artistWallSearchTerm
+        ? entries.filter(([name]) => name.toLowerCase().includes(artistWallSearchTerm.toLowerCase()))
+        : entries;
+
+    if (filteredEntries.length === 0) {
+        gridContainer.innerHTML = `<div class="artist-empty-state">找不到符合條件的藝人紀錄</div>`;
+        return;
+    }
+
+    const missingOfficialImages = [];
+
+    gridContainer.innerHTML = filteredEntries.map(([name, count], idx) => {
+        const favIdx = favUpperMap.has(name.toUpperCase()) ? favUpperMap.get(name.toUpperCase()) : -1;
+        const isFav = favIdx !== -1;
+        const imgInfo = getArtistImageInfo(name);
+        if (!imgInfo.isOfficial) {
+            missingOfficialImages.push(name);
+        }
+
+        const safeNameAttr = name.replace(/"/g, '&quot;');
+        const safeNameJs = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+        const favBadgeHtml = isFav
+            ? `<button type="button" class="artist-fav-btn active" onclick="toggleFavoriteArtist('${safeNameJs}', event)" title="${adminPassword ? '點擊取消最愛置頂' : `最愛置頂 #${favIdx + 1}`}">
+                   <i data-lucide="star"></i><span>#${favIdx + 1}</span>
+               </button>`
+            : (adminPassword
+                ? `<button type="button" class="artist-fav-btn" onclick="toggleFavoriteArtist('${safeNameJs}', event)" title="設為最愛置頂">
+                       <i data-lucide="star"></i>
+                   </button>`
+                : '');
+
+        return `
+            <div class="artist-wall-card ${isFav ? 'is-favorite' : ''} animate-up" style="animation-delay: ${Math.min(idx * 0.03, 0.45)}s" onclick="openArtistDetail('${safeNameJs}')">
+                ${favBadgeHtml}
+                <div class="artist-avatar-wrap">
+                    <div class="artist-avatar-img ${imgInfo.url ? '' : 'no-avatar'}" data-artist-avatar="${safeNameAttr}" ${imgInfo.url ? `style="background-image: url('${imgInfo.url.replace(/'/g, "\\'")}')"` : ''}>
+                        ${imgInfo.url ? '' : '<i data-lucide="mic-2"></i>'}
+                    </div>
+                    <div class="artist-count-pill">${count} <span>${count === 1 ? 'SHOW' : 'SHOWS'}</span></div>
+                </div>
+                <div class="artist-wall-name" title="${safeNameAttr}">${name}</div>
+            </div>
+        `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons({ nodes: [gridContainer] });
+
+    // 背景自動向 Spotify 補齊尚未建檔的藝人官方頭像
+    if (missingOfficialImages.length > 0) {
+        setTimeout(() => autoFetchMissingArtistImages(missingOfficialImages), 400);
+    }
+}
+
+window.openArtistDetail = function(artistName) {
+    currentSelectedArtist = artistName;
+    const gridSubview = document.getElementById('artists-grid-subview');
+    const detailSubview = document.getElementById('artist-detail-subview');
+    if (!gridSubview || !detailSubview) return;
+
+    gridSubview.classList.add('hidden');
+    detailSubview.classList.remove('hidden');
+
+    const cleanTarget = artistName.trim().toUpperCase();
+    const relatedTickets = allTickets.filter(t => {
+        if (['APPLIED', 'FAILED_DRAW', 'FAILED_TICKET', 'GIVEN_UP', 'CANCELLED', 'HIDDEN'].includes(t.status)) return false;
+        if (['EXHIBITION', 'SCREENING'].includes(t.type)) return false;
+        const isMain = t.artist && t.artist.trim().toUpperCase() === cleanTarget;
+        const list = (t.artist_list || '').split(/[、,]+/).map(s => s.trim().toUpperCase());
+        return isMain || list.includes(cleanTarget);
+    }).sort((a, b) => new Date(cleanDate(b.date)) - new Date(cleanDate(a.date)));
+
+    const inPersonCount = relatedTickets.filter(t => !ARTIST_RANKING_EXCLUDED_TYPES.inPerson.includes(t.type)).length;
+    const fullCount = relatedTickets.length;
+    const oneManCount = relatedTickets.filter(t => t.artist && t.artist.trim().toUpperCase() === cleanTarget && t.type === 'ONE_MAN').length;
+    const firstLiveDate = relatedTickets.length > 0 ? cleanDate(relatedTickets[relatedTickets.length - 1].date) : '-';
+
+    const favs = getCurrentUserFavorites();
+    const favIdx = favs.findIndex(f => f.toUpperCase() === cleanTarget);
+    const isFav = favIdx !== -1;
+
+    const imgInfo = getArtistImageInfo(artistName);
+    const safeNameJs = artistName.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const safeNameAttr = artistName.replace(/"/g, '&quot;');
+
+    const recordsHtml = relatedTickets.map((t, i) => {
+        const isMainArtist = t.artist && t.artist.trim().toUpperCase() === cleanTarget;
+        const roleBadge = (isMainArtist && t.type === 'ONE_MAN')
+            ? `<span class="artist-record-badge oneman">ONE MAN</span>`
+            : `<span class="artist-record-badge fes">${TYPE_MAP_PRO[t.type] || 'FES / 共演'}</span>`;
+
+        const statusBadge = t.status === 'CONFIRMED'
+            ? `<span class="artist-record-status confirmed">參戰確定</span>`
+            : `<span class="artist-record-status completed">參戰完畢</span>`;
+
+        return `
+            <div class="artist-record-card animate-up" style="animation-delay: ${Math.min(i * 0.04, 0.4)}s" onclick="openDetail('${t.id}')">
+                <div class="artist-record-left">
+                    <div class="artist-record-meta">
+                        <span class="artist-record-date"><i data-lucide="calendar"></i> ${cleanDate(t.date)}</span>
+                        ${roleBadge}
+                        ${statusBadge}
+                    </div>
+                    <div class="artist-record-title">${t.tour_title}</div>
+                    <div class="artist-record-sub">
+                        <span><i data-lucide="map-pin"></i> ${t.venue_name || '-'}</span>
+                        ${t.seat_info ? `<span><i data-lucide="armchair"></i> ${t.seat_info}</span>` : ''}
+                    </div>
+                </div>
+                <div class="artist-record-right">
+                    <i data-lucide="ticket"></i>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    detailSubview.innerHTML = `
+        <div class="artist-detail-topbar">
+            <button type="button" class="artist-back-btn" onclick="closeArtistDetail()">
+                <i data-lucide="arrow-left"></i> <span>BACK TO ARTISTS</span>
+            </button>
+            <div class="artist-detail-actions">
+                <button type="button" class="artist-action-btn ${isFav ? 'active' : ''}" onclick="toggleFavoriteArtist('${safeNameJs}', event)">
+                    <i data-lucide="star"></i>
+                    <span>${isFav ? `PINNED #${favIdx + 1}` : 'FAVORITE'}</span>
+                </button>
+                ${adminPassword ? `
+                    <button type="button" class="artist-action-btn" onclick="openArtistPhotoModal('${safeNameJs}')">
+                        <i data-lucide="camera"></i>
+                        <span>PHOTO</span>
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+
+        <div class="artist-hero-banner">
+            <div class="artist-hero-backdrop" data-artist-avatar="${safeNameAttr}" ${imgInfo.url ? `style="background-image: url('${imgInfo.url.replace(/'/g, "\\'")}')"` : ''}></div>
+            <div class="artist-hero-overlay"></div>
+            <div class="artist-hero-content">
+                <div class="artist-hero-portrait ${imgInfo.url ? '' : 'no-avatar'}" data-artist-avatar="${safeNameAttr}" ${imgInfo.url ? `style="background-image: url('${imgInfo.url.replace(/'/g, "\\'")}')"` : ''}>
+                    ${imgInfo.url ? '' : '<i data-lucide="mic-2"></i>'}
+                </div>
+                <div class="artist-hero-info">
+                    ${isFav ? `<div class="artist-hero-pin-tag"><i data-lucide="crown"></i> FAVORITE ARTIST #${favIdx + 1}</div>` : ''}
+                    <h2 class="artist-hero-name">${artistName}</h2>
+                    <div class="artist-hero-stats">
+                        <div class="artist-hero-stat">
+                            <span class="stat-lbl">REAL ATTENDANCE</span>
+                            <span class="stat-val">${inPersonCount} <small>場</small></span>
+                        </div>
+                        <div class="artist-hero-stat">
+                            <span class="stat-lbl">FULL EXPERIENCE</span>
+                            <span class="stat-val">${fullCount} <small>場</small></span>
+                        </div>
+                        <div class="artist-hero-stat">
+                            <span class="stat-lbl">ONE MAN</span>
+                            <span class="stat-val">${oneManCount} <small>場</small></span>
+                        </div>
+                        <div class="artist-hero-stat">
+                            <span class="stat-lbl">FIRST LIVE</span>
+                            <span class="stat-val date-val">${firstLiveDate}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="artist-records-section">
+            <div class="artist-records-header">
+                <h3>PARTICIPATED LIVE RECORDS <span>/ 參戰履歷 (${relatedTickets.length})</span></h3>
+                <span class="artist-records-hint">點擊項目開啟票券</span>
+            </div>
+            <div class="artist-records-list">
+                ${recordsHtml || '<div class="artist-empty-state">尚無參戰紀錄</div>'}
+            </div>
+        </div>
+    `;
+
+    if (window.lucide) lucide.createIcons({ nodes: [detailSubview] });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.closeArtistDetail = function(shouldRender = true) {
+    currentSelectedArtist = null;
+    const gridSubview = document.getElementById('artists-grid-subview');
+    const detailSubview = document.getElementById('artist-detail-subview');
+    if (gridSubview) gridSubview.classList.remove('hidden');
+    if (detailSubview) {
+        detailSubview.classList.add('hidden');
+        detailSubview.innerHTML = '';
+    }
+    if (shouldRender) {
+        renderArtistsTab();
+    }
+};
+
+window.openArtistPhotoModal = function(artistName) {
+    if (!adminPassword) {
+        openLogin(() => openArtistPhotoModal(artistName));
+        return;
+    }
+    const imgInfo = getArtistImageInfo(artistName);
+    const safeNameJs = artistName.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const safeNameAttr = artistName.replace(/"/g, '&quot;');
+
+    modal.querySelector('.modal-content').classList.remove('flipped');
+    const adminTool = document.getElementById('modal-admin-tool-inner');
+    if (adminTool) adminTool.innerHTML = '';
+
+    modalBody.innerHTML = `
+        <div class="modal-front" style="padding: 2rem; box-sizing: border-box;">
+            <h2 style="color:var(--text-accent); font-family:'Bebas Neue'; margin-bottom:0.5rem; font-size:1.8rem; letter-spacing:1px;">
+                ARTIST PHOTO SETTING
+            </h2>
+            <p style="color:#888; font-size:0.9rem; margin-top:0; margin-bottom:1.5rem;">設定「<strong style="color:#fff;">${artistName}</strong>」的專屬頭像與底圖</p>
+
+            <div style="display:flex; flex-direction:column; gap:15px;">
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <label style="font-size:0.8rem; color:var(--text-accent); font-family:'Bebas Neue'; letter-spacing:1px;">DEEZER 線上搜尋頭像</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="spotify-photo-query" value="${safeNameAttr}" placeholder="輸入藝人名稱搜尋 Deezer..." style="flex:1;">
+                        <button type="button" onclick="searchSpotifyForPhotoModal('${safeNameJs}')" class="upload-btn" style="white-space:nowrap;">
+                            <i data-lucide="search"></i> <span>SEARCH</span>
+                        </button>
+                    </div>
+                    <div id="spotify-photo-results" class="spotify-photo-grid" style="margin-top:8px;"></div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:8px; background: #0a0a0a; padding: 12px; border-radius: 8px; border: 1px solid #222;">
+                    <label style="font-size: 0.8rem; letter-spacing: 1px; color: var(--text-accent); font-family: 'Bebas Neue';">IMAGE URL OR UPLOAD / 圖片網址或手動上傳</label>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
+                        <input type="text" name="artist_custom_img" id="artist-custom-img-input" placeholder="https://..." value="${imgInfo.url ? imgInfo.url.replace(/"/g, '&quot;') : ''}" style="flex:1; min-width: 150px; border-color: #333; background: #000;">
+                        <input type="file" id="file-artist-photo" accept="image/*" style="display:none;" onchange="handleFileUpload(this, 'artist_custom_img')">
+                        <button type="button" onclick="document.getElementById('file-artist-photo').click()" class="upload-btn">
+                            <i data-lucide="image-plus"></i> <span>UPLOAD</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" id="save-artist-photo-btn" onclick="saveArtistPhotoFromModal('${safeNameJs}')" style="background:var(--text-accent); color:black; padding:14px; font-weight:bold; font-family:'Bebas Neue'; border:none; font-size:1.15rem; cursor:pointer; border-radius:4px; margin-top:5px;">
+                    SAVE ARTIST PHOTO
+                </button>
+            </div>
+        </div>
+    `;
+    modal.classList.remove('hidden');
+    toggleBodyScroll(true);
+    lucide.createIcons();
+
+    // 自動觸發一次 Spotify 搜尋
+    searchSpotifyForPhotoModal(artistName);
+};
+
+window.searchSpotifyForPhotoModal = async function(artistName) {
+    const qInput = document.getElementById('spotify-photo-query');
+    const resultsEl = document.getElementById('spotify-photo-results');
+    if (!qInput || !resultsEl) return;
+    const q = qInput.value.trim() || artistName;
+
+    resultsEl.innerHTML = `<span style="color:#888; font-size:0.8rem;"><i data-lucide="loader-2" class="spin" style="width:14px; height:14px; vertical-align:middle;"></i> 正在從 Deezer 搜尋「${q}」...</span>`;
+    lucide.createIcons({ nodes: [resultsEl] });
+
+    try {
+        const artists = await window.queryDeezerArtistsOnline(q);
+        const withImg = (artists || []).filter(a => a.image_url);
+        if (withImg.length === 0) {
+            resultsEl.innerHTML = `<span style="color:#888; font-size:0.8rem;">找不到相符的 Deezer 藝人照片，可嘗試輸入英文/日文名稱，或於下方手動上傳。</span>`;
+            return;
+        }
+
+        resultsEl.innerHTML = withImg.map(a => {
+            const safeImg = a.image_url.replace(/'/g, "\\'");
+            const safeName = a.name.replace(/"/g, '&quot;');
+            return `
+                <div class="spotify-photo-option" onclick="document.getElementById('artist-custom-img-input').value = '${safeImg}'; document.querySelectorAll('.spotify-photo-option').forEach(el => el.classList.remove('selected')); this.classList.add('selected');">
+                    <img src="${a.thumb_url || a.image_url}" alt="${safeName}">
+                    <span>${a.name}</span>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        resultsEl.innerHTML = `<span style="color:#ff6666; font-size:0.8rem;">搜尋失敗：${e.toString()}</span>`;
+    }
+};
+
+window.saveArtistPhotoFromModal = async function(artistName) {
+    const input = document.getElementById('artist-custom-img-input');
+    const btn = document.getElementById('save-artist-photo-btn');
+    if (!input || !input.value.trim()) {
+        await showAlert('請選擇或輸入圖片網址！', 'error');
+        return;
+    }
+    const newUrl = input.value.trim();
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'SAVING...';
+    }
+
+    upsertLocalArtistConfig(artistName, newUrl);
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('u') || 'ching';
+
+    try {
+        await fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'saveArtistConfig',
+                username: currentUser,
+                password: adminPassword,
+                artist: { artist_name: artistName, image_url: newUrl }
+            })
+        });
+        closeModal();
+        if (currentSelectedArtist && currentSelectedArtist.toUpperCase() === artistName.toUpperCase()) {
+            openArtistDetail(currentSelectedArtist);
+        } else {
+            renderArtistsTab();
+        }
+        await showAlert('藝人照片已更新！', 'success');
+    } catch (e) {
+        await showAlert('儲存失敗：' + e.toString(), 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'SAVE ARTIST PHOTO';
+        }
+    }
+};
 
 function isArtistRankingEligible(t) {
     const excludedTypes = ARTIST_RANKING_EXCLUDED_TYPES[artistRankingMode] || ARTIST_RANKING_EXCLUDED_TYPES.full;
@@ -2367,6 +3236,10 @@ window.checkLogin = async () => {
                 if (!document.getElementById('modal').classList.contains('hidden') && window.currentDetailId) {
                     openDetail(window.currentDetailId);
                 }
+                if (artistsView && artistsView.classList.contains('active')) {
+                    if (currentSelectedArtist) openArtistDetail(currentSelectedArtist);
+                    else renderArtistsTab();
+                }
             }
         } else {
             await showAlert('密碼錯誤！Invalid Password.', 'error');
@@ -2548,7 +3421,7 @@ function showAdminForm(editData = null) {
         syncCoordinates();
     };
 
-    // 2. 處理藝人建議 (仍來自 allTickets 統計)
+    // 2. 處理藝人建議 (來自 allTickets 統計 + Spotify 線上搜尋)
     const artistCounts = {};
     allTickets.forEach(t => {
         if (!['EXHIBITION', 'SCREENING'].includes(t.type)) {
@@ -2567,40 +3440,127 @@ function showAdminForm(editData = null) {
     });
 
     const sortedArtists = Object.entries(artistCounts).sort((a,b) => b[1] - a[1]);
-    const artistOptions = sortedArtists.map(a => `<option value="${a[0]}">`).join('');
     
     // 產生前 12 名常用藝人標籤供快速新增
+    const quickMainTags = sortedArtists.slice(0, 10).map(a => 
+        `<span class="tag-chip" onclick="addArtistToField('artist', '${a[0].replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')">+ ${a[0]}</span>`
+    ).join('');
     const quickTags = sortedArtists.slice(0, 12).map(a => 
-        `<span class="tag-chip" onclick="addArtistToField('artist_list', '${a[0].replace(/'/g, "\\'")}')">+ ${a[0]}</span>`
+        `<span class="tag-chip" onclick="addArtistToField('artist_list', '${a[0].replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')">+ ${a[0]}</span>`
     ).join('');
 
-    // 產生熱門藝人標籤 (從 allTickets 統計)
-    window.updateArtistList = (searchTerm = '') => {
-        const container = document.getElementById('artist-quick-tags');
-        const aInput = document.getElementById('form-artist-list');
+    window.artistSearchModes = { artist: 'LOCAL', artist_list: 'LOCAL' };
+    window.spotifySearchTimeouts = {};
+
+    // 共用藝人標籤渲染與 Spotify 查詢邏輯 (支援打前 2 個字快速搜尋帶入)
+    window.updateArtistFieldSuggestions = (fieldName = 'artist_list', mode = null, searchTerm = null) => {
+        if (mode) window.artistSearchModes[fieldName] = mode;
+        const currentMode = window.artistSearchModes[fieldName] || 'LOCAL';
+
+        const containerId = fieldName === 'artist' ? 'main-artist-quick-tags' : 'artist-quick-tags';
+        const inputId = fieldName === 'artist' ? 'form-main-artist' : 'form-artist-list';
+        const container = document.getElementById(containerId);
+        const aInput = document.getElementById(inputId);
         if (!container || !aInput) return;
 
-        // 取得目前已輸入的所有藝人 (用於排除)
-        const selectedArtists = aInput.value.split(/[、,，]+/).map(s => s.trim()).filter(s => s !== '');
+        // 切換按鈕高亮
+        document.querySelectorAll(`.artist-cat-btn[data-field="${fieldName}"]`).forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === currentMode);
+        });
 
-        let filtered = sortedArtists;
-        
-        // 1. 排除已選藝人
-        filtered = filtered.filter(a => !selectedArtists.includes(a[0]));
-
-        // 2. 如果有搜尋字串，進一步過濾
-        if (searchTerm.trim() !== '') {
-            const s = searchTerm.toLowerCase();
-            filtered = filtered.filter(a => a[0].toLowerCase().includes(s));
+        // 取得最後一個頓號後的搜尋字詞
+        if (searchTerm === null) {
+            const parts = aInput.value.split('、');
+            searchTerm = parts[parts.length - 1].trim();
         }
 
-        // 只顯示前 15 個結果
-        container.innerHTML = filtered.slice(0, 15).map(a => 
-            `<span class="tag-chip" onclick="addArtistToField('artist_list', '${a[0].replace(/'/g, "\\'")}')">+ ${a[0]}</span>`
-        ).join('');
+        const selectedArtists = aInput.value.split(/[、,，]+/).map(s => s.trim()).filter(s => s !== '');
+        clearTimeout(window.spotifySearchTimeouts[fieldName]);
+
+        // 產生本地匹配標籤 HTML
+        let localFiltered = sortedArtists.filter(a => !selectedArtists.includes(a[0]));
+        if (searchTerm !== '') {
+            const s = searchTerm.toLowerCase();
+            localFiltered = localFiltered.filter(a => a[0].toLowerCase().includes(s));
+        }
+        const maxLocal = fieldName === 'artist' ? 10 : 15;
+        const localChipsHtml = localFiltered.slice(0, maxLocal).map(a => {
+            const safeA = a[0].replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            return `<span class="tag-chip" onclick="addArtistToField('${fieldName}', '${safeA}')">+ ${a[0]}</span>`;
+        }).join('');
+
+        // 嚴格卡控：僅在切換至「Deezer搜尋 (SPOTIFY)」模式時才觸發線上查詢；「現有資料 (LOCAL)」僅過濾本地紀錄
+        if (currentMode !== 'SPOTIFY') {
+            container.innerHTML = localChipsHtml || (searchTerm ? '<span style="color:#666; font-size:0.78rem;">現有資料無相符藝人，可切換右上角「Deezer搜尋」查詢線上資料。</span>' : '');
+            return;
+        }
+
+        if (searchTerm.length < 1) {
+            container.innerHTML = `<span style="color:#888; font-size:0.8rem;">請在上方輸入藝人關鍵字（多演出者以「、」隔開），Deezer 將為您搜尋藝人與頭像...</span>`;
+            return;
+        }
+
+        const loadingHtml = `<span class="spotify-loading-hint" style="color:var(--text-accent); font-size:0.78rem; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="loader-2" class="spin" style="width:12px; height:12px;"></i> 搜尋 Deezer「${searchTerm}」...</span>`;
+        container.innerHTML = loadingHtml;
+        if (window.lucide) lucide.createIcons({ nodes: [container] });
+
+        window.spotifySearchTimeouts[fieldName] = setTimeout(async () => {
+            // 二次卡控：若非同步等待期間使用者已切回「現有資料」，立即中止不覆蓋畫面
+            if (window.artistSearchModes[fieldName] !== 'SPOTIFY') return;
+            try {
+                const artists = await window.queryDeezerArtistsOnline(searchTerm);
+                if (window.artistSearchModes[fieldName] !== 'SPOTIFY') return;
+                if (Array.isArray(artists) && artists.length > 0) {
+                    const spotifyChips = artists
+                        .filter(item => !selectedArtists.includes(item.name))
+                        .slice(0, 6)
+                        .map(item => {
+                            const safeName = item.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                            const safeImg = (item.image_url || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                            const safeId = (item.spotify_id || '').replace(/'/g, "\\'");
+                            const thumb = item.thumb_url || item.image_url || '';
+                            const avatarHtml = thumb
+                                ? `<img src="${thumb}" class="spotify-chip-avatar" alt="">`
+                                : `<i data-lucide="disc" style="width:12px; height:12px;"></i>`;
+                            return `<span class="tag-chip spotify-tag-chip" onclick="addArtistToField('${fieldName}', '${safeName}', '${safeImg}', '${safeId}')">${avatarHtml} ${item.name}</span>`;
+                        }).join('');
+
+                    container.innerHTML = spotifyChips || '<span style="color:#888; font-size:0.8rem;">找不到相關 Deezer 藝人。</span>';
+                } else {
+                    container.innerHTML = '<span style="color:#888; font-size:0.8rem;">找不到相關 Deezer 藝人，請嘗試其他關鍵字。</span>';
+                }
+                if (window.lucide) lucide.createIcons({ nodes: [container] });
+            } catch (err) {
+                console.warn('Deezer suggest error:', err);
+                if (window.artistSearchModes[fieldName] === 'SPOTIFY') {
+                    container.innerHTML = '<span style="color:#888; font-size:0.8rem;">Deezer 搜尋暫時無法使用，請稍後再試。</span>';
+                }
+            }
+        }, 350);
     };
 
-    // 出演者名單輸入變更時觸發
+    window.updateArtistList = (searchTerm = '') => {
+        window.updateArtistFieldSuggestions('artist_list', null, searchTerm);
+    };
+
+    // 主角藝人輸入變更時觸發 (支援頓號分隔與前兩字搜尋)
+    window.onMainArtistInputChange = (val) => {
+        const aInput = document.getElementById('form-main-artist');
+        if (!aInput) return;
+
+        const converted = val.replace(/[,，]/g, '、');
+        if (converted !== val) {
+            const start = aInput.selectionStart;
+            aInput.value = converted;
+            aInput.setSelectionRange(start, start);
+        }
+
+        const parts = converted.split('、');
+        const currentSearch = parts[parts.length - 1].trim();
+        window.updateArtistFieldSuggestions('artist', null, currentSearch);
+    };
+
+    // 出演者名單輸入變更時觸發 (支援頓號分隔與前兩字搜尋)
     window.onArtistListInputChange = (val) => {
         const aInput = document.getElementById('form-artist-list');
         if (!aInput) return;
@@ -2618,7 +3578,7 @@ function showAdminForm(editData = null) {
         const currentSearch = parts[parts.length - 1].trim();
 
         // 3. 更新下方標籤
-        updateArtistList(currentSearch);
+        window.updateArtistFieldSuggestions('artist_list', null, currentSearch);
     };
 
     // 產生熱門會場標籤 (從 venueConfig 取得)
@@ -2697,13 +3657,25 @@ function showAdminForm(editData = null) {
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>主角/出演・出賽 (Main Focus)</label>
-                    <input type="text" name="artist" list="artist-list" placeholder="單一藝人專場請填此 (FES可留空)" value="${editData ? editData.artist : ''}" autocomplete="off" spellcheck="false">
-                    <datalist id="artist-list">${artistOptions}</datalist>
+                    <div class="artist-field-header">
+                        <label>主角/出演・出賽 (Main Focus)</label>
+                        <div class="artist-mode-bar">
+                            <button type="button" class="artist-cat-btn active" data-field="artist" data-mode="LOCAL" onclick="updateArtistFieldSuggestions('artist', 'LOCAL')">現有資料</button>
+                            <button type="button" class="artist-cat-btn deezer-btn" data-field="artist" data-mode="SPOTIFY" onclick="updateArtistFieldSuggestions('artist', 'SPOTIFY')">Deezer搜尋</button>
+                        </div>
+                    </div>
+                    <input type="text" name="artist" id="form-main-artist" placeholder="單一藝人專場請填此 (FES可留空；打前兩字可自動搜藝人)" value="${editData ? editData.artist : ''}" oninput="onMainArtistInputChange(this.value)" autocomplete="off" spellcheck="false">
+                    <div id="main-artist-quick-tags" class="quick-add-tags">${quickMainTags}</div>
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                    <label>共演陣容/嘉賓 (複數演出使用、隔開)</label>
+                    <div class="artist-field-header">
+                        <label>共演陣容/嘉賓 (複數演出使用、隔開)</label>
+                        <div class="artist-mode-bar">
+                            <button type="button" class="artist-cat-btn active" data-field="artist_list" data-mode="LOCAL" onclick="updateArtistFieldSuggestions('artist_list', 'LOCAL')">現有資料</button>
+                            <button type="button" class="artist-cat-btn deezer-btn" data-field="artist_list" data-mode="SPOTIFY" onclick="updateArtistFieldSuggestions('artist_list', 'SPOTIFY')">Deezer搜尋</button>
+                        </div>
+                    </div>
                     <input type="text" name="artist_list" id="form-artist-list" placeholder="FES、拼盤請填此;ex: LiSA、May'n" value="${editData ? (editData.artist_list || '') : ''}" oninput="onArtistListInputChange(this.value)" autocomplete="off" spellcheck="false">
                     <div id="artist-quick-tags" class="quick-add-tags">${quickTags}</div>
                 </div>
@@ -3019,7 +3991,7 @@ window.handleSave = async function() {
     }
 }
 
-window.addArtistToField = function(fieldName, artistName) {
+window.addArtistToField = function(fieldName, artistName, imageUrl = '', spotifyId = '') {
     const input = document.querySelector(`input[name="${fieldName}"]`);
     if (!input) return;
     
@@ -3036,13 +4008,34 @@ window.addArtistToField = function(fieldName, artistName) {
         input.value = uniqueParts.join('、');
     }
 
-    // 觸發藝人建議清單更新 (搜尋清空)
-    if (window.updateArtistList) {
-        updateArtistList('');
+    // 若來自 Spotify 標籤且帶有藝人頭像網址，自動快取並同步寫入 artist_config
+    if (imageUrl) {
+        upsertLocalArtistConfig(artistName, imageUrl, spotifyId);
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUser = urlParams.get('u') || 'ching';
+        fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'saveArtistConfig',
+                username: currentUser,
+                password: adminPassword,
+                artist: {
+                    artist_name: artistName,
+                    image_url: imageUrl,
+                    spotify_id: spotifyId
+                }
+            })
+        }).catch(err => console.warn('Failed to save artist photo to config:', err));
     }
 
-    // 視覺回饋
+    // 觸發藝人建議清單更新 (搜尋清空，並恢復顯示常用標籤)
+    if (window.updateArtistFieldSuggestions) {
+        window.updateArtistFieldSuggestions(fieldName, 'LOCAL', '');
+    }
+
+    // 視覺回饋並聚焦回輸入框，方便繼續打「、」輸入下一位演出者
     input.style.borderColor = 'var(--text-accent)';
+    input.focus();
     setTimeout(() => { input.style.borderColor = '#333'; }, 300);
 }
 
@@ -3484,7 +4477,7 @@ window.forceClearCacheAndReload = async function() {
         // 3. 清理 LocalStorage 中的票券資料與場地快取 (保留管理員登入資訊)
         for (let i = localStorage.length - 1; i >= 0; i--) {
             const key = localStorage.key(i);
-            if (key && (key.startsWith('livenote_cache_') || key.startsWith('livenote_venues_'))) {
+            if (key && (key.startsWith('livenote_cache_') || key.startsWith('livenote_venues_') || key === 'livenote_artists_cache')) {
                 localStorage.removeItem(key);
             }
         }

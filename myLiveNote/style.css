@@ -3341,3 +3341,814 @@ body.no-scroll .scroll-top-btn {
     from { transform: rotate(0deg); }
     to { transform: rotate(-360deg); }
 }
+
+/* =========================================================================
+   v7.1.0: 4-TAB NAVIGATION, ARTISTS WALL, ARTIST HERO PROFILE & SPOTIFY TAGS
+   ========================================================================= */
+
+@media (max-width: 600px) {
+    .tabs {
+        gap: 0.35rem;
+    }
+    .tab-btn {
+        padding: 0.55rem 0.45rem;
+        font-size: 0.92rem;
+    }
+    .tab-btn.icon-btn {
+        flex: 0 0 42px;
+    }
+}
+
+/* --- ARTISTS TAB: MODE SWITCHER & TOOLBAR --- */
+.artist-tab-mode-switcher {
+    margin: 0 auto 1.2rem auto;
+}
+
+.artist-tab-mode-btn {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    color: #666;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    transition: all 0.25s ease;
+}
+
+.artist-tab-mode-btn:hover {
+    color: #aaa;
+}
+
+.artist-tab-mode-btn.active {
+    background: var(--text-accent);
+    color: #000;
+}
+
+.artist-wall-toolbar {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.8rem;
+}
+
+.artist-search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #0a0a0a;
+    border: 1px solid #222;
+    border-radius: 999px;
+    padding: 8px 18px;
+    width: 100%;
+    max-width: 420px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.artist-search-box:focus-within {
+    border-color: var(--text-accent);
+    box-shadow: 0 0 15px rgba(197, 164, 137, 0.15);
+}
+
+.artist-search-box i,
+.artist-search-box svg {
+    width: 16px;
+    height: 16px;
+    color: var(--text-accent);
+    flex-shrink: 0;
+}
+
+.artist-search-box input {
+    background: transparent !important;
+    border: none !important;
+    color: #fff !important;
+    font-size: 0.9rem;
+    width: 100%;
+    outline: none !important;
+    padding: 2px 0 !important;
+}
+
+/* --- ARTISTS AVATAR WALL GRID --- */
+.artists-wall-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 18px;
+    padding-bottom: 2.5rem;
+}
+
+@media (max-width: 600px) {
+    .artists-wall-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+}
+
+@media (max-width: 390px) {
+    .artists-wall-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+}
+
+.artist-wall-card {
+    position: relative;
+    background: linear-gradient(160deg, #111111 0%, #080808 100%);
+    border: 1px solid #1e1e1e;
+    border-radius: 14px;
+    padding: 20px 10px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.artist-wall-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(197, 164, 137, 0.55);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7), 0 0 18px rgba(197, 164, 137, 0.12);
+}
+
+.artist-wall-card.is-favorite {
+    background: linear-gradient(160deg, #19140f 0%, #090807 100%);
+    border-color: rgba(197, 164, 137, 0.65);
+    box-shadow: 0 6px 20px rgba(197, 164, 137, 0.1);
+}
+
+.artist-fav-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(15, 15, 15, 0.85);
+    border: 1px solid #333;
+    color: #666;
+    border-radius: 999px;
+    padding: 3px 7px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    z-index: 3;
+    transition: all 0.25s ease;
+}
+
+.artist-fav-btn i,
+.artist-fav-btn svg {
+    width: 11px;
+    height: 11px;
+}
+
+.artist-fav-btn:hover {
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+    transform: scale(1.06);
+}
+
+.artist-fav-btn.active {
+    background: rgba(197, 164, 137, 0.18);
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+    box-shadow: 0 0 10px rgba(197, 164, 137, 0.25);
+}
+
+.artist-fav-btn.active svg {
+    fill: var(--text-accent);
+}
+
+.artist-avatar-wrap {
+    position: relative;
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.artist-avatar-img {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    background-color: #141414;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid #2c2c2c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.35s ease, border-color 0.35s ease;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 600px) {
+    .artist-avatar-img {
+        width: 76px;
+        height: 76px;
+    }
+    .artist-wall-card {
+        padding: 16px 8px 12px;
+    }
+}
+
+.artist-wall-card:hover .artist-avatar-img,
+.artist-wall-card.is-favorite .artist-avatar-img {
+    border-color: var(--text-accent);
+}
+
+.artist-avatar-img.no-avatar i,
+.artist-avatar-img.no-avatar svg {
+    width: 30px;
+    height: 30px;
+    color: #444;
+}
+
+.artist-count-pill {
+    position: absolute;
+    bottom: -8px;
+    background: #0d0d0d;
+    border: 1px solid rgba(197, 164, 137, 0.6);
+    color: var(--text-accent);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.artist-count-pill span {
+    font-size: 0.65rem;
+    color: #888;
+}
+
+.artist-wall-name {
+    font-family: 'Noto Sans TC', 'Noto Sans JP', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #eee;
+    text-align: center;
+    width: 100%;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.3;
+    min-height: 2.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.artist-empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #555;
+    font-family: 'Bebas Neue', 'Noto Sans TC', sans-serif;
+    letter-spacing: 1.5px;
+}
+
+/* --- ARTIST DETAIL SUBVIEW (HERO BANNER & PARTICIPATED LIST) --- */
+.artist-detail-subview.hidden,
+#artists-grid-subview.hidden {
+    display: none !important;
+}
+
+.artist-detail-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+.artist-back-btn,
+.artist-action-btn {
+    background: #0e0e0e;
+    border: 1px solid #2b2b2b;
+    color: #ccc;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 1.2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.artist-back-btn:hover,
+.artist-action-btn:hover {
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+}
+
+.artist-action-btn.active {
+    background: rgba(197, 164, 137, 0.16);
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+}
+
+.artist-action-btn.active svg {
+    fill: var(--text-accent);
+}
+
+.artist-back-btn i,
+.artist-back-btn svg,
+.artist-action-btn i,
+.artist-action-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.artist-detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.artist-hero-banner {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(197, 164, 137, 0.35);
+    min-height: 280px;
+    display: flex;
+    align-items: flex-end;
+    padding: 2rem 1.8rem;
+    margin-bottom: 2rem;
+    background: #0a0a0a;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85);
+}
+
+.artist-hero-backdrop {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center 22%;
+    filter: brightness(0.55) contrast(1.08);
+    transform: scale(1.04);
+    transition: transform 0.6s ease;
+}
+
+.artist-hero-banner:hover .artist-hero-backdrop {
+    transform: scale(1.08);
+}
+
+.artist-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(8, 8, 8, 0.15) 0%, rgba(8, 8, 8, 0.72) 55%, #080808 100%),
+        radial-gradient(circle at 80% 20%, rgba(197, 164, 137, 0.22), transparent 60%);
+}
+
+.artist-hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    width: 100%;
+}
+
+.artist-hero-portrait {
+    width: 115px;
+    height: 115px;
+    border-radius: 50%;
+    background-color: #141414;
+    background-size: cover;
+    background-position: center;
+    border: 3px solid var(--text-accent);
+    flex-shrink: 0;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.artist-hero-portrait.no-avatar i,
+.artist-hero-portrait.no-avatar svg {
+    width: 40px;
+    height: 40px;
+    color: #555;
+}
+
+.artist-hero-info {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.artist-hero-pin-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(197, 164, 137, 0.2);
+    border: 1px solid var(--text-accent);
+    color: var(--text-accent);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+}
+
+.artist-hero-pin-tag svg {
+    width: 12px;
+    height: 12px;
+}
+
+.artist-hero-name {
+    font-family: 'Anton', 'Noto Sans TC', 'Noto Sans JP', sans-serif;
+    font-size: 2.3rem;
+    color: #fff;
+    margin: 0 0 14px 0;
+    line-height: 1.15;
+    letter-spacing: 1px;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+}
+
+.artist-hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    background: rgba(10, 10, 10, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+.artist-hero-stat {
+    display: flex;
+    flex-direction: column;
+    border-left: 2px solid var(--text-accent);
+    padding-left: 8px;
+}
+
+.artist-hero-stat .stat-lbl {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 1px;
+    color: #888;
+}
+
+.artist-hero-stat .stat-val {
+    font-family: 'Anton', sans-serif;
+    font-size: 1.25rem;
+    color: #fff;
+}
+
+.artist-hero-stat .stat-val small {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.75rem;
+    color: #999;
+    font-weight: normal;
+}
+
+.artist-hero-stat .stat-val.date-val {
+    font-family: 'Bebas Neue', monospace;
+    font-size: 1.05rem;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+@media (max-width: 650px) {
+    .artist-hero-banner {
+        padding: 1.5rem 1.1rem;
+        min-height: 250px;
+    }
+    .artist-hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .artist-hero-portrait {
+        width: 86px;
+        height: 86px;
+    }
+    .artist-hero-name {
+        font-size: 1.75rem;
+    }
+    .artist-hero-stats {
+        grid-template-columns: repeat(2, 1fr);
+        width: 100%;
+    }
+}
+
+/* --- ARTIST PARTICIPATED RECORDS LIST --- */
+.artist-records-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #1f1f1f;
+    padding-bottom: 8px;
+}
+
+.artist-records-header h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.35rem;
+    letter-spacing: 2px;
+    color: var(--text-accent);
+    margin: 0;
+}
+
+.artist-records-header h3 span {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: normal;
+}
+
+.artist-records-hint {
+    font-size: 0.75rem;
+    color: #555;
+}
+
+.artist-records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 2.5rem;
+}
+
+.artist-record-card {
+    background: linear-gradient(90deg, #111111 0%, #0b0b0b 100%);
+    border: 1px solid #222;
+    border-left: 3px solid var(--text-accent);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.artist-record-card:hover {
+    transform: translateX(4px);
+    border-color: var(--text-accent);
+    background: linear-gradient(90deg, #171410 0%, #0d0d0d 100%);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+.artist-record-left {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+    text-align: left;
+}
+
+.artist-record-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.artist-record-date {
+    font-family: 'Bebas Neue', monospace;
+    font-size: 0.9rem;
+    color: var(--text-accent);
+    letter-spacing: 1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.artist-record-date svg {
+    width: 12px;
+    height: 12px;
+}
+
+.artist-record-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+    padding: 1px 8px;
+    border-radius: 4px;
+}
+
+.artist-record-badge.oneman {
+    background: rgba(197, 164, 137, 0.2);
+    color: var(--text-accent);
+    border: 1px solid rgba(197, 164, 137, 0.5);
+}
+
+.artist-record-badge.fes {
+    background: #1a1a1a;
+    color: #aaa;
+    border: 1px solid #333;
+}
+
+.artist-record-status {
+    font-size: 0.7rem;
+    padding: 1px 7px;
+    border-radius: 4px;
+}
+
+.artist-record-status.confirmed {
+    background: rgba(76, 175, 80, 0.15);
+    color: #81c784;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+}
+
+.artist-record-status.completed {
+    background: #161616;
+    color: #777;
+    border: 1px solid #2a2a2a;
+}
+
+.artist-record-title {
+    font-family: 'Noto Sans TC', 'Noto Sans JP', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.35;
+}
+
+.artist-record-sub {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.artist-record-sub span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.artist-record-sub svg {
+    width: 12px;
+    height: 12px;
+    color: var(--text-accent);
+}
+
+.artist-record-right {
+    color: var(--text-accent);
+    opacity: 0.55;
+    flex-shrink: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.artist-record-card:hover .artist-record-right {
+    opacity: 1;
+    transform: scale(1.12);
+}
+
+/* --- ARTIST COMPACT MODE SWITCHER & DEEZER QUICK TAG CHIPS --- */
+.artist-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.artist-field-header label {
+    margin: 0;
+}
+
+.artist-mode-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #0c0c0c;
+    border: 1px solid #222;
+    padding: 2px 4px;
+    border-radius: 6px;
+    width: fit-content;
+}
+
+.artist-cat-btn {
+    flex: 0 0 auto;
+    background: transparent;
+    color: #888;
+    border: 1px solid transparent;
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-family: 'Noto Sans TC', 'Bebas Neue', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+.artist-cat-btn:hover {
+    color: #eee;
+    border-color: rgba(197, 164, 137, 0.4);
+}
+
+.artist-cat-btn.active {
+    background: var(--text-accent);
+    color: #000;
+    border-color: var(--text-accent);
+}
+
+.artist-cat-btn.deezer-btn {
+    color: #5c9aff;
+}
+
+.artist-cat-btn.deezer-btn:hover {
+    color: #8ab4f8;
+    border-color: rgba(66, 133, 244, 0.5);
+    background: rgba(66, 133, 244, 0.12);
+}
+
+.artist-cat-btn.deezer-btn.active {
+    background: #4285F4;
+    color: #fff;
+    border-color: #4285F4;
+}
+
+.spotify-tag-chip {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    border-color: rgba(29, 185, 84, 0.55) !important;
+    color: #e2ffe9 !important;
+    background: rgba(29, 185, 84, 0.1) !important;
+    padding: 3px 10px 3px 5px !important;
+    border-radius: 999px !important;
+}
+
+.spotify-tag-chip:hover {
+    border-color: #1DB954 !important;
+    background: rgba(29, 185, 84, 0.22) !important;
+    color: #fff !important;
+}
+
+.spotify-chip-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
+}
+
+.spotify-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 4px 2px;
+}
+
+.spotify-photo-option {
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.spotify-photo-option:hover,
+.spotify-photo-option.selected {
+    border-color: var(--text-accent);
+    background: rgba(197, 164, 137, 0.14);
+}
+
+.spotify-photo-option img {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid #444;
+}
+
+.spotify-photo-option span {
+    font-size: 0.75rem;
+    color: #ddd;
+    line-height: 1.2;
+    word-break: break-word;
+}
+

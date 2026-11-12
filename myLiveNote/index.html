@@ -20,7 +20,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Main CSS -->
-    <link rel="stylesheet" href="style.css?v=7.0.5">
+    <link rel="stylesheet" href="style.css?v=7.1.4">
 </head>
 <body>
 
@@ -43,6 +43,7 @@
             </button>
             
             <button class="tab-btn active" data-tab="list">TICKETS</button>
+            <button class="tab-btn" data-tab="artists">ARTISTS</button>
             <button class="tab-btn" data-tab="map">MAP</button>
             <button class="tab-btn" data-tab="stats">STATS</button>
         </div>
@@ -61,7 +62,6 @@
         <section id="list-view" class="active">
             <div class="filter-categories">
                 <button class="cat-btn active" data-cat="date">YEAR</button>
-                <button class="cat-btn" data-cat="artist">ARTIST</button>
                 <button class="cat-btn" data-cat="status">STATUS</button>
                 <button class="cat-btn" data-cat="milestone">MILESTONE</button>
                 <div id="filter-addon"></div>
@@ -92,7 +92,31 @@
             </div>
         </section>
 
-        <!-- Tab 2: Map View -->
+        <!-- Tab 2: Artists View -->
+        <section id="artists-view">
+            <div id="artists-grid-subview">
+                <h2 class="animate-fade" id="artists-main-title">ARTISTS</h2>
+                <div class="ranking-mode-switcher artist-tab-mode-switcher" aria-label="Artists attendance mode">
+                    <button class="artist-tab-mode-btn active" data-artist-mode="inPerson" type="button">REAL ATTENDANCE</button>
+                    <button class="artist-tab-mode-btn" data-artist-mode="full" type="button">FULL EXPERIENCE</button>
+                </div>
+                <div class="artist-wall-toolbar">
+                    <div class="artist-search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="artist-wall-search" placeholder="SEARCH ARTIST / 搜尋藝人..." oninput="onArtistWallSearch(this.value)" autocomplete="off">
+                    </div>
+                </div>
+                <div id="artists-wall-grid" class="artists-wall-grid">
+                    <!-- Artist avatars injected by JS -->
+                </div>
+            </div>
+
+            <div id="artist-detail-subview" class="artist-detail-subview hidden">
+                <!-- Artist Hero Banner + Participated Records injected by JS -->
+            </div>
+        </section>
+
+        <!-- Tab 3: Map View -->
         <section id="map-view">
             <div id="map"></div>
         </section>
@@ -220,7 +244,7 @@
     </div>
 
     <!-- Main Script -->
-    <script src="script.js?v=7.0.5"></script>
+    <script src="script.js?v=7.1.4"></script>
     <script>
         lucide.createIcons();
     </script>

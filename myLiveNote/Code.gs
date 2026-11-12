@@ -1,11 +1,12 @@
 /**
- * LiveNote 後端多使用者版本 - v7.0 (Google Calendar 同步整合版)
- */
+ * LiveNote 後端多使用者版本 - v7.1 (藝人獨立功能、Google Calendar 同步整合版)
+*/
 
 const MAIN_SHEET = 'LiveRecords';
 const CONFIG_SHEET = '_Config_';
 const TEMPLATE_SHEET = '_Template_';
 const VENUE_SHEET = 'venue_config';
+const ARTIST_SHEET = 'artist_config';
 
 const ss = SpreadsheetApp.getActiveSpreadsheet();
 const cache = CacheService.getScriptCache();
@@ -31,11 +32,22 @@ function doGet(e) {
         username: u.username,
         display_name: u.display_name,
         avatar_url: u.avatar_url,
-        has_calendar: !!(u.calendar_id && String(u.calendar_id).trim() !== '')
+        has_calendar: !!(u.calendar_id && String(u.calendar_id).trim() !== ''),
+        favorite_artists: u.favorite_artists
+          ? String(u.favorite_artists).split(',').map(s => s.trim()).filter(s => s !== '')
+          : []
       })));
     }
 
     if (action === 'getVenues') return response(getCachedConfig(VENUE_SHEET));
+
+    if (action === 'getArtists') return response(getCachedConfig(ARTIST_SHEET));
+
+    if (action === 'searchArtist' || action === 'searchSpotifyArtist') {
+      const q = (e.parameter.q || '').trim();
+      if (!q) return response({ status: 'success', artists: [] });
+      return response(searchDeezerArtists(q));
+    }
 
     if (action === 'getCalendarLink') {
       const password = e.parameter.p;
@@ -155,6 +167,52 @@ function doPost(e) {
       return response({ status: 'success', eventId: eventId });
     }
     // ────────────────────────────
+
+    // ── 更新最愛藝人排序 action (帳號綁定同步) ──
+    if (params.action === 'updateFavoriteArtists') {
+      const userConfig = validateUser(username, password);
+      if (!userConfig) return response({ status: 'error', message: 'Unauthorized' });
+
+      const configSheet = ss.getSheetByName(CONFIG_SHEET);
+      if (!configSheet) return response({ status: 'error', message: 'Config sheet not found' });
+
+      const configData = configSheet.getDataRange().getValues();
+      const headers = configData[0].map(h => String(h).trim());
+      let favColIdx = headers.indexOf('favorite_artists');
+      if (favColIdx === -1) {
+        favColIdx = headers.length;
+        configSheet.getRange(1, favColIdx + 1).setValue('favorite_artists');
+      }
+
+      const usernameColIdx = headers.indexOf('username');
+      let targetRow = -1;
+      for (let i = 1; i < configData.length; i++) {
+        if (String(configData[i][usernameColIdx]).trim() === String(username).trim()) {
+          targetRow = i + 1;
+          break;
+        }
+      }
+      if (targetRow === -1) return response({ status: 'error', message: 'User not found in _Config_' });
+
+      const favList = Array.isArray(params.favorite_artists)
+        ? params.favorite_artists.map(s => String(s).trim()).filter(s => s !== '')
+        : String(params.favorite_artists || '').split(',').map(s => s.trim()).filter(s => s !== '');
+
+      configSheet.getRange(targetRow, favColIdx + 1).setValue(favList.join(','));
+      cache.remove(`CONFIG_${CONFIG_SHEET}`);
+
+      return response({ status: 'success', favorite_artists: favList });
+    }
+
+    // ── 儲存/更新藝人頭像設定 action (artist_config) ──
+    if (params.action === 'saveArtistConfig') {
+      const isAuthorized = !!(username && password && validateUser(username, password));
+      const items = Array.isArray(params.artists) ? params.artists : (params.artist ? [params.artist] : []);
+      if (items.length === 0) return response({ status: 'error', message: 'No artist data provided' });
+
+      const updated = upsertArtistConfigRows(items, isAuthorized);
+      return response({ status: 'success', updated: updated });
+    }
 
     const userConfig = validateUser(username, password);
     if (!userConfig) return response({ status: 'error', message: 'Unauthorized' });
@@ -297,7 +355,7 @@ function getOrCreateUserSheet(name) {
 }
 
 function clearAllCache() {
-  cache.removeAll([`CONFIG_${CONFIG_SHEET}`, `CONFIG_${VENUE_SHEET}`]);
+  cache.removeAll([`CONFIG_${CONFIG_SHEET}`, `CONFIG_${VENUE_SHEET}`, `CONFIG_${ARTIST_SHEET}`]);
 }
 
 function getS3PresignedUrl(objectKey, contentType) {
@@ -349,7 +407,7 @@ function updateStatusToCompleted() {
   today.setHours(0, 0, 0, 0); 
 
   // 定義不需要執行此排查的工作表名稱（可自行增減）
-  var excludeSheets = ['_Config_', '_Template_', 'venue_config'];
+  var excludeSheets = ['_Config_', '_Template_', 'venue_config', 'artist_config'];
 
   for (var s = 0; s < sheets.length; s++) {
     var sheet = sheets[s];
@@ -481,4 +539,112 @@ function buildCalendarDescription(d) {
   if (d.id)  lines.push(`LiveNoteID :${d.id}`);
   lines.push(`\n FOR LiveNote App`);
   return lines.join('\n');
+}
+
+// ── DEEZER API (免金鑰開源端點) 與 ARTIST CONFIG 輔助函式 ─────────
+
+function searchDeezerArtists(query) {
+  try {
+    const url = `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=8`;
+    const res = UrlFetchApp.fetch(url, {
+      method: 'get',
+      headers: {
+        'Accept-Language': 'ja,zh-TW;q=0.9,en;q=0.8'
+      },
+      muteHttpExceptions: true
+    });
+
+    if (res.getResponseCode() !== 200) {
+      return { status: 'error', message: 'Deezer API error: ' + res.getContentText(), artists: [] };
+    }
+
+    const json = JSON.parse(res.getContentText());
+    const items = (json && Array.isArray(json.data)) ? json.data : [];
+    const artists = items.map(item => {
+      const rawHighRes = item.picture_xl || item.picture_big || item.picture_medium || '';
+      const rawThumb = item.picture_medium || item.picture_small || rawHighRes;
+      const isPlaceholder = rawHighRes.indexOf('/artist//') !== -1;
+      return {
+        name: item.name,
+        spotify_id: String(item.id || ''),
+        image_url: isPlaceholder ? '' : rawHighRes,
+        thumb_url: isPlaceholder ? '' : rawThumb
+      };
+    });
+
+    return { status: 'success', artists: artists };
+  } catch (err) {
+    return { status: 'error', message: err.toString(), artists: [] };
+  }
+}
+
+function getOrCreateArtistSheet() {
+  let sheet = ss.getSheetByName(ARTIST_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(ARTIST_SHEET);
+    sheet.getRange(1, 1, 1, 4).setValues([['artist_name', 'image_url', 'spotify_id', 'updated_at']]);
+  }
+  return sheet;
+}
+
+function upsertArtistConfigRows(items, allowOverwrite) {
+  const sheet = getOrCreateArtistSheet();
+  const data = sheet.getDataRange().getValues();
+  let headers = data[0].map(h => String(h).trim());
+  if (headers.length === 0 || !headers[0]) {
+    headers = ['artist_name', 'image_url', 'spotify_id', 'updated_at'];
+    sheet.getRange(1, 1, 1, 4).setValues([headers]);
+  }
+
+  const nameIdx = headers.indexOf('artist_name') !== -1 ? headers.indexOf('artist_name') : 0;
+  const imgIdx = headers.indexOf('image_url') !== -1 ? headers.indexOf('image_url') : 1;
+  const spIdx = headers.indexOf('spotify_id') !== -1 ? headers.indexOf('spotify_id') : 2;
+  const updIdx = headers.indexOf('updated_at') !== -1 ? headers.indexOf('updated_at') : 3;
+
+  const existingMap = new Map();
+  for (let i = 1; i < data.length; i++) {
+    const key = String(data[i][nameIdx] || '').trim().toUpperCase();
+    if (key) existingMap.set(key, { rowIndex: i + 1, row: data[i] });
+  }
+
+  const nowStr = Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss");
+  const rowsToAppend = [];
+  let updatedCount = 0;
+
+  items.forEach(item => {
+    const artistName = String(item.artist_name || item.name || '').trim();
+    const imageUrl = String(item.image_url || '').trim();
+    const spotifyId = String(item.spotify_id || '').trim();
+    if (!artistName || !imageUrl) return;
+
+    const key = artistName.toUpperCase();
+    const existing = existingMap.get(key);
+    if (existing) {
+      const currentImg = String(existing.row[imgIdx] || '').trim();
+      if (allowOverwrite || !currentImg) {
+        sheet.getRange(existing.rowIndex, imgIdx + 1).setValue(imageUrl);
+        if (spotifyId && spIdx !== -1) sheet.getRange(existing.rowIndex, spIdx + 1).setValue(spotifyId);
+        if (updIdx !== -1) sheet.getRange(existing.rowIndex, updIdx + 1).setValue(nowStr);
+        updatedCount++;
+      }
+    } else {
+      const newRow = [];
+      newRow[nameIdx] = artistName;
+      newRow[imgIdx] = imageUrl;
+      if (spIdx !== -1) newRow[spIdx] = spotifyId;
+      if (updIdx !== -1) newRow[updIdx] = nowStr;
+      rowsToAppend.push(newRow);
+      existingMap.set(key, { rowIndex: data.length + rowsToAppend.length, row: newRow });
+      updatedCount++;
+    }
+  });
+
+  if (rowsToAppend.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rowsToAppend.length, Math.max(headers.length, 4)).setValues(rowsToAppend);
+  }
+
+  if (updatedCount > 0) {
+    cache.remove(`CONFIG_${ARTIST_SHEET}`);
+  }
+  return updatedCount;
 }

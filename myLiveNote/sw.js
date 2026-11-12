@@ -1,4 +1,4 @@
-const CACHE_NAME = 'livenote-v7.0.5';
+const CACHE_NAME = 'livenote-v7.1.4';
 const ASSETS = [
   'shared.html',
   'index.html',
@@ -41,8 +41,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. GAS API 請求與本地圖片上傳請求不快取，確保資料即時性
-  if (url.includes('script.google.com') || url.includes('action=getPresignedUrl')) {
+  // 2. GAS API 請求、外部音樂搜尋 API 與本地圖片上傳請求不快取，確保資料即時性
+  if (url.includes('script.google.com') || url.includes('action=getPresignedUrl') || url.includes('deezer.com') || url.includes('dzcdn.net') || url.includes('wikipedia.org')) {
     return;
   }
 
