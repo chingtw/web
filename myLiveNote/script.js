@@ -2885,6 +2885,39 @@ window.openDetail = function(id) {
 
     const heroImg = String(t.images || rawT.images || '').trim();
     const hasHeroImg = heroImg !== '';
+    const hasSetlist = String(setlistDisplay || '').trim() !== '';
+
+    const missingOfficialImages = [];
+    const renderModalArtistTag = (name, isMain = false) => {
+        const cleanName = String(name || '').trim();
+        if (!cleanName) return '';
+        const imgInfo = getArtistImageInfo(cleanName);
+        if (!imgInfo.isOfficial) {
+            missingOfficialImages.push(cleanName);
+        }
+        const safeNameAttr = cleanName.replace(/"/g, '&quot;');
+        const bgStyle = imgInfo.url ? `style="background-image: url('${imgInfo.url.replace(/'/g, "\\'")}');"` : '';
+        return `
+            <div class="${isMain ? 'modal-main-artist-item' : 'modal-lineup-artist-chip'}">
+                <div class="modal-artist-avatar ${imgInfo.url ? '' : 'no-avatar'}" data-artist-avatar="${safeNameAttr}" ${bgStyle}>
+                    ${imgInfo.url ? '' : '<i data-lucide="mic-2"></i>'}
+                </div>
+                <span class="modal-artist-name">${cleanName}</span>
+            </div>
+        `;
+    };
+
+    const mainArtists = String(rawT.artist || '').split(/[、,]+/).map(s => s.trim()).filter(Boolean);
+    const lineupArtists = String(rawT.artist_list || '').split(/[、,]+/).map(s => s.trim()).filter(Boolean);
+    const mainArtistsHtml = mainArtists.length > 0
+        ? `<div class="modal-main-artists">${mainArtists.map(a => renderModalArtistTag(a, true)).join('')}</div>`
+        : '';
+    const lineupArtistsHtml = lineupArtists.length > 0
+        ? `<div class="modal-lineup-box">
+               <strong class="modal-lineup-title">共演陣容 / 嘉賓</strong>
+               <div class="modal-lineup-list">${lineupArtists.map(a => renderModalArtistTag(a, false)).join('')}</div>
+           </div>`
+        : '';
     
     modalBody.innerHTML = `
         <div class="modal-flipper">
@@ -2894,8 +2927,9 @@ window.openDetail = function(id) {
                     <div id="modal-admin-tool-inner" style="position: absolute; top: 15px; left: 20px; z-index: 101;"></div>
                 </div>
                 <div class="modal-text-content">
-                    <h2 style="color:var(--text-accent); font-family:'Anton'; font-size:2.2rem; margin-top:0; margin-bottom:0.4rem;">${rawT.tour_title}</h2><h3 style="color:#aaa; font-size:1.2rem; margin-top:0;">${rawT.artist}</h3>
-                    ${rawT.artist_list ? `<div style="margin:1rem 0; background:#1a1a1a; padding:15px; border-left:3px solid var(--text-accent);"><strong style="color:var(--text-accent);">共演陣容/嘉賓</strong><br>${rawT.artist_list}</div>` : ''}
+                    <h2 style="color:var(--text-accent); font-family:'Anton'; font-size:2.2rem; margin-top:0; margin-bottom:0.5rem;">${rawT.tour_title}</h2>
+                    ${mainArtistsHtml}
+                    ${lineupArtistsHtml}
                     <div class="modal-meta-grid">
                         <div class="modal-meta-item"><strong>狀態</strong><span>${statusText}</span></div>
                         <div class="modal-meta-item"><strong>公演種別</strong><span>${typeLabelJP}</span></div>
@@ -2910,9 +2944,9 @@ window.openDetail = function(id) {
 
                     ${companionsHtml}
 
-                    ${!isFailed ? `
+                    ${(!isFailed && hasSetlist) ? `
                         <div class="modal-ticket-separator"></div><h4 style="color:var(--text-accent); font-family:'Bebas Neue'; letter-spacing:1px; margin-bottom:10px;">SETLIST & MEMO / セトリ・參戰紀錄</h4>
-                        <div class="setlist-container" style="background:#0a0a0a; padding:20px; border:1px solid #222; font-family:monospace; max-height:300px; overflow:auto; color:#bbb; line-height:1.6; white-space: pre;">${setlistDisplay ? setlistDisplay : 'No setlist available.'}</div>
+                        <div class="setlist-container" style="background:#0a0a0a; padding:20px; border:1px solid #222; font-family:monospace; max-height:300px; overflow:auto; color:#bbb; line-height:1.6; white-space: pre;">${setlistDisplay}</div>
                     ` : ''}
 
                     ${hasLatLng ? `<div class="detail-map-container"><div id="${isMultiVenue ? 'detail-map-flat' : 'detail-map'}"></div></div>` : ''}
@@ -2953,6 +2987,10 @@ window.openDetail = function(id) {
     modal.scrollTop = 0;
     toggleBodyScroll(true);
     lucide.createIcons();
+
+    if (missingOfficialImages.length > 0) {
+        setTimeout(() => autoFetchMissingArtistImages(missingOfficialImages), 300);
+    }
 
     setTimeout(() => {
         if (detailMapInstance) { detailMapInstance.remove(); detailMapInstance = null; }
@@ -3776,10 +3814,10 @@ function showAdminForm(editData = null) {
                 <div style="background:#1a1a1a; padding:15px; border-radius:8px; margin-top:5px; border:1px solid #333;">
                     <label style="display:block; margin-bottom:12px; font-weight:bold; color:var(--text-accent); font-size:0.9rem; letter-spacing:1px;">MILESTONES / 紀念紀錄</label>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="ARTIST" ${ms.includes('ARTIST')?'checked':''}> 初參戰</label>
-                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="EXPEDITION" ${ms.includes('EXPEDITION')?'checked':''}> 初遠征</label>
-                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="VENUE" ${ms.includes('VENUE')?'checked':''}> 初会場</label>
-                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="EVENT" ${ms.includes('EVENT')?'checked':''}> 初參加</label>
+                        <label class="milestone-option-label" style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="ARTIST" ${ms.includes('ARTIST')?'checked':''}> 初參戰</label>
+                        <label class="milestone-option-label" style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="EXPEDITION" ${ms.includes('EXPEDITION')?'checked':''}> 初遠征</label>
+                        <label class="milestone-option-label" style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="VENUE" ${ms.includes('VENUE')?'checked':''}> 初会場</label>
+                        <label class="milestone-option-label" style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;"><input type="checkbox" name="milestone" value="EVENT" ${ms.includes('EVENT')?'checked':''}> 初參加</label>
                     </div>
                 </div>
 
