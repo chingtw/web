@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHING x</title>
+    <meta name="application-name" content="CHING x">
+    <meta name="apple-mobile-web-app-title" content="CHING x">
+    <meta property="og:site_name" content="CHING x">
+    <meta property="og:title" content="CHING x - Integrated Web Apps &amp; Cloud Services">
+    <meta property="og:description" content="Official web application platform for CHING x, providing personal cloud tools, event tracking, and Google Workspace integrations.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #2d3436;
+            --accent-color: #0984e3;
+            --card-bg: #ffffff;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 600;
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        p.tagline {
+            font-size: 1.1rem;
+            color: #636e72;
+            font-weight: 300;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #2d3436;
+        }
+
+        .card p {
+            font-size: 0.95rem;
+            color: #636e72;
+            margin-bottom: 20px;
+        }
+
+        .card .btn {
+            padding: 10px 25px;
+            background-color: var(--bg-color);
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+            transition: var(--transition);
+        }
+
+        .card:hover .btn {
+            background-color: var(--accent-color);
+            color: #fff;
+        }
+
+        footer {
+            margin-top: 80px;
+            font-size: 0.85rem;
+            color: #b2bec3;
+            font-weight: 300;
+        }
+
+        footer .footer-links {
+            margin-top: 10px;
+        }
+
+        footer .footer-links a {
+            color: #b2bec3;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: color 0.2s;
+        }
+
+        footer .footer-links a:hover {
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>CHING x</h1>
+            <p class="tagline">An integrated web application platform providing personal cloud tools, productivity tracking, and Google Workspace integrations.</p>
+        </header>
+
+        <main class="grid">
+            <a href="myLiveNote/" class="card">
+                <h2>MyLiveNote</h2>
+                <p>Personal event & live attendance tracking system with Google Sheets integration and interactive data analytics.</p>
+                <span class="btn">Launch App</span>
+            </a>
+
+            <a href="form/" class="card">
+                <h2>JP Cargo Hub</h2>
+                <p>Package forwarding and package tracking management system designed for seamless cross-border shipping workflows.</p>
+                <span class="btn">Launch App</span>
+            </a>
+        </main>
+
+        <footer>
+            &copy; 2026 CHING x. All rights reserved.
+            <div class="footer-links">
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+            </div>
+        </footer>
+    </div>
+
+</body>
+</html>
